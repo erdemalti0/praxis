@@ -1,0 +1,148 @@
+# Praxis
+
+**AI-Powered Development Workspace**
+
+Praxis is a desktop application that lets you orchestrate multiple AI coding agents side-by-side. Spawn Claude Code, OpenCode, Aider, Gemini CLI, and more — all in a unified workspace with split terminals, widgets, a built-in browser, and mission planning.
+
+## Features
+
+### Multi-Agent Terminal
+- Spawn and manage multiple AI agents simultaneously
+- Split panes (horizontal/vertical) for side-by-side work
+- Drag-and-drop to rearrange terminal panes
+- Paste images directly into terminals (Cmd+V or drag & drop)
+- Bracket paste mode for TUI compatibility
+- Terminal search (Cmd+F)
+
+### Workspaces
+- Organize work into named, color-coded workspaces
+- Emoji icons for quick identification
+- Drag to reorder workspace tabs
+- Per-workspace terminal layouts and widget dashboards
+- Persist and restore across sessions
+
+### Widget Dashboard
+- Drag-and-drop grid layout with resizable widgets
+- Built-in widgets:
+  - Agent Monitor — track agent activity
+  - System Monitor — CPU, memory, disk
+  - Port Monitor — active network ports
+  - Git Status — branch, staged files, diffs
+  - Notes — markdown editor with preview
+  - Bookmarks — save and organize links
+  - Pomodoro Timer — focus/break cycles
+  - Prompt Library — reusable prompt templates
+  - Quick Commands — saved terminal commands
+  - Log Viewer — real-time log streaming
+  - Diff Viewer — side-by-side code diffs
+  - Markdown Preview — live markdown rendering
+  - File Explorer — browse project files
+
+### Built-in Browser
+- Tabbed browser with navigation
+- Tab groups and pinning
+- Password manager with encryption
+- Bookmark integration
+- Keyboard shortcuts (Cmd+T, Cmd+W, Cmd+L, etc.)
+
+### Mission Planner
+- Create multi-step mission workflows
+- DAG-based flow chart visualization
+- Assign steps to AI agents
+- Track progress and completion
+
+### Task Board
+- Kanban-style task management (Todo, In Progress, Done)
+- Tag support with auto-coloring
+- Drag to reorder
+- Assign tasks to running agents
+
+### Additional Features
+- Command Palette (Cmd+K)
+- Keyboard shortcuts help (?)
+- Custom themes with full color token editor
+- Recent projects on startup
+- Onboarding flow for new users
+- Toast notifications for all operations
+- Custom confirmation dialogs
+- Session persistence across restarts
+- Multi-window support (Cmd+Shift+N)
+
+## Tech Stack
+
+- **Frontend:** React 18, TypeScript, Zustand
+- **Terminal:** xterm.js with WebGL renderer
+- **Desktop:** Electron with electron-vite
+- **PTY:** node-pty for native terminal processes
+- **Styling:** CSS variables with custom theme engine
+- **Icons:** Lucide React
+- **Widgets:** react-grid-layout
+- **Markdown:** marked.js
+- **Syntax:** highlight.js
+
+## Getting Started
+
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- macOS (primary platform)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <repo-url>
+cd praxis-electron
+
+# Install dependencies
+npm install
+
+# Start development
+npm run dev
+```
+
+### Build
+
+```bash
+# Build for production
+npm run build
+
+# Package as .dmg (macOS)
+npm run dist
+```
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| Cmd+K | Command Palette |
+| Cmd+T | New Terminal Tab |
+| Cmd+W | Close Tab |
+| Cmd+, | Settings |
+| Cmd+F | Search in Terminal |
+| Cmd+Shift+N | New Window |
+| Cmd+1-9 | Switch Workspace |
+| ? | Keyboard Shortcuts Help |
+
+## Data Storage
+
+```
+~/.praxis/
+  settings.json          # Global settings, themes, agents
+  ui-state.json          # Layout, sidebar, workspaces
+  browser-state.json     # Browser tabs, groups
+  prompt-library.json    # Saved prompts
+  quick-commands.json    # Saved commands
+
+{project}/.praxis/
+  missions.json          # Mission workflows
+  tasks.json             # Task board
+  widgets.json           # Widget layouts
+  notes.json             # Notes
+  bookmarks.json         # Bookmarks
+  pomodoro.json          # Timer state
+```
+
+## License
+
+MIT

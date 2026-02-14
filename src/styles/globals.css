@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+    font-family: "JetBrains Mono", "SF Mono", Monaco, Menlo, monospace;
+    background: var(--vp-bg-primary, #000000);
+    color: var(--vp-text-primary, #e0e0e0);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--vp-scrollbar-thumb, #1e1e1e);
+    border-radius: 6px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--vp-scrollbar-hover, #333333);
+  }
+}
+
+.xterm {
+  padding: 8px;
+}
+
+/* Global smooth transitions */
+button, a, input, [class*="transition"] {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* React Grid Layout overrides */
+.widget-grid-layout {
+  min-height: 100%;
+}
+
+/* Tag palette colors */
+:root {
+  --vp-tag-blue-bg: rgba(96,165,250,0.15);
+  --vp-tag-blue-border: rgba(96,165,250,0.25);
+  --vp-tag-blue-text: #60a5fa;
+  --vp-tag-purple-bg: rgba(168,85,247,0.15);
+  --vp-tag-purple-border: rgba(168,85,247,0.25);
+  --vp-tag-purple-text: #a855f7;
+  --vp-tag-pink-bg: rgba(236,72,153,0.15);
+  --vp-tag-pink-border: rgba(236,72,153,0.25);
+  --vp-tag-pink-text: #ec4899;
+  --vp-tag-amber-bg: rgba(245,158,11,0.15);
+  --vp-tag-amber-border: rgba(245,158,11,0.25);
+  --vp-tag-amber-text: #f59e0b;
+  --vp-tag-emerald-bg: rgba(52,211,153,0.15);
+  --vp-tag-emerald-border: rgba(52,211,153,0.25);
+  --vp-tag-emerald-text: #34d399;
+  --vp-tag-cyan-bg: rgba(34,211,238,0.15);
+  --vp-tag-cyan-border: rgba(34,211,238,0.25);
+  --vp-tag-cyan-text: #22d3ee;
+  --vp-tag-rose-bg: rgba(251,113,133,0.15);
+  --vp-tag-rose-border: rgba(251,113,133,0.25);
+  --vp-tag-rose-text: #fb7185;
+  --vp-tag-indigo-bg: rgba(129,140,248,0.15);
+  --vp-tag-indigo-border: rgba(129,140,248,0.25);
+  --vp-tag-indigo-text: #818cf8;
+}
+
+/* Widget drag animations */
+.react-grid-item {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.react-grid-item.react-draggable-dragging {
+  transform: scale(1.02);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  opacity: 0.9;
+}
+
+.react-grid-item.dropping {
+  animation: widgetDrop 0.3s ease;
+}
+
+.react-grid-item > .react-resizable-handle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  bottom: 2px;
+  right: 2px;
+  cursor: se-resize;
+  background: none;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--vp-border-medium, rgba(255, 255, 255, 0.15));
+  border-bottom: 2px solid var(--vp-border-medium, rgba(255, 255, 255, 0.15));
+  border-radius: 0 0 2px 0;
+}
+
+.react-grid-item > .react-resizable-handle:hover::after {
+  border-color: var(--vp-accent-blue-glow, rgba(96, 165, 250, 0.5));
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.react-grid-placeholder {
+  background: var(--vp-accent-blue) !important;
+  opacity: 0.15 !important;
+  border-radius: 12px !important;
+}
+
+@keyframes widgetDrop {
+  0% { transform: scale(1.02); }
+  50% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}

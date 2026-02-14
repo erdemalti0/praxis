@@ -1,0 +1,354 @@
+import { useEffect, useRef, lazy, Suspense } from "react";
+import { useShallow } from "zustand/shallow";
+import StatsBar from "../stats/StatsBar";
+import Sidebar from "./Sidebar";
+import MainPanel from "./MainPanel";
+import MissionBoard from "../missions/MissionBoard";
+import SpawnDialog from "../terminal/SpawnDialog";
+import BrowserPanel from "../browser/BrowserPanel";
+import EditorPanel from "../editor/EditorPanel";
+import WorkspaceContent from "../widgets/WorkspaceContent";
+import { useUIStore } from "../../stores/uiStore";
+import { useBrowserStore } from "../../stores/browserStore";
+import { useWidgetStore } from "../../stores/widgetStore";
+import { useSettingsStore } from "../../stores/settingsStore";
+import OnboardingOverlay from "../ui/OnboardingOverlay";
+
+const WidgetCatalog = lazy(() => import("../widgets/WidgetCatalog"));
+
+const SIDEBAR_COLLAPSED_WIDTH = 48;
+const TASK_PANEL_WIDTH = 340;
+
+export default function AppShell() {
+  const {
+    sidebarWidth, sidebarCollapsed, viewMode, draggingTab, terminalMaximized,
+    selectedProject, addWorkspace, workspaces, activeWorkspaceId,
+    showWidgetCatalog, setShowWidgetCatalog, showMissionPanel,
+  } = useUIStore(useShallow((s) => ({
+    sidebarWidth: s.sidebarWidth,
+    sidebarCollapsed: s.sidebarCollapsed,
+    viewMode: s.viewMode,
+    draggingTab: s.draggingTab,
+    terminalMaximized: s.terminalMaximized,
+    selectedProject: s.selectedProject,
+    addWorkspace: s.addWorkspace,
+    workspaces: s.workspaces,
+    activeWorkspaceId: s.activeWorkspaceId,
+    showWidgetCatalog: s.showWidgetCatalog,
+    setShowWidgetCatalog: s.setShowWidgetCatalog,
+    showMissionPanel: s.showMissionPanel,
+  })));
+
+  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
+  const widgetStoreWidgets = useWidgetStore((s) => s.workspaceWidgets);
+  const hasWidgets = activeWorkspaceId
+    ? (widgetStoreWidgets[activeWorkspaceId]?.length ?? 0) > 0
+    : false;
+  const isWidgetMode = activeWorkspace?.useWidgetMode ?? false;
+  const onboardingDone = useSettingsStore((s) => s.onboardingDone);
+
+  const initRef = useRef(false);
+  const currentSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth;
+
+  // Auto-create or restore workspaces when project is selected
+  useEffect(() => {
+    if (selectedProject && !initRef.current) {
+      const ws = useUIStore.getState().workspaces;
+      if (ws.length === 0) {
+        const saved = useSettingsStore.getState().savedWorkspaces;
+        if (saved.length > 0) {
+          for (const sw of saved) {
+            addWorkspace({ id: sw.id, name: sw.name, color: sw.color });
+          }
+        } else {
+          addWorkspace({ id: `ws-${Date.now()}`, name: "Workspace 1" });
+        }
+      }
+      initRef.current = true;
+    }
+  }, [selectedProject, addWorkspace]);
+
+  // Auto-save workspaces when they change (debounced)
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!initRef.current) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      useSettingsStore.getState().saveWorkspaces(
+        workspaces.map((ws) => ({
+          id: ws.id, name: ws.name, color: ws.color,
+          useWidgetMode: ws.useWidgetMode,
+        }))
+      );
+    }, 1000);
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, [workspaces]);
+
+  const panelStyle = {
+    borderRadius: 14,
+    overflow: "hidden" as const,
+    border: "1px solid var(--vp-border-panel)",
+  };
+
+  // Listen for custom tab-drop event from StatsBar's mouse-based drag
+  useEffect(() => {
+    const handleTabDrop = (e: Event) => {
+      const { tab } = (e as CustomEvent).detail;
+      const store = useUIStore.getState();
+      const vm = store.viewMode;
+
+      if (
+        (tab === "missions" && vm === "terminal") ||
+        (tab === "terminal" && vm === "missions")
+      ) {
+        store.setViewMode("split");
+      }
+    };
+
+    document.addEventListener("praxis-tab-drop", handleTabDrop);
+    return () => {
+      document.removeEventListener("praxis-tab-drop", handleTabDrop);
+    };
+  }, []);
+
+  const canDrop =
+    (draggingTab === "missions" && viewMode === "terminal") ||
+    (draggingTab === "terminal" && viewMode === "missions");
+
+  const dropLabel =
+    draggingTab === "missions"
+      ? "Drop here to split with Missions"
+      : "Drop here to split with Terminal";
+
+  const browserMaximized = useBrowserStore((s) => s.browserMaximized);
+
+  // Maximized browser — hide everything else
+  if (browserMaximized && viewMode === "browser") {
+    return (
+      <div
+        className="h-screen w-screen flex flex-col"
+        style={{
+          background: "var(--vp-bg-primary)",
+          color: "var(--vp-text-primary)",
+          fontFamily:
+            '-apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", "Segoe UI", sans-serif',
+        }}
+      >
+        <div className="flex-1 min-h-0" style={{ padding: 8 }}>
+          <div
+            className="h-full"
+            style={{ ...panelStyle, background: "var(--vp-bg-surface)" }}
+          >
+            <BrowserPanel />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Maximized terminal — hide everything else
+  if (terminalMaximized) {
+    return (
+      <div
+        className="h-screen w-screen flex flex-col"
+        style={{
+          background: "var(--vp-bg-primary)",
+          color: "var(--vp-text-primary)",
+          fontFamily:
+            '-apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", "Segoe UI", sans-serif',
+        }}
+      >
+        <div className="flex-1 min-h-0" style={{ padding: 8 }}>
+          <div
+            className="h-full"
+            style={{ ...panelStyle, background: "var(--vp-bg-surface)" }}
+          >
+            <MainPanel />
+          </div>
+        </div>
+        <SpawnDialog />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="h-screen w-screen flex flex-col"
+      style={{
+        background: "var(--vp-bg-primary)",
+        color: "var(--vp-text-primary)",
+        fontFamily:
+          '-apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", "Segoe UI", sans-serif',
+      }}
+    >
+      <StatsBar />
+      <div className="flex flex-1 min-h-0" style={{ padding: 8, gap: 8 }}>
+        {/* Sidebar — always visible */}
+        <div
+          style={{
+            width: currentSidebarWidth,
+            minWidth: currentSidebarWidth,
+            ...panelStyle,
+            background: "var(--vp-bg-surface)",
+            transition:
+              "width 0.3s cubic-bezier(0.16, 1, 0.3, 1), min-width 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+        >
+          <Sidebar />
+        </div>
+
+        {/* Mission panel — shown in widget mode when toggled from catalog */}
+        {isWidgetMode && showMissionPanel && activeWorkspaceId && viewMode !== "browser" && viewMode !== "missions" && viewMode !== "editor" && (
+          <div
+            style={{
+              width: TASK_PANEL_WIDTH,
+              minWidth: TASK_PANEL_WIDTH,
+              ...panelStyle,
+              background: "var(--vp-bg-surface)",
+            }}
+          >
+            <MissionBoard variant="panel" />
+          </div>
+        )}
+
+        {/* Widget grid — replaces terminal/split, but never browser or tasks */}
+        {isWidgetMode && activeWorkspaceId && viewMode !== "browser" && viewMode !== "missions" && viewMode !== "editor" && (
+          <div
+            className="flex-1 min-w-0 min-h-0"
+            style={{
+              ...panelStyle,
+              background: "var(--vp-bg-surface)",
+            }}
+          >
+            <WorkspaceContent workspaceId={activeWorkspaceId} />
+          </div>
+        )}
+
+        {/* Tasks view — always shown when viewMode is tasks */}
+        {viewMode === "missions" && (
+          <div
+            className="flex-1 min-w-0 min-h-0"
+            style={{
+              ...panelStyle,
+              background: "var(--vp-bg-surface)",
+              position: "relative",
+            }}
+          >
+            <MissionBoard variant="full" />
+            {canDrop && <DropOverlay label={dropLabel} />}
+          </div>
+        )}
+
+        {/* Terminal view — shown when not replaced by widgets */}
+        {viewMode === "terminal" && !isWidgetMode && (
+          <div
+            className="flex-1 min-w-0 min-h-0"
+            style={{ ...panelStyle, background: "var(--vp-bg-surface)", position: "relative", zIndex: 1, overflow: "hidden" }}
+          >
+            <MainPanel />
+            {canDrop && <DropOverlay label={dropLabel} />}
+          </div>
+        )}
+
+        {/* Split view — shown when not replaced by widgets */}
+        {viewMode === "split" && !isWidgetMode && (
+          <>
+            <div
+              style={{
+                width: TASK_PANEL_WIDTH,
+                minWidth: TASK_PANEL_WIDTH,
+                ...panelStyle,
+                background: "var(--vp-bg-surface)",
+              }}
+            >
+              <MissionBoard variant="panel" />
+            </div>
+            <div
+              className="flex-1 min-w-0 min-h-0"
+              style={{ ...panelStyle, background: "var(--vp-bg-surface)" }}
+            >
+              <MainPanel />
+            </div>
+          </>
+        )}
+
+        {/* Editor view */}
+        {viewMode === "editor" && (
+          <div
+            className="flex-1 min-w-0 min-h-0"
+            style={{ ...panelStyle, background: "var(--vp-bg-surface)" }}
+          >
+            <EditorPanel />
+          </div>
+        )}
+
+        {/* Browser view — kept mounted to preserve webview state, hidden via CSS */}
+        <div
+          className="flex-1 min-w-0 min-h-0"
+          style={{
+            ...panelStyle,
+            background: "var(--vp-bg-surface)",
+            position: "relative",
+            display: viewMode === "browser" ? undefined : "none",
+          }}
+        >
+          <BrowserPanel />
+        </div>
+
+        {/* Widget catalog side panel — shown during customize, not on browser/tasks */}
+        {isWidgetMode && showWidgetCatalog && activeWorkspaceId && viewMode !== "browser" && viewMode !== "missions" && viewMode !== "editor" && (
+          <div
+            style={{
+              ...panelStyle,
+              background: "var(--vp-bg-surface)",
+              transition: "width 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          >
+            <Suspense fallback={null}>
+              <WidgetCatalog
+                workspaceId={activeWorkspaceId}
+                onClose={() => setShowWidgetCatalog(false)}
+              />
+            </Suspense>
+          </div>
+        )}
+      </div>
+      <SpawnDialog />
+      {!onboardingDone && <OnboardingOverlay />}
+    </div>
+  );
+}
+
+function DropOverlay({ label }: { label: string }) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        background: "var(--vp-accent-blue-bg)",
+        border: "2px dashed var(--vp-accent-blue-border)",
+        borderRadius: 14,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 50,
+        pointerEvents: "none",
+      }}
+    >
+      <span
+        style={{
+          color: "var(--vp-accent-blue)",
+          fontSize: 13,
+          fontWeight: 500,
+          background: "var(--vp-bg-overlay)",
+          padding: "8px 16px",
+          borderRadius: 10,
+        }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
