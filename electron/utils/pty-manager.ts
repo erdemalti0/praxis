@@ -2,6 +2,7 @@ import type { IPty } from "node-pty";
 import os from "os";
 import path from "path";
 import { randomUUID } from "crypto";
+import { getUserShellEnv } from "./shell-env";
 
 interface PtySession {
   pty: IPty;
@@ -49,13 +50,17 @@ export function spawnPty(
 
   const isWindows = process.platform === "win32";
 
+  // Use the user's full shell environment so agent CLIs (claude, aider, etc.)
+  // are found in PATH even in packaged builds
+  const userEnv = getUserShellEnv();
+
   const shell = pty.spawn(cmd, args, {
     name: isWindows ? undefined : "xterm-256color",
     cols: cols || 80,
     rows: rows || 24,
     cwd: safeCwd,
     env: {
-      ...process.env,
+      ...userEnv,
       ...(isWindows ? {} : { TERM: "xterm-256color" }),
       PWD: safeCwd,
       HOME: os.homedir(),
