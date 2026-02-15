@@ -1,5 +1,9 @@
 # Praxis
 
+<p align="center">
+  <img src="./assets/praxis.gif" alt="Praxis Demo" width="800" />
+</p>
+
 **AI-Powered Development Workspace**
 
 Praxis is a cross-platform desktop application that lets you orchestrate multiple AI coding agents side-by-side. Spawn Claude Code, OpenCode, Aider, Gemini CLI, AMP, and more — all in a unified workspace with split terminals, widgets, a built-in browser, and mission planning.
