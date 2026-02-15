@@ -1,25 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PomodoroConfig } from "../../../types/widget";
-import { useUIStore } from "../../../stores/uiStore";
 import { useSettingsStore } from "../../../stores/settingsStore";
-import { loadJsonFile, createDebouncedSaver } from "../../../lib/persistence";
-import { getProjectDataDir } from "../../../lib/projectSlug";
-import { Play, Pause, RotateCcw, Settings, Volume2, VolumeX, Clock, Coffee, Zap, X, Minus, Plus } from "lucide-react";
-
-type TimerPhase = "focus" | "break" | "longBreak";
-
-interface SessionRecord {
-  type: TimerPhase;
-  duration: number;
-  completedAt: number;
-}
-
-interface PomodoroSettings {
-  focusMin: number;
-  breakMin: number;
-  longBreakMin: number;
-  soundEnabled: boolean;
-}
+import { usePomodoroStore } from "../../../stores/pomodoroStore";
+import { Play, Pause, RotateCcw, Settings, Volume2, VolumeX, Clock, Coffee, Zap, Minus, Plus } from "lucide-react";
 
 export default function PomodoroWidget({
   widgetId,
@@ -28,114 +11,58 @@ export default function PomodoroWidget({
   widgetId: string;
   config?: PomodoroConfig;
 }) {
-  const projectPath = useUIStore((s) => s.selectedProject?.path);
   const homeDir = useSettingsStore((s) => s.homeDir);
-  const settingsSaverRef = useRef(createDebouncedSaver(500));
-  const sessionsSaverRef = useRef(createDebouncedSaver(500));
-  const dataDir = projectPath && homeDir ? getProjectDataDir(homeDir, projectPath) : null;
 
-  // Load persisted settings
-  const [settings, setSettings] = useState<PomodoroSettings>({
-    focusMin: config.focusDuration ?? 25,
-    breakMin: config.breakDuration ?? 5,
-    longBreakMin: config.longBreakDuration ?? 15,
-    soundEnabled: config.soundEnabled ?? true,
-  });
+  const phase = usePomodoroStore((s) => s.phase);
+  const isRunning = usePomodoroStore((s) => s.isRunning);
+  const startedAt = usePomodoroStore((s) => s.startedAt);
+  const pausedTimeLeft = usePomodoroStore((s) => s.pausedTimeLeft);
+  const completedSessions = usePomodoroStore((s) => s.completedSessions);
+  const sessions = usePomodoroStore((s) => s.sessions);
+  const settings = usePomodoroStore((s) => s.settings);
+  const getTimeLeft = usePomodoroStore((s) => s.getTimeLeft);
+  const init = usePomodoroStore((s) => s.init);
+  const start = usePomodoroStore((s) => s.start);
+  const pause = usePomodoroStore((s) => s.pause);
+  const reset = usePomodoroStore((s) => s.reset);
+  const skipPhase = usePomodoroStore((s) => s.skipPhase);
+  const completePhase = usePomodoroStore((s) => s.completePhase);
+  const updateSetting = usePomodoroStore((s) => s.updateSetting);
+  const toggleSound = usePomodoroStore((s) => s.toggleSound);
 
-  // Load settings from file
-  useEffect(() => {
-    if (!dataDir) return;
-    try {
-      const filePath = `${dataDir}/pomodoro.json`;
-      const data = loadJsonFile(filePath, { settings: null, sessions: null, completedSessions: 0 });
-      if (data.settings) setSettings(data.settings);
-    } catch {}
-  }, [dataDir]);
-
-  const focusDuration = settings.focusMin * 60;
-  const breakDuration = settings.breakMin * 60;
-  const longBreakDuration = settings.longBreakMin * 60;
-  const sessionsUntilLongBreak = config.sessionsUntilLongBreak ?? 4;
-
-  const [timeLeft, setTimeLeft] = useState(focusDuration);
-  const [isRunning, setIsRunning] = useState(false);
-  const [phase, setPhase] = useState<TimerPhase>("focus");
-  const [completedSessions, setCompletedSessions] = useState(0);
+  // Local UI state (not shared across widgets)
   const [showSettings, setShowSettings] = useState(false);
-  const [sessions, setSessions] = useState<SessionRecord[]>([]);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Derived display time — re-renders via tick interval
+  const [displayTime, setDisplayTime] = useState(() => getTimeLeft());
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Initialize store (global, not per-project)
   useEffect(() => {
-    if (!dataDir) return;
-    const filePath = `${dataDir}/pomodoro.json`;
-    settingsSaverRef.current(filePath, { settings, sessions, completedSessions });
-  }, [settings, dataDir]);
-
-  useEffect(() => {
-    if (!dataDir) return;
-    try {
-      const filePath = `${dataDir}/pomodoro.json`;
-      const data = loadJsonFile(filePath, { sessions: [] as SessionRecord[], completedSessions: 0 });
-      const today = new Date().toDateString();
-      // Only restore sessions from today
-      const todaySessions = (data.sessions || []).filter(
-        (s: SessionRecord) => new Date(s.completedAt).toDateString() === today
-      );
-      setSessions(todaySessions);
-      setCompletedSessions(data.completedSessions || 0);
-    } catch {}
-  }, [dataDir]);
-
-  useEffect(() => {
-    if (!dataDir) return;
-    const filePath = `${dataDir}/pomodoro.json`;
-    sessionsSaverRef.current(filePath, { settings, sessions, completedSessions });
-  }, [sessions, completedSessions, dataDir]);
-
-  useEffect(() => {
-    if (isRunning) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((t) => {
-          if (t <= 1) {
-            setIsRunning(false);
-            handlePhaseComplete();
-            return t;
-          }
-          return t - 1;
-        });
-      }, 1000);
+    if (homeDir) {
+      init(homeDir);
     }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isRunning, phase]);
+  }, [homeDir, init]);
 
-  const handlePhaseComplete = () => {
-    const newSession: SessionRecord = {
-      type: phase,
-      duration: phase === "focus" ? focusDuration : phase === "break" ? breakDuration : longBreakDuration,
-      completedAt: Date.now(),
-    };
-    setSessions((prev) => [...prev, newSession]);
-
-    if (settings.soundEnabled) playNotification();
-
-    if (phase === "focus") {
-      const newCount = completedSessions + 1;
-      setCompletedSessions(newCount);
-      if (newCount % sessionsUntilLongBreak === 0) {
-        setPhase("longBreak");
-        setTimeLeft(longBreakDuration);
-      } else {
-        setPhase("break");
-        setTimeLeft(breakDuration);
+  // Tick every second to update display & detect phase completion
+  useEffect(() => {
+    const tick = () => {
+      const tl = getTimeLeft();
+      setDisplayTime(tl);
+      if (isRunning && tl <= 0) {
+        if (settings.soundEnabled) playNotification();
+        completePhase();
       }
-    } else {
-      setPhase("focus");
-      setTimeLeft(focusDuration);
-    }
-  };
+    };
+    tick();
+    const id = setInterval(tick, 200);
+    return () => clearInterval(id);
+  }, [isRunning, getTimeLeft, completePhase, settings.soundEnabled]);
+
+  // Update display when store state changes (e.g. from broadcast, workspace switch)
+  useEffect(() => {
+    setDisplayTime(getTimeLeft());
+  }, [phase, isRunning, startedAt, pausedTimeLeft, completedSessions]);
 
   const playNotification = () => {
     try {
@@ -146,32 +73,15 @@ export default function PomodoroWidget({
     } catch {}
   };
 
-  const mins = Math.floor(timeLeft / 60);
-  const secs = timeLeft % 60;
-  const totalDuration = phase === "focus" ? focusDuration : phase === "break" ? breakDuration : longBreakDuration;
-  const pct = ((totalDuration - timeLeft) / totalDuration) * 100;
-
-  const reset = () => {
-    setIsRunning(false);
-    setPhase("focus");
-    setTimeLeft(focusDuration);
-  };
-
-  const skipPhase = () => {
-    setIsRunning(false);
-    if (phase === "focus") {
-      if ((completedSessions + 1) % sessionsUntilLongBreak === 0) {
-        setPhase("longBreak");
-        setTimeLeft(longBreakDuration);
-      } else {
-        setPhase("break");
-        setTimeLeft(breakDuration);
-      }
-    } else {
-      setPhase("focus");
-      setTimeLeft(focusDuration);
-    }
-  };
+  const mins = Math.floor(displayTime / 60);
+  const secs = Math.floor(displayTime % 60);
+  const phaseDuration =
+    phase === "focus"
+      ? settings.focusMin * 60
+      : phase === "break"
+        ? settings.breakMin * 60
+        : settings.longBreakMin * 60;
+  const pct = ((phaseDuration - displayTime) / phaseDuration) * 100;
 
   const getPhaseColor = () => {
     switch (phase) {
@@ -196,25 +106,6 @@ export default function PomodoroWidget({
       case "longBreak": return <Coffee size={12} style={{ color: getPhaseColor() }} />;
     }
   };
-
-  const updateSetting = (key: keyof PomodoroSettings, delta: number) => {
-    setSettings((prev) => {
-      const val = (prev[key] as number) + delta;
-      if (key === "focusMin") return { ...prev, focusMin: Math.max(5, Math.min(60, val)) };
-      if (key === "breakMin") return { ...prev, breakMin: Math.max(1, Math.min(30, val)) };
-      if (key === "longBreakMin") return { ...prev, longBreakMin: Math.max(5, Math.min(60, val)) };
-      return prev;
-    });
-  };
-
-  // When settings change and timer isn't running, update timeLeft
-  useEffect(() => {
-    if (!isRunning) {
-      if (phase === "focus") setTimeLeft(focusDuration);
-      else if (phase === "break") setTimeLeft(breakDuration);
-      else setTimeLeft(longBreakDuration);
-    }
-  }, [settings.focusMin, settings.breakMin, settings.longBreakMin]);
 
   return (
     <div className="h-full flex flex-col" style={{ position: "relative" }}>
@@ -248,7 +139,7 @@ export default function PomodoroWidget({
           <div className="flex items-center justify-between" style={{ padding: "6px 0" }}>
             <span style={{ fontSize: 11, color: "var(--vp-text-muted)" }}>Sound</span>
             <button
-              onClick={() => setSettings((p) => ({ ...p, soundEnabled: !p.soundEnabled }))}
+              onClick={toggleSound}
               style={{
                 background: settings.soundEnabled ? "var(--vp-accent-blue-bg-hover)" : "var(--vp-bg-surface-hover)",
                 border: "none",
@@ -284,7 +175,7 @@ export default function PomodoroWidget({
                 strokeDasharray={`${2 * Math.PI * 40}`}
                 strokeDashoffset={`${2 * Math.PI * 40 * (1 - pct / 100)}`}
                 strokeLinecap="round" transform="rotate(-90 45 45)"
-                style={{ transition: "stroke-dashoffset 1s linear" }}
+                style={{ transition: "stroke-dashoffset 0.3s linear" }}
               />
             </svg>
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, color: "var(--vp-text-primary)", fontFamily: "monospace" }}>
@@ -294,7 +185,7 @@ export default function PomodoroWidget({
 
           <div className="flex gap-2">
             <button
-              onClick={() => setIsRunning(!isRunning)}
+              onClick={() => isRunning ? pause() : start()}
               style={{
                 padding: "6px 16px", fontSize: 11, borderRadius: 6,
                 background: isRunning ? "var(--vp-accent-red-bg)" : "var(--vp-accent-blue-bg-hover)",
@@ -320,7 +211,7 @@ export default function PomodoroWidget({
               <div style={{ fontSize: 9, color: "var(--vp-text-faint)" }}>Sessions</div>
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "var(--vp-text-primary)" }}>{Math.floor((completedSessions * settings.focusMin))}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "var(--vp-text-primary)" }}>{Math.floor(completedSessions * settings.focusMin)}</div>
               <div style={{ fontSize: 9, color: "var(--vp-text-faint)" }}>Minutes</div>
             </div>
             <div style={{ textAlign: "center" }}>

@@ -71,6 +71,13 @@ function App() {
     return () => unlisten();
   }, [setSelectedProject]);
 
+  // Notify main process when selected project changes (for duplicate window detection)
+  useEffect(() => {
+    if (selectedProject?.path) {
+      invoke("set_window_project", selectedProject.path);
+    }
+  }, [selectedProject?.path]);
+
   useEffect(() => {
     if (!selectedProject) return;
 

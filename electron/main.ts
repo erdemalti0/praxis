@@ -33,6 +33,7 @@ if (!gotTheLock) {
 
 let mainWindow: BrowserWindow | null = null;
 const allWindows = new Set<BrowserWindow>();
+const windowProjectPaths = new Map<BrowserWindow, string>();
 let ipcHandlersRegistered = false;
 
 /** Parse --open-project=<path> from argv */
@@ -80,7 +81,7 @@ export function createWindow(projectName?: string, projectPath?: string) {
     backgroundColor: "#000000",
     icon: path.join(__dirname, "../resources/logo.png"),
     ...(process.platform === "darwin"
-      ? { titleBarStyle: "hiddenInset" as const, trafficLightPosition: { x: 12, y: 16 } }
+      ? { titleBarStyle: "hiddenInset" as const, trafficLightPosition: { x: 14, y: 18 } }
       : {}),
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
@@ -94,6 +95,9 @@ export function createWindow(projectName?: string, projectPath?: string) {
   });
 
   allWindows.add(win);
+  if (projectPath) {
+    windowProjectPaths.set(win, projectPath);
+  }
 
   // Set mainWindow reference to the first window (or current if none)
   if (!mainWindow) {
@@ -120,6 +124,17 @@ export function createWindow(projectName?: string, projectPath?: string) {
     ipcMain.handle("get_default_shell", () => getDefaultShell());
 
     ipcMain.handle("get_platform", () => process.platform);
+
+    ipcMain.handle("set_window_project", (event, projectPath: string) => {
+      const senderWin = BrowserWindow.fromWebContents(event.sender);
+      if (senderWin) {
+        if (projectPath) {
+          windowProjectPaths.set(senderWin, projectPath);
+        } else {
+          windowProjectPaths.delete(senderWin);
+        }
+      }
+    });
 
     ipcMain.handle("open_external", (_event, url: string) => {
       if (url.startsWith("https://")) shell.openExternal(url);
@@ -284,6 +299,7 @@ export function createWindow(projectName?: string, projectPath?: string) {
 
   win.on("closed", () => {
     allWindows.delete(win);
+    windowProjectPaths.delete(win);
     if (mainWindow === win) {
       mainWindow = null;
     }
@@ -308,6 +324,14 @@ ipcMain.handle("open_directory_dialog", async () => {
 app.on("second-instance", (_event, argv) => {
   const project = parseOpenProject(argv);
   if (project) {
+    // If this project is already open in a window, focus it instead of opening a new one
+    for (const [win, projPath] of windowProjectPaths) {
+      if (projPath === project.path && !win.isDestroyed()) {
+        win.show();
+        win.focus();
+        return;
+      }
+    }
     createWindow(project.name, project.path);
   } else if (mainWindow) {
     mainWindow.show();

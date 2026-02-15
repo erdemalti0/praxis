@@ -11,6 +11,7 @@ import { useSettingsStore } from "../../stores/settingsStore";
 import SettingsPanel from "../settings/SettingsPanel";
 import { useConfirmStore } from "../../stores/confirmStore";
 import { useWidgetStore } from "../../stores/widgetStore";
+import { isMac } from "../../lib/platform";
 
 export default function StatsBar() {
   const selectedProject = useUIStore((s) => s.selectedProject);
@@ -190,8 +191,16 @@ export default function StatsBar() {
 
   return (
     <div
-      className="flex items-center px-5 gap-4 select-none shrink-0"
-      style={{ height: 52, background: "transparent", position: "relative", zIndex: 2 }}
+      className="flex items-center gap-4 select-none shrink-0"
+      style={{
+        height: 52,
+        background: "transparent",
+        position: "relative",
+        zIndex: 2,
+        paddingLeft: isMac() ? 78 : 20,
+        paddingRight: 20,
+        WebkitAppRegion: "drag",
+      } as React.CSSProperties}
     >
       {/* Project name */}
       <span
@@ -201,7 +210,8 @@ export default function StatsBar() {
           fontWeight: 600,
           letterSpacing: "-0.01em",
           marginRight: 4,
-        }}
+          WebkitAppRegion: "no-drag",
+        } as React.CSSProperties}
       >
         {selectedProject?.name ?? "Praxis"}
       </span>
@@ -217,7 +227,8 @@ export default function StatsBar() {
           flex: 1,
           minWidth: 0,
           overflow: "hidden",
-        }}
+          WebkitAppRegion: "no-drag",
+        } as React.CSSProperties}
       >
         {/* Missions tab (draggable) */}
         <button
@@ -698,7 +709,7 @@ export default function StatsBar() {
       </div>
 
       {/* Widget mode controls */}
-      <div className="ml-auto flex items-center gap-2" style={{ position: "relative", flexShrink: 0 }}>
+      <div className="ml-auto flex items-center gap-2" style={{ position: "relative", flexShrink: 0, WebkitAppRegion: "no-drag" } as React.CSSProperties}>
         {/* Usage panel toggle */}
         <button
           onClick={() => setShowUsagePanel(!showUsagePanel)}
