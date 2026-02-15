@@ -47,14 +47,16 @@ export function spawnPty(
     safeCwd = os.homedir();
   }
 
+  const isWindows = process.platform === "win32";
+
   const shell = pty.spawn(cmd, args, {
-    name: "xterm-256color",
+    name: isWindows ? undefined : "xterm-256color",
     cols: cols || 80,
     rows: rows || 24,
     cwd: safeCwd,
     env: {
       ...process.env,
-      TERM: "xterm-256color",
+      ...(isWindows ? {} : { TERM: "xterm-256color" }),
       PWD: safeCwd,
       HOME: os.homedir(),
     },

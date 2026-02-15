@@ -50,6 +50,7 @@ interface PersistedSettings {
   recentProjects: ProjectInfo[];
   recentSpawns: Array<{ agentType: string; flags: Record<string, string | boolean>; timestamp: number }>;
   onboardingDone: boolean;
+  cliEnabled: boolean;
   workspaceTemplates: WorkspaceTemplate[];
 }
 
@@ -78,6 +79,7 @@ interface SettingsState extends PersistedSettings {
   addRecentSpawn: (agentType: string, flags: Record<string, string | boolean>) => void;
 
   setOnboardingDone: (done: boolean) => void;
+  setCliEnabled: (enabled: boolean) => void;
   setShowSettingsPanel: (show: boolean) => void;
 
   addTemplate: (template: WorkspaceTemplate) => void;
@@ -93,6 +95,7 @@ const DEFAULT_SETTINGS: PersistedSettings = {
   recentProjects: [],
   recentSpawns: [],
   onboardingDone: false,
+  cliEnabled: false,
   workspaceTemplates: [],
 };
 
@@ -168,6 +171,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       recentProjects: s.recentProjects,
       recentSpawns: s.recentSpawns,
       onboardingDone: s.onboardingDone,
+      cliEnabled: s.cliEnabled,
       workspaceTemplates: s.workspaceTemplates,
     });
   },
@@ -256,6 +260,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   setOnboardingDone: (done: boolean) => {
     set({ onboardingDone: done });
+    debouncedSave(get);
+  },
+  setCliEnabled: (enabled: boolean) => {
+    set({ cliEnabled: enabled });
     debouncedSave(get);
   },
   setShowSettingsPanel: (show: boolean) => set({ showSettingsPanel: show }),

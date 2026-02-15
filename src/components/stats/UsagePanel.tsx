@@ -26,9 +26,7 @@ export function UsagePanel({ onClose }: UsagePanelProps) {
   const fetchUsage = async () => {
     setLoading(true);
     try {
-      console.log("[UsagePanel] Fetching usage data...");
       const response = await invoke<UsageResponse>("fetch_usage");
-      console.log("[UsagePanel] Received data:", response);
       setData(response);
       setLastUpdated(Date.now());
     } catch (err) {

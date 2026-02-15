@@ -2,7 +2,7 @@
 
 **AI-Powered Development Workspace**
 
-Praxis is a desktop application that lets you orchestrate multiple AI coding agents side-by-side. Spawn Claude Code, OpenCode, Aider, Gemini CLI, and more — all in a unified workspace with split terminals, widgets, a built-in browser, and mission planning.
+Praxis is a cross-platform desktop application that lets you orchestrate multiple AI coding agents side-by-side. Spawn Claude Code, OpenCode, Aider, Gemini CLI, AMP, and more — all in a unified workspace with split terminals, widgets, a built-in browser, and mission planning.
 
 ## Features
 
@@ -10,9 +10,9 @@ Praxis is a desktop application that lets you orchestrate multiple AI coding age
 - Spawn and manage multiple AI agents simultaneously
 - Split panes (horizontal/vertical) for side-by-side work
 - Drag-and-drop to rearrange terminal panes
-- Paste images directly into terminals (Cmd+V or drag & drop)
+- Paste images directly into terminals
 - Bracket paste mode for TUI compatibility
-- Terminal search (Cmd+F)
+- Terminal search (Ctrl+F / Cmd+F)
 
 ### Workspaces
 - Organize work into named, color-coded workspaces
@@ -41,15 +41,16 @@ Praxis is a desktop application that lets you orchestrate multiple AI coding age
 ### Built-in Browser
 - Tabbed browser with navigation
 - Tab groups and pinning
-- Password manager with encryption
+- Persistent sessions across restarts
 - Bookmark integration
-- Keyboard shortcuts (Cmd+T, Cmd+W, Cmd+L, etc.)
+- Keyboard shortcuts (Ctrl+T / Cmd+T, Ctrl+W / Cmd+W, etc.)
 
 ### Mission Planner
 - Create multi-step mission workflows
-- DAG-based flow chart visualization
+- DAG-based flow chart visualization with multi-dependency support
 - Assign steps to AI agents
 - Track progress and completion
+- GPT-powered mission generation from natural language
 
 ### Task Board
 - Kanban-style task management (Todo, In Progress, Done)
@@ -57,20 +58,31 @@ Praxis is a desktop application that lets you orchestrate multiple AI coding age
 - Drag to reorder
 - Assign tasks to running agents
 
+### Usage Tracking
+- Claude Code rate limit monitoring (OAuth)
+- Claude Code cost tracking (per-model breakdown)
+- Gemini quota monitoring (Pro/Flash tiers)
+
 ### Additional Features
-- Command Palette (Cmd+K)
+- Command Palette (Ctrl+K / Cmd+K)
 - Keyboard shortcuts help (?)
 - Custom themes with full color token editor
 - Recent projects on startup
 - Onboarding flow for new users
-- Toast notifications for all operations
-- Custom confirmation dialogs
+- Toast notifications
 - Session persistence across restarts
-- Multi-window support (Cmd+Shift+N)
+
+## Platforms
+
+| Platform | Status | Package Format |
+|----------|--------|---------------|
+| macOS    | Supported | `.dmg` |
+| Windows  | Supported | `.exe` (NSIS) |
+| Linux    | Supported | `.AppImage`, `.deb` |
 
 ## Tech Stack
 
-- **Frontend:** React 18, TypeScript, Zustand
+- **Frontend:** React 19, TypeScript, Zustand
 - **Terminal:** xterm.js with WebGL renderer
 - **Desktop:** Electron with electron-vite
 - **PTY:** node-pty for native terminal processes
@@ -84,45 +96,39 @@ Praxis is a desktop application that lets you orchestrate multiple AI coding age
 
 ### Prerequisites
 - Node.js 18+
-- npm or yarn
-- macOS (primary platform)
+- npm
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone <repo-url>
-cd praxis-electron
+git clone https://github.com/erdemalti0/praxis-app.git
+cd vibepilot-electron
 
 # Install dependencies
 npm install
+```
 
-# Start development
+### Development
+
+```bash
 npm run dev
 ```
 
-### Build
+### Build & Package
 
 ```bash
-# Build for production
+# Build for production (renderer + electron)
 npm run build
 
-# Package as .dmg (macOS)
+# Package for current platform
 npm run dist
+
+# Package for specific platform
+npm run dist:mac
+npm run dist:win
+npm run dist:linux
 ```
-
-## Keyboard Shortcuts
-
-| Shortcut | Action |
-|----------|--------|
-| Cmd+K | Command Palette |
-| Cmd+T | New Terminal Tab |
-| Cmd+W | Close Tab |
-| Cmd+, | Settings |
-| Cmd+F | Search in Terminal |
-| Cmd+Shift+N | New Window |
-| Cmd+1-9 | Switch Workspace |
-| ? | Keyboard Shortcuts Help |
 
 ## Data Storage
 
@@ -131,6 +137,7 @@ npm run dist
   settings.json          # Global settings, themes, agents
   ui-state.json          # Layout, sidebar, workspaces
   browser-state.json     # Browser tabs, groups
+  browser-favorites.json # Browser bookmarks
   prompt-library.json    # Saved prompts
   quick-commands.json    # Saved commands
 

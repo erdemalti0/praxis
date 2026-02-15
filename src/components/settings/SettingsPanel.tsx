@@ -1,12 +1,14 @@
-import { useState, useCallback } from "react";
-import { X, Palette, Bot, Layout, Plus, Trash2, Edit3, Check } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { X, Palette, Bot, Layout, Plus, Trash2, Edit3, Check, Settings } from "lucide-react";
 import { useSettingsStore, type UserAgent } from "../../stores/settingsStore";
 import { BUILTIN_THEMES, createDefaultThemeColors, type ThemeDefinition, type ThemeColors } from "../../lib/themes";
 import { useUIStore } from "../../stores/uiStore";
+import { invoke } from "../../lib/ipc";
 
-type SettingsTab = "themes" | "agents" | "workspaces";
+type SettingsTab = "general" | "themes" | "agents" | "workspaces";
 
 const TABS: { id: SettingsTab; label: string; icon: typeof Palette }[] = [
+  { id: "general", label: "General", icon: Settings },
   { id: "themes", label: "Themes", icon: Palette },
   { id: "agents", label: "Agents", icon: Bot },
   { id: "workspaces", label: "Workspaces", icon: Layout },
@@ -56,7 +58,12 @@ export default function SettingsPanel() {
   const savedWorkspaces = useSettingsStore((s) => s.savedWorkspaces);
   const saveWorkspaces = useSettingsStore((s) => s.saveWorkspaces);
 
-  const [activeTab, setActiveTab] = useState<SettingsTab>("themes");
+  const cliEnabled = useSettingsStore((s) => s.cliEnabled);
+  const setCliEnabled = useSettingsStore((s) => s.setCliEnabled);
+  const [cliToggling, setCliToggling] = useState(false);
+  const [cliError, setCliError] = useState<string | null>(null);
+
+  const [activeTab, setActiveTab] = useState<SettingsTab>("general");
   const [editingTheme, setEditingTheme] = useState<ThemeDefinition | null>(null);
   const [showNewAgent, setShowNewAgent] = useState(false);
   const [newAgent, setNewAgent] = useState<Partial<UserAgent>>({ label: "", cmd: "", color: "#60a5fa", args: [], flags: [] });
@@ -64,6 +71,85 @@ export default function SettingsPanel() {
   const close = useCallback(() => setShow(false), [setShow]);
 
   if (!show) return null;
+
+  /* ── General Tab ── */
+  const handleCliToggle = async () => {
+    setCliToggling(true);
+    setCliError(null);
+    try {
+      if (cliEnabled) {
+        const result = await invoke<{ success: boolean; error?: string }>("uninstall_cli");
+        if (result.success) {
+          setCliEnabled(false);
+        } else {
+          setCliError(result.error || "Failed to uninstall CLI");
+        }
+      } else {
+        const result = await invoke<{ success: boolean; error?: string }>("install_cli");
+        if (result.success) {
+          setCliEnabled(true);
+        } else {
+          setCliError(result.error || "Failed to install CLI");
+        }
+      }
+    } catch (err: any) {
+      setCliError(err?.message || "Failed to toggle CLI");
+    } finally {
+      setCliToggling(false);
+    }
+  };
+
+  const renderGeneralTab = () => (
+    <div className="space-y-5">
+      <div>
+        <label style={{ color: "var(--vp-text-muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          Terminal Integration
+        </label>
+        <div
+          className="flex items-center justify-between"
+          style={{
+            padding: "14px 16px", borderRadius: 10, marginTop: 10,
+            border: "1px solid var(--vp-border-subtle)",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 13, color: "var(--vp-text-primary)", fontWeight: 500 }}>
+              Terminal Command
+            </div>
+            <div style={{ fontSize: 11, color: "var(--vp-text-dim)", marginTop: 2 }}>
+              Use <code style={{ background: "var(--vp-bg-surface-hover)", padding: "1px 5px", borderRadius: 4, fontSize: 11 }}>praxis .</code> to open projects from terminal
+            </div>
+          </div>
+          <button
+            onClick={handleCliToggle}
+            disabled={cliToggling}
+            style={{
+              width: 44, height: 24, borderRadius: 12, border: "none",
+              background: cliEnabled ? "var(--vp-accent-blue)" : "var(--vp-bg-surface-hover)",
+              cursor: cliToggling ? "wait" : "pointer",
+              position: "relative", transition: "background 0.2s",
+              opacity: cliToggling ? 0.6 : 1,
+            }}
+          >
+            <div
+              style={{
+                width: 18, height: 18, borderRadius: "50%",
+                background: "#fff",
+                position: "absolute", top: 3,
+                left: cliEnabled ? 23 : 3,
+                transition: "left 0.2s",
+              }}
+            />
+          </button>
+        </div>
+        {cliError && (
+          <div style={{ fontSize: 11, color: "var(--vp-accent-red)", marginTop: 8, padding: "0 16px" }}>
+            {cliError}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   /* ── Theme Tab ── */
   const renderThemesTab = () => (
@@ -599,6 +685,7 @@ export default function SettingsPanel() {
           </div>
 
           <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
+            {activeTab === "general" && renderGeneralTab()}
             {activeTab === "themes" && renderThemesTab()}
             {activeTab === "agents" && renderAgentsTab()}
             {activeTab === "workspaces" && renderWorkspacesTab()}

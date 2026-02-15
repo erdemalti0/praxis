@@ -6,6 +6,7 @@ import {
 import { useUIStore } from "../../stores/uiStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { useToastStore } from "../../stores/toastStore";
+import { modKey } from "../../lib/platform";
 
 interface Action {
   id: string;
@@ -95,7 +96,7 @@ export default function CommandPalette() {
       label: "Open Settings",
       icon: Settings,
       category: "Settings",
-      shortcut: "Cmd+,",
+      shortcut: `${modKey()}+,`,
       execute: () => { useSettingsStore.getState().setShowSettingsPanel(true); setOpen(false); },
     },
     {

@@ -38,6 +38,16 @@ export function buildMenu(win: BrowserWindow) {
     {
       label: "File",
       submenu: [
+        ...(!isMac
+          ? [
+              {
+                label: "Settings...",
+                accelerator: "CmdOrCtrl+," as string,
+                click: () => send("menu:settings"),
+              },
+              { type: "separator" as const },
+            ]
+          : []),
         {
           label: "New Terminal",
           accelerator: "CmdOrCtrl+T",
@@ -178,7 +188,7 @@ export function buildMenu(win: BrowserWindow) {
       submenu: [
         {
           label: "Toggle Developer Tools",
-          accelerator: "CmdOrCtrl+Option+I",
+          accelerator: "CmdOrCtrl+Shift+I",
           click: () => {
             if (!win.isDestroyed()) {
               win.webContents.toggleDevTools();

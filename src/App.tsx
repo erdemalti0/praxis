@@ -57,6 +57,20 @@ function App() {
     }
   }, []);
 
+  // Listen for open-project events from main process (second-instance / CLI)
+  useEffect(() => {
+    const unlisten = listen("open-project", (data: { name: string; path: string }) => {
+      const project = {
+        name: data.name,
+        path: data.path,
+        lastModified: Date.now() / 1000,
+      };
+      setSelectedProject(project);
+      useSettingsStore.getState().addRecentProject(project);
+    });
+    return () => unlisten();
+  }, [setSelectedProject]);
+
   useEffect(() => {
     if (!selectedProject) return;
 

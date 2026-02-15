@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
+import { modKey } from "../../lib/platform";
 
 interface ShortcutsDialogProps {
   open: boolean;
@@ -11,36 +12,38 @@ interface ShortcutEntry {
   keys: string;
 }
 
+const mod = modKey();
+
 const SECTIONS: { title: string; shortcuts: ShortcutEntry[] }[] = [
   {
     title: "General",
     shortcuts: [
-      { label: "Command Palette", keys: "Cmd+K" },
-      { label: "Settings", keys: "Cmd+," },
+      { label: "Command Palette", keys: `${mod}+K` },
+      { label: "Settings", keys: `${mod}+,` },
       { label: "Shortcuts Help", keys: "?" },
     ],
   },
   {
     title: "Terminal",
     shortcuts: [
-      { label: "New Terminal", keys: "Cmd+T" },
-      { label: "Close Tab", keys: "Cmd+W" },
+      { label: "New Terminal", keys: `${mod}+T` },
+      { label: "Close Tab", keys: `${mod}+W` },
     ],
   },
   {
     title: "Browser",
     shortcuts: [
-      { label: "Focus URL", keys: "Cmd+L" },
-      { label: "Reload", keys: "Cmd+R" },
-      { label: "Back", keys: "Cmd+[" },
-      { label: "Forward", keys: "Cmd+]" },
-      { label: "New Tab", keys: "Cmd+T" },
+      { label: "Focus URL", keys: `${mod}+L` },
+      { label: "Reload", keys: `${mod}+R` },
+      { label: "Back", keys: `${mod}+[` },
+      { label: "Forward", keys: `${mod}+]` },
+      { label: "New Tab", keys: `${mod}+T` },
     ],
   },
   {
     title: "Navigation",
     shortcuts: [
-      { label: "Switch Workspace", keys: "Cmd+1-9" },
+      { label: "Switch Workspace", keys: `${mod}+1-9` },
     ],
   },
 ];

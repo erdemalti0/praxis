@@ -60,8 +60,15 @@ export function registerGitHandlers() {
   ipcMain.handle("run_quick_command", (_event, args: { command: string; projectPath?: string }) => {
     const cwd = args?.projectPath || projectPath;
     if (!cwd) return "No project path set";
+
+    // Whitelist: only allow git commands to prevent command injection
+    const cmd = args.command.trim();
+    if (!cmd.startsWith("git ")) {
+      return "Only git commands are allowed";
+    }
+
     try {
-      return execSync(args.command, { cwd, encoding: "utf-8", timeout: 15000 });
+      return execSync(cmd, { cwd, encoding: "utf-8", timeout: 15000 });
     } catch (e: any) {
       return e.stderr || e.message || "Command failed";
     }

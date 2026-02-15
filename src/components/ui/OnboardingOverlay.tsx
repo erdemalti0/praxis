@@ -1,8 +1,17 @@
 import { useState } from "react";
-import { Terminal, LayoutGrid, Rocket } from "lucide-react";
+import { Terminal, LayoutGrid, Rocket, TerminalSquare } from "lucide-react";
 import { useSettingsStore } from "../../stores/settingsStore";
+import { invoke } from "../../lib/ipc";
 
-const STEPS = [
+interface StepDef {
+  title: string;
+  description: string;
+  icon: typeof Terminal | null;
+  actionLabel: string;
+  isCliStep?: boolean;
+}
+
+const STEPS: StepDef[] = [
   {
     title: "Welcome to Praxis",
     description: "Your AI-powered development workspace",
@@ -22,6 +31,13 @@ const STEPS = [
     actionLabel: "Next",
   },
   {
+    title: "Open from Terminal",
+    description: "Type praxis . in any terminal to open that folder in Praxis — just like code . for VS Code.",
+    icon: TerminalSquare,
+    actionLabel: "Next",
+    isCliStep: true,
+  },
+  {
     title: "You're Ready!",
     description: "Start building amazing things",
     icon: Rocket,
@@ -31,10 +47,30 @@ const STEPS = [
 
 export default function OnboardingOverlay() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [cliInstalling, setCliInstalling] = useState(false);
+  const [cliResult, setCliResult] = useState<"idle" | "success" | "error">("idle");
   const setOnboardingDone = useSettingsStore((s) => s.setOnboardingDone);
+  const setCliEnabled = useSettingsStore((s) => s.setCliEnabled);
 
   const finish = () => {
     setOnboardingDone(true);
+  };
+
+  const handleInstallCli = async () => {
+    setCliInstalling(true);
+    try {
+      const result = await invoke<{ success: boolean; error?: string }>("install_cli");
+      if (result.success) {
+        setCliEnabled(true);
+        setCliResult("success");
+      } else {
+        setCliResult("error");
+      }
+    } catch {
+      setCliResult("error");
+    } finally {
+      setCliInstalling(false);
+    }
   };
 
   const step = STEPS[currentStep];
@@ -97,46 +133,126 @@ export default function OnboardingOverlay() {
           {step.description}
         </p>
 
-        {/* Navigation buttons */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 10 }}>
-          {currentStep > 0 && (
+        {/* CLI step: Enable / Skip buttons */}
+        {step.isCliStep ? (
+          <div style={{ display: "flex", justifyContent: "center", gap: 10 }}>
+            {currentStep > 0 && (
+              <button
+                onClick={() => setCurrentStep((s) => s - 1)}
+                style={{
+                  padding: "8px 20px",
+                  fontSize: 13,
+                  borderRadius: 8,
+                  border: "1px solid var(--vp-border-medium)",
+                  background: "var(--vp-bg-surface-hover)",
+                  color: "var(--vp-text-primary)",
+                  cursor: "pointer",
+                }}
+              >
+                Previous
+              </button>
+            )}
+            {cliResult === "success" ? (
+              <button
+                onClick={() => setCurrentStep((s) => s + 1)}
+                style={{
+                  padding: "8px 24px",
+                  fontSize: 13,
+                  borderRadius: 8,
+                  border: "none",
+                  background: "var(--vp-accent-green)",
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontWeight: 500,
+                }}
+              >
+                Installed! Continue
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleInstallCli}
+                  disabled={cliInstalling}
+                  style={{
+                    padding: "8px 24px",
+                    fontSize: 13,
+                    borderRadius: 8,
+                    border: "none",
+                    background: "var(--vp-accent-blue)",
+                    color: "#fff",
+                    cursor: cliInstalling ? "wait" : "pointer",
+                    fontWeight: 500,
+                    opacity: cliInstalling ? 0.7 : 1,
+                  }}
+                >
+                  {cliInstalling ? "Installing..." : "Enable"}
+                </button>
+                <button
+                  onClick={() => setCurrentStep((s) => s + 1)}
+                  style={{
+                    padding: "8px 20px",
+                    fontSize: 13,
+                    borderRadius: 8,
+                    border: "1px solid var(--vp-border-medium)",
+                    background: "var(--vp-bg-surface-hover)",
+                    color: "var(--vp-text-primary)",
+                    cursor: "pointer",
+                  }}
+                >
+                  Skip
+                </button>
+              </>
+            )}
+          </div>
+        ) : (
+          /* Standard navigation buttons */
+          <div style={{ display: "flex", justifyContent: "center", gap: 10 }}>
+            {currentStep > 0 && (
+              <button
+                onClick={() => setCurrentStep((s) => s - 1)}
+                style={{
+                  padding: "8px 20px",
+                  fontSize: 13,
+                  borderRadius: 8,
+                  border: "1px solid var(--vp-border-medium)",
+                  background: "var(--vp-bg-surface-hover)",
+                  color: "var(--vp-text-primary)",
+                  cursor: "pointer",
+                }}
+              >
+                Previous
+              </button>
+            )}
             <button
-              onClick={() => setCurrentStep((s) => s - 1)}
+              onClick={() => {
+                if (currentStep < STEPS.length - 1) {
+                  setCurrentStep((s) => s + 1);
+                } else {
+                  finish();
+                }
+              }}
               style={{
-                padding: "8px 20px",
+                padding: "8px 24px",
                 fontSize: 13,
                 borderRadius: 8,
-                border: "1px solid var(--vp-border-medium)",
-                background: "var(--vp-bg-surface-hover)",
-                color: "var(--vp-text-primary)",
+                border: "none",
+                background: "var(--vp-accent-blue)",
+                color: "#fff",
                 cursor: "pointer",
+                fontWeight: 500,
               }}
             >
-              Previous
+              {step.actionLabel}
             </button>
-          )}
-          <button
-            onClick={() => {
-              if (currentStep < STEPS.length - 1) {
-                setCurrentStep((s) => s + 1);
-              } else {
-                finish();
-              }
-            }}
-            style={{
-              padding: "8px 24px",
-              fontSize: 13,
-              borderRadius: 8,
-              border: "none",
-              background: "var(--vp-accent-blue)",
-              color: "#fff",
-              cursor: "pointer",
-              fontWeight: 500,
-            }}
-          >
-            {step.actionLabel}
-          </button>
-        </div>
+          </div>
+        )}
+
+        {/* Error message */}
+        {cliResult === "error" && step.isCliStep && (
+          <p style={{ fontSize: 11, color: "var(--vp-accent-red)", marginTop: 12 }}>
+            Failed to install. You may need to run Praxis with elevated permissions, or install manually from Settings.
+          </p>
+        )}
 
         {/* Step dots */}
         <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 24 }}>

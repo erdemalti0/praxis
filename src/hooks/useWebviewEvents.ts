@@ -87,11 +87,11 @@ export function useWebviewEvents(
     };
 
     const handlePluginCrashed = () => {
-      console.warn("Plugin crashed");
+      // Plugin crashed — no action needed
     };
 
-    const handleDidRedirect = (e: any) => {
-      console.log("Redirect to:", e.newURL);
+    const handleDidRedirect = (_e: any) => {
+      // Redirect handled silently
     };
 
     const updateNavigationState = () => {

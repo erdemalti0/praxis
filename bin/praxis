@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Praxis CLI — open a project folder in Praxis
+# Usage: praxis [path]  (defaults to current directory)
+
+TARGET="${1:-.}"
+ABSOLUTE_PATH="$(cd "$TARGET" 2>/dev/null && pwd)"
+
+if [ -z "$ABSOLUTE_PATH" ]; then
+  echo "praxis: '$TARGET' is not a valid directory"
+  exit 1
+fi
+
+PROJECT_NAME="$(basename "$ABSOLUTE_PATH")"
+
+# Locate the Praxis app bundle
+if [ "$(uname)" = "Darwin" ]; then
+  APP_PATH="/Applications/Praxis.app"
+  if [ ! -d "$APP_PATH" ]; then
+    # Try user Applications folder
+    APP_PATH="$HOME/Applications/Praxis.app"
+  fi
+  if [ -d "$APP_PATH" ]; then
+    open -a "$APP_PATH" --args "--open-project=$ABSOLUTE_PATH"
+  else
+    # Development mode — launch via electron-vite
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+    if [ -f "$PROJECT_ROOT/node_modules/.bin/electron-vite" ]; then
+      cd "$PROJECT_ROOT" && npx electron-vite dev -- "--open-project=$ABSOLUTE_PATH" &
+    else
+      echo "praxis: Cannot find Praxis.app or development build"
+      exit 1
+    fi
+  fi
+elif [ "$(uname)" = "Linux" ]; then
+  # Try common Linux install locations
+  ELECTRON_BIN=""
+  for p in /usr/bin/praxis /usr/local/bin/praxis-electron /opt/Praxis/praxis; do
+    if [ -x "$p" ] && [ "$p" != "$0" ]; then
+      ELECTRON_BIN="$p"
+      break
+    fi
+  done
+  if [ -n "$ELECTRON_BIN" ]; then
+    "$ELECTRON_BIN" "--open-project=$ABSOLUTE_PATH" &
+  else
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+    if [ -f "$PROJECT_ROOT/node_modules/.bin/electron-vite" ]; then
+      cd "$PROJECT_ROOT" && npx electron-vite dev -- "--open-project=$ABSOLUTE_PATH" &
+    else
+      echo "praxis: Cannot find Praxis installation"
+      exit 1
+    fi
+  fi
+fi

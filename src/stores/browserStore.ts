@@ -94,9 +94,10 @@ const DEFAULT_FAVORITES: Favorite[] = [
   { id: "default-1", name: "Google", url: "https://www.google.com" },
   { id: "default-2", name: "GitHub", url: "https://github.com" },
   { id: "default-3", name: "YouTube", url: "https://youtube.com" },
-  { id: "default-4", name: "Stack Overflow", url: "https://stackoverflow.com" },
-  { id: "default-5", name: "Claude", url: "https://claude.ai" },
-  { id: "default-6", name: "ChatGPT", url: "https://chat.openai.com" },
+  { id: "default-4", name: "Claude", url: "https://claude.ai" },
+  { id: "default-5", name: "ChatGPT", url: "https://chat.openai.com" },
+  { id: "default-6", name: "Bridgemind", url: "https://www.bridgemind.ai/" },
+  { id: "default-7", name: "Perplexity", url: "https://www.perplexity.ai/" },
 ];
 
 function extractHostname(rawUrl: string): string {

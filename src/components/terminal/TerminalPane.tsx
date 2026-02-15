@@ -4,6 +4,7 @@ import { useTerminalStore } from "../../stores/terminalStore";
 import { useUIStore } from "../../stores/uiStore";
 import { invoke, listen } from "../../lib/ipc";
 import { getOrCreateTerminal, activateWebGL } from "../../lib/terminal/terminalCache";
+import { getDefaultShell } from "../../lib/platform";
 import { swapPanes } from "../../lib/layout/layoutUtils";
 import "@xterm/xterm/css/xterm.css";
 
@@ -244,12 +245,12 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
         if (!isShell) {
           const shellCwd = session?.projectPath || "~";
           terminal.write("\r\n\x1b[90m[Process exited — starting shell...]\x1b[0m\r\n\r\n");
-          invoke<{ id: string; cwd: string }>("spawn_pty", {
+          getDefaultShell().then((defaultShell) => invoke<{ id: string; cwd: string }>("spawn_pty", {
             id: sessionId,
-            cmd: "/bin/zsh",
+            cmd: defaultShell,
             args: [],
             cwd: shellCwd,
-          }).then((res) => {
+          })).then((res) => {
             const actualCwd = res?.cwd || shellCwd;
             store.updateSession(sessionId!, {
               agentType: "shell",

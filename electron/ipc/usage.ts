@@ -8,8 +8,6 @@ import { ProviderUsage, UsageResponse } from "../../src/types/usage";
 
 export function registerUsageHandlers() {
   ipcMain.handle("fetch_usage", async () => {
-    console.log("[Usage] Fetching usage data...");
-
     const providers = await Promise.all([
       fetchClaudeOAuth(),
       fetchClaudeCost(),
@@ -18,7 +16,6 @@ export function registerUsageHandlers() {
     ]);
 
     const validProviders = providers.filter((p): p is ProviderUsage => p !== null);
-    console.log(`[Usage] Found ${validProviders.length} providers with data:`, validProviders.map(p => p.id));
 
     const response: UsageResponse = {
       providers: validProviders,
@@ -29,24 +26,25 @@ export function registerUsageHandlers() {
   });
 }
 
-// Read Claude OAuth token from macOS keychain or fallback to credentials file
+// Read Claude OAuth token from OS credential store or fallback to credentials file
 function getClaudeAccessToken(): string | null {
-  // Try macOS keychain first (where Claude Code actually stores credentials)
-  try {
-    const keychainData = execSync(
-      'security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null',
-      { encoding: "utf-8", timeout: 5000 }
-    ).trim();
-    if (keychainData) {
-      const parsed = JSON.parse(keychainData);
-      const token = parsed?.claudeAiOauth?.accessToken;
-      if (token) {
-        console.log("[Claude OAuth] Token found in macOS keychain");
-        return token;
+  // Try macOS keychain (where Claude Code stores credentials on macOS)
+  if (process.platform === "darwin") {
+    try {
+      const keychainData = execSync(
+        'security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null',
+        { encoding: "utf-8", timeout: 5000 }
+      ).trim();
+      if (keychainData) {
+        const parsed = JSON.parse(keychainData);
+        const token = parsed?.claudeAiOauth?.accessToken;
+        if (token) {
+          return token;
+        }
       }
+    } catch {
+      // Keychain not available or no entry found
     }
-  } catch {
-    // Keychain not available or no entry found
   }
 
   // Fallback: try credentials file
@@ -56,7 +54,6 @@ function getClaudeAccessToken(): string | null {
       const credData = JSON.parse(fs.readFileSync(credPath, "utf-8"));
       const token = credData?.claudeAiOauth?.accessToken;
       if (token) {
-        console.log("[Claude OAuth] Token found in credentials file");
         return token;
       }
     }
@@ -64,7 +61,6 @@ function getClaudeAccessToken(): string | null {
     // File not found or invalid
   }
 
-  console.log("[Claude OAuth] No credentials found in keychain or file");
   return null;
 }
 
@@ -131,8 +127,7 @@ async function fetchClaudeOAuth(): Promise<ProviderUsage | null> {
       available: true,
       rateLimits: { windows },
     };
-  } catch (err) {
-    console.log("[Claude OAuth] Error:", err instanceof Error ? err.message : String(err));
+  } catch {
     return null;
   }
 }
@@ -142,7 +137,6 @@ async function fetchClaudeCost(): Promise<ProviderUsage | null> {
   try {
     const projectsDir = path.join(os.homedir(), ".config", "claude", "projects");
     if (!fs.existsSync(projectsDir)) {
-      console.log("[Claude Cost] Projects directory not found:", projectsDir);
       return null;
     }
 
@@ -201,8 +195,7 @@ async function fetchClaudeCost(): Promise<ProviderUsage | null> {
         breakdown,
       },
     };
-  } catch (err) {
-    console.log("[Claude Cost] Error:", err instanceof Error ? err.message : String(err));
+  } catch {
     return null;
   }
 }
@@ -212,7 +205,6 @@ async function fetchGemini(): Promise<ProviderUsage | null> {
   try {
     const credsPath = path.join(os.homedir(), ".gemini", "oauth_creds.json");
     if (!fs.existsSync(credsPath)) {
-      console.log("[Gemini] OAuth credentials file not found:", credsPath);
       return null;
     }
 
@@ -220,7 +212,6 @@ async function fetchGemini(): Promise<ProviderUsage | null> {
     const accessToken = creds?.access_token;
 
     if (!accessToken) {
-      console.log("[Gemini] No access_token found in credentials");
       return null;
     }
 
@@ -249,12 +240,10 @@ async function fetchGemini(): Promise<ProviderUsage | null> {
     const buckets = data?.buckets || [];
 
     if (buckets.length === 0) {
-      console.log("[Gemini] No buckets in response");
       return null;
     }
 
-    // Group into Pro and Flash tiers (like CodexBar)
-    // Pick the most-used model per tier (lowest remainingFraction)
+    // Group into Pro and Flash tiers
     let proBest: { used: number; resetsAt: string } | null = null;
     let flashBest: { used: number; resetsAt: string } | null = null;
 
@@ -295,22 +284,14 @@ async function fetchGemini(): Promise<ProviderUsage | null> {
       available: true,
       rateLimits: { windows },
     };
-  } catch (err) {
-    console.log("[Gemini] Error:", err instanceof Error ? err.message : String(err));
+  } catch {
     return null;
   }
 }
 
 // AMP (Sourcegraph)
 async function fetchAMP(): Promise<ProviderUsage | null> {
-  try {
-    // AMP uses browser cookies for authentication (session cookie from ampcode.com)
-    // This requires browser cookie extraction which is complex in Electron
-    // For now, return null - implement browser cookie reading if needed
-    console.log("[AMP] Browser cookie-based auth not yet implemented");
-    return null;
-  } catch (err) {
-    console.log("[AMP] Error:", err instanceof Error ? err.message : String(err));
-    return null;
-  }
+  // AMP uses browser cookies for authentication (session cookie from ampcode.com)
+  // Not yet implemented — requires browser cookie extraction
+  return null;
 }

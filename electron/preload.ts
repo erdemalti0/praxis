@@ -26,9 +26,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.removeListener(channel, callback);
   },
   send: (channel: string, ...args: any[]) => {
-    const validChannels = [
-      "password-form-submitted",
-    ];
+    const validChannels: string[] = [];
     if (validChannels.includes(channel)) {
       ipcRenderer.send(channel, ...args);
     }
@@ -59,7 +57,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
     fs.writeFileSync(filePath, Buffer.from(base64Data, "base64"));
   },
   getTempDir: (): string => {
-    const os = require("os");
     return os.tmpdir();
   },
 });

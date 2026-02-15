@@ -1,5 +1,8 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage } from "electron";
 import path from "path";
+import fs from "fs";
+import os from "os";
+import { execSync } from "child_process";
 import { registerTerminalHandlers } from "./ipc/terminal";
 import { registerFilesystemHandlers } from "./ipc/filesystem";
 import { registerSessionsHandlers } from "./ipc/sessions";
@@ -16,13 +19,57 @@ import { registerUsageHandlers } from "./ipc/usage";
 import { startFileWatchers } from "./ipc/filesystem";
 import { buildMenu } from "./menu";
 import { closeAllPty } from "./utils/pty-manager";
+import { getDefaultShell } from "./utils/platform";
 
 // Set app name early so macOS menu bar shows "Praxis" instead of "Electron"
 app.name = "Praxis";
 
+// ── Single-instance lock ──
+// If another instance is already running, forward argv and quit
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+}
+
 let mainWindow: BrowserWindow | null = null;
 const allWindows = new Set<BrowserWindow>();
 let ipcHandlersRegistered = false;
+
+/** Parse --open-project=<path> from argv */
+function parseOpenProject(argv: string[]): { name: string; path: string } | null {
+  for (const arg of argv) {
+    if (arg.startsWith("--open-project=")) {
+      const projectPath = arg.slice("--open-project=".length);
+      if (projectPath) {
+        const projectName = path.basename(projectPath);
+        return { name: projectName, path: projectPath };
+      }
+    }
+  }
+  return null;
+}
+
+/** Send open-project event to the focused or main window */
+function sendOpenProject(project: { name: string; path: string }) {
+  const target = BrowserWindow.getFocusedWindow() || mainWindow;
+  if (target && !target.isDestroyed()) {
+    target.webContents.send("open-project", project);
+    target.show();
+    target.focus();
+  }
+}
+
+/** Resolve path to the CLI shell script */
+function getCliSourcePath(): string {
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, "bin", "praxis");
+  }
+  return path.join(__dirname, "..", "bin", "praxis");
+}
+
+function getCliSymlinkPath(): string {
+  return "/usr/local/bin/praxis";
+}
 
 export function createWindow(projectName?: string, projectPath?: string) {
   const win = new BrowserWindow({
@@ -32,8 +79,9 @@ export function createWindow(projectName?: string, projectPath?: string) {
     minHeight: 600,
     backgroundColor: "#000000",
     icon: path.join(__dirname, "../resources/logo.png"),
-    titleBarStyle: "hiddenInset",
-    trafficLightPosition: { x: 12, y: 16 },
+    ...(process.platform === "darwin"
+      ? { titleBarStyle: "hiddenInset" as const, trafficLightPosition: { x: 12, y: 16 } }
+      : {}),
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
       contextIsolation: true,
@@ -69,6 +117,10 @@ export function createWindow(projectName?: string, projectPath?: string) {
     registerSearchHandlers();
     registerUsageHandlers();
 
+    ipcMain.handle("get_default_shell", () => getDefaultShell());
+
+    ipcMain.handle("get_platform", () => process.platform);
+
     ipcMain.handle("open_external", (_event, url: string) => {
       if (url.startsWith("https://")) shell.openExternal(url);
     });
@@ -91,6 +143,113 @@ export function createWindow(projectName?: string, projectPath?: string) {
         popup.focus();
       });
       popup.loadURL(args.url);
+    });
+
+    // ── CLI install/uninstall ──
+    ipcMain.handle("install_cli", async () => {
+      if (process.platform === "win32") {
+        const source = app.isPackaged
+          ? path.join(process.resourcesPath, "bin", "praxis.cmd")
+          : path.join(__dirname, "..", "bin", "praxis.cmd");
+        const targetDir = path.join(os.homedir(), "AppData", "Local", "Praxis");
+        const target = path.join(targetDir, "praxis.cmd");
+        try {
+          fs.mkdirSync(targetDir, { recursive: true });
+          fs.copyFileSync(source, target);
+          // Add to user PATH if not already there
+          try {
+            const currentPath = execSync('powershell -Command "[Environment]::GetEnvironmentVariable(\'Path\', \'User\')"', { encoding: "utf-8" }).trim();
+            if (!currentPath.includes(targetDir)) {
+              execSync(`powershell -Command "[Environment]::SetEnvironmentVariable('Path', '${currentPath};${targetDir}', 'User')"`)
+            }
+          } catch {
+            // PATH update failed — user can add manually
+          }
+          return { success: true, path: target };
+        } catch (err: any) {
+          return { success: false, error: err.message };
+        }
+      } else {
+        const source = getCliSourcePath();
+        const target = getCliSymlinkPath();
+        try {
+          // Try without sudo first
+          if (fs.existsSync(target)) fs.unlinkSync(target);
+          fs.symlinkSync(source, target);
+          return { success: true, path: target };
+        } catch {
+          // Needs elevated permissions — use osascript on macOS, pkexec on Linux
+          try {
+            const shellCmd = `rm -f "${target}" && ln -s "${source}" "${target}"`;
+            if (process.platform === "darwin") {
+              const escaped = shellCmd.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+              execSync(
+                `osascript -e 'do shell script "${escaped}" with administrator privileges'`
+              );
+            } else {
+              execSync(`pkexec sh -c '${shellCmd}'`);
+            }
+            return { success: true, path: target };
+          } catch (err: any) {
+            return { success: false, error: err.message };
+          }
+        }
+      }
+    });
+
+    ipcMain.handle("uninstall_cli", async () => {
+      if (process.platform === "win32") {
+        const targetDir = path.join(os.homedir(), "AppData", "Local", "Praxis");
+        const target = path.join(targetDir, "praxis.cmd");
+        try {
+          if (fs.existsSync(target)) fs.unlinkSync(target);
+          // Remove from user PATH
+          try {
+            const currentPath = execSync('powershell -Command "[Environment]::GetEnvironmentVariable(\'Path\', \'User\')"', { encoding: "utf-8" }).trim();
+            if (currentPath.includes(targetDir)) {
+              const newPath = currentPath.split(";").filter((p: string) => p !== targetDir).join(";");
+              execSync(`powershell -Command "[Environment]::SetEnvironmentVariable('Path', '${newPath}', 'User')"`)
+            }
+          } catch {
+            // PATH cleanup failed — non-critical
+          }
+          return { success: true };
+        } catch (err: any) {
+          return { success: false, error: err.message };
+        }
+      } else {
+        const target = getCliSymlinkPath();
+        try {
+          if (fs.existsSync(target)) fs.unlinkSync(target);
+          return { success: true };
+        } catch {
+          // Needs elevated permissions
+          try {
+            const shellCmd = `rm -f "${target}"`;
+            if (process.platform === "darwin") {
+              const escaped = shellCmd.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+              execSync(
+                `osascript -e 'do shell script "${escaped}" with administrator privileges'`
+              );
+            } else {
+              execSync(`pkexec sh -c '${shellCmd}'`);
+            }
+            return { success: true };
+          } catch (err: any) {
+            return { success: false, error: err.message };
+          }
+        }
+      }
+    });
+
+    ipcMain.handle("check_cli_installed", async () => {
+      if (process.platform === "win32") {
+        const target = path.join(os.homedir(), "AppData", "Local", "Praxis", "praxis.cmd");
+        return fs.existsSync(target);
+      } else {
+        const target = getCliSymlinkPath();
+        return fs.existsSync(target);
+      }
     });
 
   }
@@ -145,6 +304,17 @@ ipcMain.handle("open_directory_dialog", async () => {
   return result.filePaths[0];
 });
 
+// ── Second instance: forward project to existing window ──
+app.on("second-instance", (_event, argv) => {
+  const project = parseOpenProject(argv);
+  if (project) {
+    sendOpenProject(project);
+  } else if (mainWindow) {
+    mainWindow.show();
+    mainWindow.focus();
+  }
+});
+
 app.whenReady().then(() => {
   // Set dock icon on macOS (overrides default Electron icon in dev mode)
   if (process.platform === "darwin" && app.dock) {
@@ -154,7 +324,14 @@ app.whenReady().then(() => {
       if (!icon.isEmpty()) app.dock.setIcon(icon);
     } catch {}
   }
-  createWindow();
+
+  // Check if launched with --open-project
+  const project = parseOpenProject(process.argv);
+  if (project) {
+    createWindow(project.name, project.path);
+  } else {
+    createWindow();
+  }
 });
 
 app.on("window-all-closed", () => {

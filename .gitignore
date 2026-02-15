@@ -2,8 +2,30 @@ node_modules/
 dist/
 dist-electron/
 release/
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
 *.log
+
+# Environment & secrets
+.env
+.env.*
+*.pem
+*.key
+*.crt
+
+# App data
 .vibepilot/
+
+# Test files
 erdem.txt
 test-autorefresh.txt

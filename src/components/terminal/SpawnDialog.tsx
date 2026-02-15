@@ -7,6 +7,7 @@ import { splitPane } from "../../lib/layout/layoutUtils";
 import type { LayoutNode } from "../../types/layout";
 import { invoke, listen } from "../../lib/ipc";
 import { getOrCreateTerminal } from "../../lib/terminal/terminalCache";
+import { getDefaultShell } from "../../lib/platform";
 
 import claudeLogo from "../../assets/logos/claude.png";
 import opencodeLogo from "../../assets/logos/opencode.svg";
@@ -39,7 +40,7 @@ interface AgentPreset {
 const AGENT_PRESETS: AgentPreset[] = [
   {
     label: "Shell",
-    cmd: "/bin/zsh",
+    cmd: "__default_shell__",
     args: [],
     type: "shell",
     flags: [],
@@ -299,6 +300,12 @@ export default function SpawnDialog() {
 
   const handleSpawn = async () => {
     if (!preset) return;
+
+    // Resolve default shell placeholder
+    if (preset.cmd === "__default_shell__") {
+      preset.cmd = await getDefaultShell();
+    }
+
     const finalArgs = buildArgs();
 
     // Generate session ID on frontend so we can set up listeners BEFORE spawning
@@ -341,12 +348,12 @@ export default function SpawnDialog() {
           // Non-shell agent exited → drop to shell automatically
           const shellCwd = session?.projectPath || cwd;
           terminal.write("\r\n\x1b[90m[Process exited — starting shell...]\x1b[0m\r\n\r\n");
-          invoke<{ id: string; cwd: string }>("spawn_pty", {
+          getDefaultShell().then((defaultShell) => invoke<{ id: string; cwd: string }>("spawn_pty", {
             id,
-            cmd: "/bin/zsh",
+            cmd: defaultShell,
             args: [],
             cwd: shellCwd,
-          }).then((res) => {
+          })).then((res) => {
             const actualCwd = res?.cwd || shellCwd;
             store.updateSession(id, {
               agentType: "shell",
@@ -429,6 +436,11 @@ export default function SpawnDialog() {
     const matchedPreset = allPresets.find((p) => p.type === agentType);
     if (!matchedPreset) return;
 
+    // Resolve default shell placeholder
+    if (matchedPreset.cmd === "__default_shell__") {
+      matchedPreset.cmd = await getDefaultShell();
+    }
+
     const id = `pty-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     const spawnCwd = selectedProject?.path ?? "~";
 
@@ -465,7 +477,7 @@ export default function SpawnDialog() {
         if (!isShell) {
           const shellCwd = session?.projectPath || spawnCwd;
           terminal.write("\r\n\x1b[90m[Process exited — starting shell...]\x1b[0m\r\n\r\n");
-          invoke<{ id: string; cwd: string }>("spawn_pty", { id, cmd: "/bin/zsh", args: [], cwd: shellCwd })
+          getDefaultShell().then((defaultShell) => invoke<{ id: string; cwd: string }>("spawn_pty", { id, cmd: defaultShell, args: [], cwd: shellCwd }))
             .then((res) => {
               const actualCwd = res?.cwd || shellCwd;
               store.updateSession(id, { agentType: "shell", title: `Shell@${actualCwd.split("/").pop() || actualCwd}`, projectPath: actualCwd });
