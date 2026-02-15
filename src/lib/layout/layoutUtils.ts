@@ -122,3 +122,39 @@ export function getSessionIds(layout: LayoutNode): string[] {
     ...getSessionIds(layout.children[1]),
   ];
 }
+
+/** Fill the first empty leaf (sessionId === null) in the layout tree */
+export function fillEmptyLeaf(layout: LayoutNode, newSessionId: string): { layout: LayoutNode; filled: boolean } {
+  if (layout.type === "leaf") {
+    if (!layout.sessionId) {
+      return { layout: { type: "leaf", sessionId: newSessionId }, filled: true };
+    }
+    return { layout, filled: false };
+  }
+
+  // Try left child first
+  const left = fillEmptyLeaf(layout.children[0], newSessionId);
+  if (left.filled) {
+    return {
+      layout: { ...layout, children: [left.layout, layout.children[1]] },
+      filled: true,
+    };
+  }
+
+  // Then right child
+  const right = fillEmptyLeaf(layout.children[1], newSessionId);
+  if (right.filled) {
+    return {
+      layout: { ...layout, children: [layout.children[0], right.layout] },
+      filled: true,
+    };
+  }
+
+  return { layout, filled: false };
+}
+
+/** Check if layout contains any empty leaf */
+export function hasEmptyLeaf(layout: LayoutNode): boolean {
+  if (layout.type === "leaf") return !layout.sessionId;
+  return hasEmptyLeaf(layout.children[0]) || hasEmptyLeaf(layout.children[1]);
+}

@@ -1,8 +1,9 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useEffect } from "react";
 import TerminalTabs from "../terminal/TerminalTabs";
 import SplitPaneLayout from "../terminal/SplitPaneLayout";
 import { useUIStore } from "../../stores/uiStore";
 import type { LayoutNode } from "../../types/layout";
+import { refitAllTerminals } from "../../lib/terminal/terminalCache";
 
 const EMPTY_LEAF: LayoutNode = { type: "leaf", sessionId: null };
 
@@ -10,6 +11,13 @@ export default memo(function MainPanel() {
   const activeWorkspaceId = useUIStore((s) => s.activeWorkspaceId);
   const workspaceLayouts = useUIStore((s) => s.workspaceLayouts);
   const activeTerminalGroup = useUIStore((s) => s.activeTerminalGroup);
+  const terminalMaximized = useUIStore((s) => s.terminalMaximized);
+  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
+
+  // Re-fit all terminals when layout changes (fullscreen toggle, sidebar toggle)
+  useEffect(() => {
+    refitAllTerminals();
+  }, [terminalMaximized, sidebarCollapsed]);
 
   const activeGroupId = activeWorkspaceId ? activeTerminalGroup[activeWorkspaceId] : undefined;
 

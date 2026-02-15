@@ -111,3 +111,23 @@ export function disposeTerminal(sessionId: string): void {
 export function hasCachedTerminal(sessionId: string): boolean {
   return cache.has(sessionId);
 }
+
+/**
+ * Re-fit all cached terminals that are currently mounted in the DOM.
+ * Used after layout changes (fullscreen toggle, sidebar toggle, etc.)
+ * to prevent terminals from going black.
+ */
+export function refitAllTerminals(): void {
+  // Delay to allow layout to settle
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      for (const [, entry] of cache) {
+        try {
+          if (entry.terminal.element) {
+            entry.fitAddon.fit();
+          }
+        } catch {}
+      }
+    }, 100);
+  });
+}

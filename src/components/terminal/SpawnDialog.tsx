@@ -3,7 +3,7 @@ import { X, Code, ChevronLeft, Search } from "lucide-react";
 import { useUIStore } from "../../stores/uiStore";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useSettingsStore } from "../../stores/settingsStore";
-import { splitPane } from "../../lib/layout/layoutUtils";
+import { splitPane, fillEmptyLeaf, hasEmptyLeaf } from "../../lib/layout/layoutUtils";
 import type { LayoutNode } from "../../types/layout";
 import { invoke, listen } from "../../lib/ipc";
 import { getOrCreateTerminal } from "../../lib/terminal/terminalCache";
@@ -278,13 +278,16 @@ export default function SpawnDialog() {
     } else {
       // No split context: check if current group has an empty leaf we can fill
       const currentLayout = groupId ? state.workspaceLayouts[groupId] : null;
-      const isEmpty = !currentLayout || (currentLayout.type === "leaf" && !currentLayout.sessionId);
 
-      if (isEmpty && groupId) {
-        // Fill the empty leaf
+      if (!currentLayout || (currentLayout.type === "leaf" && !currentLayout.sessionId)) {
+        // Root is empty — fill it
         state.setWorkspaceLayout(groupId, { type: "leaf", sessionId: newSessionId });
+      } else if (currentLayout && hasEmptyLeaf(currentLayout)) {
+        // There's an empty leaf somewhere in the split tree — fill it
+        const { layout: filled } = fillEmptyLeaf(currentLayout, newSessionId);
+        state.setWorkspaceLayout(groupId, filled);
       } else {
-        // Create a new terminal group (tab)
+        // No empty leaves — create a new terminal group (tab)
         const newGroupId = state.addTerminalGroup(wsId);
         state.setWorkspaceLayout(newGroupId, { type: "leaf", sessionId: newSessionId });
         state.setActiveTerminalGroup(wsId, newGroupId);
