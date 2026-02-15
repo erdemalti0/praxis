@@ -77,8 +77,6 @@ Praxis is a cross-platform desktop application that lets you orchestrate multipl
 | Platform | Status | Package Format |
 |----------|--------|---------------|
 | macOS    | Supported | `.dmg` |
-| Windows  | Supported | `.exe` (NSIS) |
-| Linux    | Supported | `.AppImage`, `.deb` |
 
 ## Tech Stack
 
@@ -124,10 +122,8 @@ npm run build
 # Package for current platform
 npm run dist
 
-# Package for specific platform
+# Package for macOS
 npm run dist:mac
-npm run dist:win
-npm run dist:linux
 ```
 
 ## Data Storage
