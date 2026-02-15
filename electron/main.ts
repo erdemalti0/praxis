@@ -304,11 +304,11 @@ ipcMain.handle("open_directory_dialog", async () => {
   return result.filePaths[0];
 });
 
-// ── Second instance: forward project to existing window ──
+// ── Second instance: open project in a new window ──
 app.on("second-instance", (_event, argv) => {
   const project = parseOpenProject(argv);
   if (project) {
-    sendOpenProject(project);
+    createWindow(project.name, project.path);
   } else if (mainWindow) {
     mainWindow.show();
     mainWindow.focus();

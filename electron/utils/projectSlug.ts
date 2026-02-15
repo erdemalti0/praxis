@@ -1,6 +1,6 @@
 /**
  * Convert a project path to a safe directory name for use in ~/.praxis/projects/.
- * Example: "/Users/erdem/Desktop/my-project" → "Users-erdem-Desktop-my-project"
+ * Example: "/home/user/projects/my-app" → "home-user-projects-my-app"
  */
 export function projectSlug(projectPath: string): string {
   return projectPath

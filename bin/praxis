@@ -20,7 +20,8 @@ if [ "$(uname)" = "Darwin" ]; then
     APP_PATH="$HOME/Applications/Praxis.app"
   fi
   if [ -d "$APP_PATH" ]; then
-    open -a "$APP_PATH" --args "--open-project=$ABSOLUTE_PATH"
+    # -n forces a new instance so second-instance event fires in the running app
+    open -n -a "$APP_PATH" --args "--open-project=$ABSOLUTE_PATH"
   else
     # Development mode — launch via electron-vite
     SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

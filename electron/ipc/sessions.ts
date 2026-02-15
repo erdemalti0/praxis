@@ -33,7 +33,7 @@ export function registerSessionsHandlers() {
         const stat = fs.statSync(fullPath);
         if (!stat.isDirectory()) continue;
 
-        // Decode URL-encoded path: "-Users-erdem-Desktop-project" -> "/Users/erdem/Desktop/project"
+        // Decode slug back to path: "-home-user-projects-myapp" -> "/home/user/projects/myapp"
         const decodedPath = "/" + dirName.replace(/^-/, "").replace(/-/g, "/");
         const name = decodedPath.split("/").filter(Boolean).pop() || dirName;
         const lastModified = Math.floor(stat.mtimeMs / 1000);

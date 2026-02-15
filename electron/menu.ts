@@ -1,4 +1,6 @@
-import { Menu, BrowserWindow, app } from "electron";
+import { Menu, BrowserWindow, app, dialog } from "electron";
+import path from "path";
+import { createWindow } from "./main";
 
 export function buildMenu(win: BrowserWindow) {
   const isMac = process.platform === "darwin";
@@ -63,6 +65,21 @@ export function buildMenu(win: BrowserWindow) {
           label: "Switch Project...",
           accelerator: "CmdOrCtrl+O",
           click: () => send("menu:switch-project"),
+        },
+        {
+          label: "Open Project in New Window...",
+          accelerator: "CmdOrCtrl+Shift+O",
+          click: async () => {
+            const result = await dialog.showOpenDialog(win, {
+              properties: ["openDirectory"],
+              title: "Open Project in New Window",
+            });
+            if (!result.canceled && result.filePaths.length > 0) {
+              const projectPath = result.filePaths[0];
+              const projectName = path.basename(projectPath);
+              createWindow(projectName, projectPath);
+            }
+          },
         },
         { type: "separator" },
         {
