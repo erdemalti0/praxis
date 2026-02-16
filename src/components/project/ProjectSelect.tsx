@@ -1,4 +1,5 @@
-import { FolderOpen, X, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { FolderOpen, X, Clock, GitBranch, Loader2, FolderInput } from "lucide-react";
 import { invoke } from "../../lib/ipc";
 import { useUIStore } from "../../stores/uiStore";
 import { useSettingsStore } from "../../stores/settingsStore";
@@ -10,11 +11,203 @@ function truncatePath(fullPath: string): string {
   return ".../" + segments.slice(-3).join("/");
 }
 
+function CloneModal({ onClose, onCloned }: { onClose: () => void; onCloned: (path: string) => void }) {
+  const [repoUrl, setRepoUrl] = useState("");
+  const [targetDir, setTargetDir] = useState("");
+  const [cloning, setCloning] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleChooseFolder = async () => {
+    const selectedPath = await invoke<string | null>("open_directory_dialog");
+    if (selectedPath) setTargetDir(selectedPath);
+  };
+
+  const handleClone = async () => {
+    if (!repoUrl.trim() || !targetDir) return;
+    setCloning(true);
+    setError("");
+    try {
+      const clonedPath = await invoke<string>("git_clone_repo", {
+        repoUrl: repoUrl.trim(),
+        targetDir,
+      });
+      onCloned(clonedPath);
+    } catch (e: any) {
+      setError(e.message || "Clone failed");
+    } finally {
+      setCloning(false);
+    }
+  };
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+        animation: "fadeIn 0.15s ease",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "var(--vp-bg-primary)",
+          border: "1px solid var(--vp-border)",
+          borderRadius: 16,
+          padding: 28,
+          width: 440,
+          maxWidth: "90vw",
+          animation: "fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 600, color: "var(--vp-text-primary)", display: "flex", alignItems: "center", gap: 8 }}>
+            <GitBranch size={18} />
+            Clone Repository
+          </h2>
+          <button
+            onClick={onClose}
+            style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--vp-text-dim)", padding: 4, borderRadius: 6, display: "flex" }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Repo URL */}
+        <label style={{ fontSize: 12, fontWeight: 500, color: "var(--vp-text-secondary)", marginBottom: 6, display: "block" }}>
+          Repository URL
+        </label>
+        <input
+          type="text"
+          value={repoUrl}
+          onChange={(e) => setRepoUrl(e.target.value)}
+          placeholder="https://github.com/user/repo.git"
+          disabled={cloning}
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            fontSize: 13,
+            background: "var(--vp-bg-surface)",
+            color: "var(--vp-text-primary)",
+            border: "1px solid var(--vp-border)",
+            borderRadius: 10,
+            outline: "none",
+            marginBottom: 16,
+            boxSizing: "border-box",
+          }}
+          onFocus={(e) => (e.currentTarget.style.borderColor = "var(--vp-accent-blue)")}
+          onBlur={(e) => (e.currentTarget.style.borderColor = "var(--vp-border)")}
+          autoFocus
+        />
+
+        {/* Target Folder */}
+        <label style={{ fontSize: 12, fontWeight: 500, color: "var(--vp-text-secondary)", marginBottom: 6, display: "block" }}>
+          Clone Into
+        </label>
+        <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+          <div
+            style={{
+              flex: 1,
+              padding: "10px 12px",
+              fontSize: 13,
+              background: "var(--vp-bg-surface)",
+              color: targetDir ? "var(--vp-text-primary)" : "var(--vp-text-dim)",
+              border: "1px solid var(--vp-border)",
+              borderRadius: 10,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {targetDir ? truncatePath(targetDir) : "Select a folder..."}
+          </div>
+          <button
+            onClick={handleChooseFolder}
+            disabled={cloning}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "10px 14px",
+              fontSize: 13,
+              fontWeight: 500,
+              background: "var(--vp-bg-surface)",
+              color: "var(--vp-text-primary)",
+              border: "1px solid var(--vp-border)",
+              borderRadius: 10,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            <FolderInput size={14} />
+            Browse
+          </button>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div style={{ fontSize: 12, color: "var(--vp-accent-red, #ef4444)", marginBottom: 16, padding: "8px 12px", background: "rgba(239,68,68,0.08)", borderRadius: 8 }}>
+            {error}
+          </div>
+        )}
+
+        {/* Clone Button */}
+        <button
+          onClick={handleClone}
+          disabled={cloning || !repoUrl.trim() || !targetDir}
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            padding: "12px 0",
+            background: cloning || !repoUrl.trim() || !targetDir ? "var(--vp-bg-surface)" : "var(--vp-button-primary-bg)",
+            color: cloning || !repoUrl.trim() || !targetDir ? "var(--vp-text-dim)" : "var(--vp-button-primary-text)",
+            border: "none",
+            borderRadius: 12,
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: cloning || !repoUrl.trim() || !targetDir ? "not-allowed" : "pointer",
+            transition: "all 0.2s ease",
+          }}
+        >
+          {cloning ? (
+            <>
+              <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+              Cloning...
+            </>
+          ) : (
+            <>
+              <GitBranch size={16} />
+              Clone
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function ProjectSelect() {
   const setSelectedProject = useUIStore((s) => s.setSelectedProject);
   const recentProjects = useSettingsStore((s) => s.recentProjects);
   const addRecentProject = useSettingsStore((s) => s.addRecentProject);
   const removeRecentProject = useSettingsStore((s) => s.removeRecentProject);
+  const [showCloneModal, setShowCloneModal] = useState(false);
+
+  // Listen for menu-triggered clone modal
+  useEffect(() => {
+    const handler = () => setShowCloneModal(true);
+    window.addEventListener("open-clone-modal", handler);
+    return () => window.removeEventListener("open-clone-modal", handler);
+  }, []);
 
   const handleOpenFolder = async () => {
     try {
@@ -27,6 +220,14 @@ export default function ProjectSelect() {
     } catch (err) {
       console.error("Failed to open directory dialog:", err);
     }
+  };
+
+  const handleCloned = (clonedPath: string) => {
+    const name = clonedPath.split("/").filter(Boolean).pop() || clonedPath;
+    const project: ProjectInfo = { name, path: clonedPath, lastModified: Date.now() / 1000 };
+    setSelectedProject(project);
+    addRecentProject(project);
+    setShowCloneModal(false);
   };
 
   const handleSelectRecent = (project: ProjectInfo) => {
@@ -248,9 +449,11 @@ export default function ProjectSelect() {
         </div>
       )}
 
-      {/* Open folder button */}
+      {/* Action buttons */}
       <div
         style={{
+          display: "flex",
+          gap: 12,
           animation: "fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both",
         }}
       >
@@ -277,7 +480,44 @@ export default function ProjectSelect() {
           <FolderOpen size={18} />
           Open Project
         </button>
+
+        <button
+          onClick={() => setShowCloneModal(true)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "16px 36px",
+            background: "var(--vp-bg-surface)",
+            color: "var(--vp-text-primary)",
+            border: "1px solid var(--vp-border)",
+            borderRadius: 14,
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: "pointer",
+            transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+            letterSpacing: "-0.01em",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = "var(--vp-text-dim)";
+            e.currentTarget.style.background = "var(--vp-bg-hover)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "var(--vp-border)";
+            e.currentTarget.style.background = "var(--vp-bg-surface)";
+          }}
+        >
+          <GitBranch size={18} />
+          Clone Repository
+        </button>
       </div>
+
+      {showCloneModal && (
+        <CloneModal
+          onClose={() => setShowCloneModal(false)}
+          onCloned={handleCloned}
+        />
+      )}
 
       <style>{`
         @keyframes fadeInUp {
@@ -287,6 +527,14 @@ export default function ProjectSelect() {
         @keyframes fadeInDown {
           from { opacity: 0; transform: translateY(-16px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>

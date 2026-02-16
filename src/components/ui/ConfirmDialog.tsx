@@ -2,7 +2,12 @@ import { useEffect, useRef } from "react";
 import { useConfirmStore } from "../../stores/confirmStore";
 
 export default function ConfirmDialog() {
-  const { isOpen, title, message, danger, onConfirm, hideConfirm } = useConfirmStore();
+  const isOpen = useConfirmStore((s) => s.isOpen);
+  const title = useConfirmStore((s) => s.title);
+  const message = useConfirmStore((s) => s.message);
+  const danger = useConfirmStore((s) => s.danger);
+  const onConfirm = useConfirmStore((s) => s.onConfirm);
+  const hideConfirm = useConfirmStore((s) => s.hideConfirm);
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

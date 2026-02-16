@@ -49,6 +49,21 @@ button, a, input, [class*="transition"] {
   min-height: 100%;
 }
 
+/* Customize panel slide animations */
+@keyframes customizePanelIn {
+  from { transform: translateY(100%); opacity: 0.5; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes customizePanelOut {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(100%); opacity: 0.5; }
+}
+
+/* Pane divider */
+.pane-divider:hover {
+  background: var(--vp-accent-blue) !important;
+}
+
 /* Tag palette colors */
 :root {
   --vp-tag-blue-bg: rgba(96,165,250,0.15);
@@ -108,15 +123,24 @@ button, a, input, [class*="transition"] {
   position: absolute;
   right: 3px;
   bottom: 3px;
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-right: 2px solid var(--vp-border-medium, rgba(255, 255, 255, 0.15));
   border-bottom: 2px solid var(--vp-border-medium, rgba(255, 255, 255, 0.15));
   border-radius: 0 0 2px 0;
+  opacity: 0.6;
+  transition: all 0.2s ease;
 }
 
 .react-grid-item > .react-resizable-handle:hover::after {
-  border-color: var(--vp-accent-blue-glow, rgba(96, 165, 250, 0.5));
+  border-color: var(--vp-accent-blue, rgba(96, 165, 250, 1));
+  opacity: 1;
+}
+
+.react-grid-item.resizing {
+  opacity: 0.9;
+  z-index: 99;
+  box-shadow: 0 8px 32px var(--vp-accent-blue-bg, rgba(96, 165, 250, 0.15));
 }
 
 @keyframes skeletonPulse {
@@ -125,9 +149,16 @@ button, a, input, [class*="transition"] {
 }
 
 .react-grid-placeholder {
-  background: var(--vp-accent-blue) !important;
-  opacity: 0.15 !important;
+  background: var(--vp-accent-blue-bg, rgba(96, 165, 250, 0.08)) !important;
+  opacity: 0.5 !important;
+  border: 2px dashed var(--vp-accent-blue-glow, rgba(96, 165, 250, 0.5)) !important;
   border-radius: 12px !important;
+  animation: placeholderPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes placeholderPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
 }
 
 @keyframes widgetDrop {

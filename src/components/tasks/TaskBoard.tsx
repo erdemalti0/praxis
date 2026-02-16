@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback, memo } from "react";
+import { useEffect, useRef, useState, useCallback, memo } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useTaskStore } from "../../stores/taskStore";
 import { useUIStore } from "../../stores/uiStore";
 import TaskCreateDialog from "./TaskCreateDialog";
@@ -24,7 +25,10 @@ export default memo(function TaskBoard({ variant }: Props) {
   const selectedProject = useUIStore((s) => s.selectedProject);
   const setViewMode = useUIStore((s) => s.setViewMode);
   const setSplitEnabled = useUIStore((s) => s.setSplitEnabled);
-  const { tasks, loading, loadTasks, moveTask } = useTaskStore();
+  const tasks = useTaskStore((s) => s.tasks);
+  const loading = useTaskStore((s) => s.loading);
+  const loadTasks = useTaskStore((s) => s.loadTasks);
+  const moveTask = useTaskStore((s) => s.moveTask);
   const [showCreate, setShowCreate] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Set<TaskStatus>>(new Set());
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);

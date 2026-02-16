@@ -6,6 +6,7 @@ import type { LayoutNode } from "../types/layout";
 import { loadJsonFile } from "../lib/persistence";
 
 export type ViewMode = "missions" | "terminal" | "split" | "browser" | "editor";
+export type SidebarTab = "agents" | "explorer" | "search" | "git" | "services";
 
 /** Walk a LayoutNode tree and null out all sessionIds (PTY sessions are ephemeral) */
 function clearSessionIds(node: LayoutNode): LayoutNode {
@@ -22,7 +23,6 @@ export interface Workspace {
   id: string;
   name: string;
   color: string;
-  useWidgetMode?: boolean;
   emoji?: string;
 }
 
@@ -60,9 +60,14 @@ interface UIState {
   splitSpawnContext: { sessionId: string; direction: "horizontal" | "vertical" } | null;
   draggingPaneSessionId: string | null;
   showWidgetCatalog: boolean;
+  showCustomizePanel: boolean;
+  widgetDividerRatio: number;
+  topPaneContent: "terminal" | "widgets";
   showMissionPanel: boolean;
   fullscreenWidgetId: string | null;
   commandPaletteOpen: boolean;
+  activeSidebarTab: SidebarTab;
+  setActiveSidebarTab: (tab: SidebarTab) => void;
   setViewMode: (mode: ViewMode) => void;
   setSplitEnabled: (enabled: boolean) => void;
   setTerminalMaximized: (maximized: boolean) => void;
@@ -89,9 +94,12 @@ interface UIState {
   setSplitSpawnContext: (ctx: { sessionId: string; direction: "horizontal" | "vertical" } | null) => void;
   setDraggingPaneSessionId: (sessionId: string | null) => void;
   setShowWidgetCatalog: (show: boolean) => void;
+  setShowCustomizePanel: (show: boolean) => void;
+  setWidgetDividerRatio: (ratio: number) => void;
+  setTopPaneContent: (content: "terminal" | "widgets") => void;
+  swapPanes: () => void;
   setShowMissionPanel: (show: boolean) => void;
   toggleMissionPanel: () => void;
-  toggleWidgetMode: (workspaceId: string) => void;
   setFullscreenWidgetId: (id: string | null) => void;
   setCommandPaletteOpen: (open: boolean) => void;
   reorderWorkspaces: (fromId: string, toId: string) => void;
@@ -122,9 +130,13 @@ export const useUIStore = create<UIState>((set) => ({
   splitSpawnContext: null,
   draggingPaneSessionId: null,
   showWidgetCatalog: false,
+  showCustomizePanel: false,
+  widgetDividerRatio: 0.7,
+  topPaneContent: "terminal" as "terminal" | "widgets",
   showMissionPanel: false,
   fullscreenWidgetId: null,
   commandPaletteOpen: false,
+  activeSidebarTab: "agents",
   _uiLoaded: false,
 
   setViewMode: (mode) => set((s) => ({
@@ -149,7 +161,7 @@ export const useUIStore = create<UIState>((set) => ({
   setSelectedProject: (project) => set({ selectedProject: project }),
   addWorkspace: (ws) => set((s) => {
     const color = ws.color || WORKSPACE_COLORS[s.workspaces.length % WORKSPACE_COLORS.length];
-    const defaultGroupId = `tg-${Date.now()}`;
+    const defaultGroupId = `tg-${ws.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     return {
       workspaces: [...s.workspaces, { ...ws, color }],
       activeWorkspaceId: ws.id,
@@ -215,15 +227,15 @@ export const useUIStore = create<UIState>((set) => ({
   setSplitSpawnContext: (ctx) => set({ splitSpawnContext: ctx }),
   setDraggingPaneSessionId: (sessionId) => set({ draggingPaneSessionId: sessionId }),
   setShowWidgetCatalog: (show) => set({ showWidgetCatalog: show }),
+  setShowCustomizePanel: (show) => set({ showCustomizePanel: show, showWidgetCatalog: show }),
+  setWidgetDividerRatio: (ratio) => set({ widgetDividerRatio: Math.max(0.2, Math.min(0.8, ratio)) }),
+  setTopPaneContent: (content) => set({ topPaneContent: content }),
+  swapPanes: () => set((s) => ({ topPaneContent: s.topPaneContent === "terminal" ? "widgets" : "terminal" })),
   setShowMissionPanel: (show) => set({ showMissionPanel: show }),
   toggleMissionPanel: () => set((s) => ({ showMissionPanel: !s.showMissionPanel })),
-  toggleWidgetMode: (workspaceId) => set((s) => ({
-    workspaces: s.workspaces.map((w) =>
-      w.id === workspaceId ? { ...w, useWidgetMode: !w.useWidgetMode } : w
-    ),
-  })),
   setFullscreenWidgetId: (id) => set({ fullscreenWidgetId: id }),
   setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
+  setActiveSidebarTab: (tab) => set({ activeSidebarTab: tab, sidebarCollapsed: false }),
 
   reorderWorkspaces: (fromId, toId) => set((s) => {
     const workspaces = [...s.workspaces];
@@ -259,28 +271,47 @@ export const useUIStore = create<UIState>((set) => ({
     const activeTerminalGroup: Record<string, string> = {};
     const workspaceLayouts: Record<string, LayoutNode> = {};
 
+    // Track which groupIds have already been claimed by a workspace
+    // to detect and fix collisions from the old Date.now()-only ID bug
+    const claimedGroupIds = new Set<string>();
+
     for (const ws of data.workspaces) {
       const savedGroups = data.terminalGroups?.[ws.id];
       const savedActiveGroup = data.activeTerminalGroup?.[ws.id];
 
       if (savedGroups && savedGroups.length > 0) {
-        // Restore saved layout structure (clear ephemeral sessionIds)
-        terminalGroups[ws.id] = savedGroups;
-        activeTerminalGroup[ws.id] = savedActiveGroup && savedGroups.includes(savedActiveGroup)
-          ? savedActiveGroup
-          : savedGroups[0];
-        for (const gid of savedGroups) {
-          const savedLayout = data.workspaceLayouts?.[gid];
-          workspaceLayouts[gid] = savedLayout
-            ? clearSessionIds(savedLayout)
-            : { type: "leaf", sessionId: null };
+        // Check for group ID collisions — if another workspace already claimed
+        // any of these group IDs, generate fresh ones for this workspace
+        const hasCollision = savedGroups.some((gid) => claimedGroupIds.has(gid));
+
+        if (hasCollision) {
+          // Collision detected — create fresh group for this workspace
+          const freshGroupId = `tg-${ws.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+          terminalGroups[ws.id] = [freshGroupId];
+          activeTerminalGroup[ws.id] = freshGroupId;
+          workspaceLayouts[freshGroupId] = { type: "leaf", sessionId: null };
+          claimedGroupIds.add(freshGroupId);
+        } else {
+          // Restore saved layout structure (clear ephemeral sessionIds)
+          terminalGroups[ws.id] = savedGroups;
+          activeTerminalGroup[ws.id] = savedActiveGroup && savedGroups.includes(savedActiveGroup)
+            ? savedActiveGroup
+            : savedGroups[0];
+          for (const gid of savedGroups) {
+            const savedLayout = data.workspaceLayouts?.[gid];
+            workspaceLayouts[gid] = savedLayout
+              ? clearSessionIds(savedLayout)
+              : { type: "leaf", sessionId: null };
+            claimedGroupIds.add(gid);
+          }
         }
       } else {
         // No saved layout — create fresh empty leaf
-        const groupId = `tg-restored-${ws.id}-${Date.now()}`;
+        const groupId = `tg-${ws.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
         terminalGroups[ws.id] = [groupId];
         activeTerminalGroup[ws.id] = groupId;
         workspaceLayouts[groupId] = { type: "leaf", sessionId: null };
+        claimedGroupIds.add(groupId);
       }
     }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "../../../lib/ipc";
 import type { PortMonitorConfig } from "../../../types/widget";
 import { RefreshCw, Filter, XCircle, ExternalLink, Copy } from "lucide-react";
@@ -104,13 +104,16 @@ export default function PortMonitorWidget({
     useWidgetStore.getState().updateWidgetConfig(workspaceId, widgetId, { filterProtocol });
   }, [filterProtocol, workspaceId, widgetId]);
 
+  const mountedRef = useRef(true);
+  useEffect(() => { return () => { mountedRef.current = false; }; }, []);
+
   const fetchPorts = async () => {
     setLoading(true);
     try {
       const data = await invoke<PortEntry[]>("scan_ports");
-      setPorts(data);
+      if (mountedRef.current) setPorts(data);
     } catch {}
-    setLoading(false);
+    if (mountedRef.current) setLoading(false);
   };
 
   useEffect(() => {

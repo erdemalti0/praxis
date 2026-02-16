@@ -2,6 +2,7 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { SearchAddon } from "@xterm/addon-search";
+import { Unicode11Addon } from "@xterm/addon-unicode11";
 
 interface CachedTerminal {
   terminal: Terminal;
@@ -35,6 +36,11 @@ const TERMINAL_THEME = {
   brightWhite: "#ffffff",
 };
 
+/** Default scrollback for active (visible) terminals */
+const SCROLLBACK_ACTIVE = 5000;
+/** Reduced scrollback for background (offscreen) terminals — saves ~30MB per terminal */
+const SCROLLBACK_BACKGROUND = 500;
+
 export function getOrCreateTerminal(sessionId: string): CachedTerminal {
   const existing = cache.get(sessionId);
   if (existing) return existing;
@@ -46,7 +52,7 @@ export function getOrCreateTerminal(sessionId: string): CachedTerminal {
     theme: TERMINAL_THEME,
     cursorBlink: false,
     allowProposedApi: true,
-    scrollback: 2000,
+    scrollback: SCROLLBACK_ACTIVE,
     fastScrollModifier: "alt",
     fastScrollSensitivity: 5,
   });
@@ -57,6 +63,11 @@ export function getOrCreateTerminal(sessionId: string): CachedTerminal {
   const searchAddon = new SearchAddon();
   terminal.loadAddon(searchAddon);
 
+  // Unicode 11 — fixes emoji and wide-character width issues
+  const unicode11Addon = new Unicode11Addon();
+  terminal.loadAddon(unicode11Addon);
+  terminal.unicode.activeVersion = "11";
+
   const entry: CachedTerminal = { terminal, fitAddon, searchAddon };
   cache.set(sessionId, entry);
   return entry;
@@ -65,6 +76,7 @@ export function getOrCreateTerminal(sessionId: string): CachedTerminal {
 /**
  * Activate WebGL renderer after terminal is mounted to DOM.
  * Falls back silently to canvas/DOM if WebGL is unavailable.
+ * Automatically recovers after GPU context loss.
  */
 export function activateWebGL(sessionId: string): void {
   const entry = cache.get(sessionId);
@@ -76,6 +88,8 @@ export function activateWebGL(sessionId: string): void {
     webgl.onContextLoss(() => {
       webgl.dispose();
       (entry.terminal as any).__webgl = false;
+      // Attempt recovery after a short delay
+      setTimeout(() => activateWebGL(sessionId), 1000);
     });
     entry.terminal.loadAddon(webgl);
     (entry.terminal as any).__webgl = true;
@@ -115,7 +129,7 @@ export function hasCachedTerminal(sessionId: string): boolean {
 /**
  * Re-fit all cached terminals that are currently mounted in the DOM.
  * Used after layout changes (fullscreen toggle, sidebar toggle, etc.)
- * to prevent terminals from going black.
+ * Only fits terminals whose element is actually connected to the document.
  */
 export function refitAllTerminals(): void {
   // Delay to allow layout to settle
@@ -123,11 +137,32 @@ export function refitAllTerminals(): void {
     setTimeout(() => {
       for (const [, entry] of cache) {
         try {
-          if (entry.terminal.element) {
+          if (entry.terminal.element?.isConnected) {
             entry.fitAddon.fit();
           }
         } catch {}
       }
     }, 100);
   });
+}
+
+/**
+ * Reduce scrollback for background terminals to save memory.
+ * Call when a terminal becomes hidden (workspace switch, etc.)
+ */
+export function setBackgroundScrollback(sessionId: string): void {
+  const entry = cache.get(sessionId);
+  if (entry) {
+    entry.terminal.options.scrollback = SCROLLBACK_BACKGROUND;
+  }
+}
+
+/**
+ * Restore full scrollback when a terminal becomes visible again.
+ */
+export function setActiveScrollback(sessionId: string): void {
+  const entry = cache.get(sessionId);
+  if (entry && entry.terminal.options.scrollback !== SCROLLBACK_ACTIVE) {
+    entry.terminal.options.scrollback = SCROLLBACK_ACTIVE;
+  }
 }

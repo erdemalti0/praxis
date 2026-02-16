@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { invoke } from "../../../lib/ipc";
+import { invoke, send } from "../../../lib/ipc";
 import { useTerminalStore } from "../../../stores/terminalStore";
 import { useSettingsStore } from "../../../stores/settingsStore";
 import { loadJsonFile, createDebouncedSaver } from "../../../lib/persistence";
@@ -154,7 +154,7 @@ export default function QuickCommandWidget({
 
   const sendToTerminal = (cmd: string) => {
     if (!activeSessionId) return;
-    invoke("write_pty", { id: activeSessionId, data: cmd + "\r" }).catch(() => {});
+    send("write_pty", { id: activeSessionId, data: cmd + "\r" });
   };
 
   const toggleFavorite = (id: string) => {

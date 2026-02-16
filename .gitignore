@@ -29,3 +29,6 @@ Thumbs.db
 # Test files
 erdem.txt
 test-autorefresh.txt
+
+# Internal docs
+ROADMAP.md

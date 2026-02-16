@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useTaskStore } from "../../stores/taskStore";
 import { useTerminalStore, isSessionWorking } from "../../stores/terminalStore";
 import { useUIStore } from "../../stores/uiStore";
-import { invoke } from "../../lib/ipc";
+import { send } from "../../lib/ipc";
 import { getSessionIds } from "../../lib/layout/layoutUtils";
 import { getAgentConfig } from "../../lib/agentTypes";
 import type { PraxisTask, TaskStatus } from "../../types/session";
@@ -52,7 +52,9 @@ interface Props {
 }
 
 export default function TaskCard({ task, projectPath }: Props) {
-  const { updateTask, deleteTask, moveTask } = useTaskStore();
+  const updateTask = useTaskStore((s) => s.updateTask);
+  const deleteTask = useTaskStore((s) => s.deleteTask);
+  const moveTask = useTaskStore((s) => s.moveTask);
   const [editing, setEditing] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -111,7 +113,7 @@ export default function TaskCard({ task, projectPath }: Props) {
   const sendToAgent = useCallback(
     (sessionId: string, workspaceId: string) => {
       const prompt = task.prompt || "";
-      invoke("write_pty", { id: sessionId, data: prompt + "\n" }).catch(() => {});
+      send("write_pty", { id: sessionId, data: prompt + "\n" });
       const ui = useUIStore.getState();
       const ts = useTerminalStore.getState();
       if (ui.activeWorkspaceId !== workspaceId) ui.setActiveWorkspaceId(workspaceId);

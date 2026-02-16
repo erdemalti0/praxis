@@ -2,7 +2,7 @@ import { ipcMain, BrowserWindow } from "electron";
 import fs from "fs";
 import path from "path";
 import os from "os";
-import { watch } from "chokidar";
+import { watch, FSWatcher } from "chokidar";
 
 interface FileEntry {
   name: string;
@@ -38,60 +38,71 @@ const HIDDEN_ENTRIES = new Set([
 ]);
 
 export function registerFilesystemHandlers() {
-  // Read a single file's content
-  ipcMain.handle("read_file", (_event, args: { path: string }) => {
+  // Read a single file's content (async)
+  ipcMain.handle("read_file", async (_event, args: { path: string }) => {
     const filePath = args.path;
-    if (!fs.existsSync(filePath)) throw new Error(`File not found: ${filePath}`);
-    return fs.readFileSync(filePath, "utf-8");
+    try {
+      await fs.promises.access(filePath);
+    } catch {
+      throw new Error(`File not found: ${filePath}`);
+    }
+    return fs.promises.readFile(filePath, "utf-8");
   });
 
-  // Write content to a file
-  ipcMain.handle("write_file", (_event, args: { path: string; content: string }) => {
-    fs.writeFileSync(args.path, args.content, "utf-8");
+  // Write content to a file (async)
+  ipcMain.handle("write_file", async (_event, args: { path: string; content: string }) => {
+    await fs.promises.writeFile(args.path, args.content, "utf-8");
     return true;
   });
 
-  // Editor-specific file operations (duplicated to avoid stale handler issues in dev)
-  ipcMain.handle("editor_read_file", (_event, args: { path: string }) => {
+  // Editor-specific file operations (async)
+  ipcMain.handle("editor_read_file", async (_event, args: { path: string }) => {
     const filePath = args.path;
-    if (!fs.existsSync(filePath)) throw new Error(`File not found: ${filePath}`);
-    return fs.readFileSync(filePath, "utf-8");
+    try {
+      await fs.promises.access(filePath);
+    } catch {
+      throw new Error(`File not found: ${filePath}`);
+    }
+    return fs.promises.readFile(filePath, "utf-8");
   });
 
-  ipcMain.handle("editor_write_file", (_event, args: { path: string; content: string }) => {
+  ipcMain.handle("editor_write_file", async (_event, args: { path: string; content: string }) => {
     const dir = path.dirname(args.path);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(args.path, args.content, "utf-8");
+    await fs.promises.mkdir(dir, { recursive: true });
+    await fs.promises.writeFile(args.path, args.content, "utf-8");
     return true;
   });
 
-  // Glob for files matching a pattern within a directory
-  ipcMain.handle("glob_files", (_event, args: { pattern: string; cwd: string }) => {
+  // Glob for files matching a pattern within a directory (async)
+  ipcMain.handle("glob_files", async (_event, args: { pattern: string; cwd: string }) => {
     const { pattern, cwd } = args;
-    if (!fs.existsSync(cwd)) return [];
+    try {
+      await fs.promises.access(cwd);
+    } catch {
+      return [];
+    }
     const results: string[] = [];
+    const regex = patternToRegex(pattern);
 
-    function walk(dir: string, depth: number) {
-      if (depth > 5) return; // limit recursion depth
+    async function walk(dir: string, depth: number) {
+      if (depth > 5 || results.length >= 100) return;
       try {
-        const entries = fs.readdirSync(dir);
-        for (const name of entries) {
-          if (HIDDEN_ENTRIES.has(name) || name.startsWith(".")) continue;
-          const fullPath = path.join(dir, name);
-          try {
-            const stat = fs.statSync(fullPath);
-            if (stat.isDirectory()) {
-              walk(fullPath, depth + 1);
-            } else if (name.match(patternToRegex(pattern))) {
-              results.push(fullPath);
-            }
-          } catch { continue; }
+        const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (results.length >= 100) return;
+          if (HIDDEN_ENTRIES.has(entry.name) || entry.name.startsWith(".")) continue;
+          const fullPath = path.join(dir, entry.name);
+          if (entry.isDirectory()) {
+            await walk(fullPath, depth + 1);
+          } else if (regex.test(entry.name)) {
+            results.push(fullPath);
+          }
         }
       } catch { /* skip unreadable dirs */ }
     }
 
-    walk(cwd, 0);
-    return results.slice(0, 100); // limit results
+    await walk(cwd, 0);
+    return results;
   });
 
   // Open a file or folder in the system default app
@@ -100,55 +111,60 @@ export function registerFilesystemHandlers() {
     return shell.openPath(args.path);
   });
 
-  // Read package.json from a project directory
-  ipcMain.handle("read_package_json", (_event, args: { path: string }) => {
+  // Read package.json from a project directory (async)
+  ipcMain.handle("read_package_json", async (_event, args: { path: string }) => {
     const pkgPath = path.join(args.path, "package.json");
-    if (!fs.existsSync(pkgPath)) return null;
     try {
-      return JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+      const content = await fs.promises.readFile(pkgPath, "utf-8");
+      return JSON.parse(content);
     } catch {
       return null;
     }
   });
 
-  ipcMain.handle("list_directory", (_event, args: { path: string }) => {
+  ipcMain.handle("list_directory", async (_event, args: { path: string }) => {
     const dirPath = args.path;
-    if (!fs.existsSync(dirPath)) {
+    let stat: fs.Stats;
+    try {
+      stat = await fs.promises.stat(dirPath);
+    } catch {
       throw new Error(`Directory not found: ${dirPath}`);
     }
-    const stat = fs.statSync(dirPath);
     if (!stat.isDirectory()) {
       throw new Error(`Not a directory: ${dirPath}`);
     }
 
-    const entries = fs.readdirSync(dirPath);
+    const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
     const dirs: FileEntry[] = [];
     const files: FileEntry[] = [];
 
-    for (const name of entries) {
-      if (name.startsWith(".") && HIDDEN_ENTRIES.has(name)) continue;
-      if (HIDDEN_ENTRIES.has(name)) continue;
+    // Process entries in parallel with Promise.all
+    await Promise.all(
+      entries.map(async (entry) => {
+        if (entry.name.startsWith(".") && HIDDEN_ENTRIES.has(entry.name)) return;
+        if (HIDDEN_ENTRIES.has(entry.name)) return;
 
-      const fullPath = path.join(dirPath, name);
-      try {
-        const entryStat = fs.statSync(fullPath);
-        const modified = Math.floor(entryStat.mtimeMs / 1000);
-        const entry: FileEntry = {
-          name,
-          path: fullPath,
-          isDir: entryStat.isDirectory(),
-          size: entryStat.isDirectory() ? 0 : entryStat.size,
-          modified,
-        };
-        if (entryStat.isDirectory()) {
-          dirs.push(entry);
-        } else {
-          files.push(entry);
+        const fullPath = path.join(dirPath, entry.name);
+        try {
+          const entryStat = await fs.promises.stat(fullPath);
+          const modified = Math.floor(entryStat.mtimeMs / 1000);
+          const fileEntry: FileEntry = {
+            name: entry.name,
+            path: fullPath,
+            isDir: entryStat.isDirectory(),
+            size: entryStat.isDirectory() ? 0 : entryStat.size,
+            modified,
+          };
+          if (entryStat.isDirectory()) {
+            dirs.push(fileEntry);
+          } else {
+            files.push(fileEntry);
+          }
+        } catch {
+          // skip inaccessible entries
         }
-      } catch {
-        continue;
-      }
-    }
+      })
+    );
 
     dirs.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
     files.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
@@ -156,6 +172,9 @@ export function registerFilesystemHandlers() {
     return [...dirs, ...files];
   });
 }
+
+// Track watchers per window for cleanup
+const windowWatchers = new WeakMap<BrowserWindow, FSWatcher>();
 
 export function startFileWatchers(win: BrowserWindow) {
   const home = os.homedir();
@@ -181,35 +200,59 @@ export function startFileWatchers(win: BrowserWindow) {
     persistent: true,
   });
 
+  // Store watcher for cleanup
+  windowWatchers.set(win, watcher);
+
+  // Batch file watcher updates with debounce
+  const pendingUpdates = new Map<string, { type: string; content?: string }>();
+  let flushTimer: ReturnType<typeof setTimeout> | null = null;
+  const WATCHER_BATCH_INTERVAL = 100; // ms
+
+  function flushWatcherUpdates() {
+    flushTimer = null;
+    if (win.isDestroyed()) return;
+    for (const [, update] of pendingUpdates) {
+      if (update.content !== undefined) {
+        win.webContents.send(update.type, update.content);
+      }
+    }
+    pendingUpdates.clear();
+  }
+
   watcher.on("change", (filePath: string) => {
     if (win.isDestroyed()) return;
 
     const filename = path.basename(filePath);
 
-    if (filename === "history.jsonl") {
-      try {
-        const content = fs.readFileSync(filePath, "utf-8");
+    // Read file async and queue update
+    fs.promises.readFile(filePath, "utf-8").then((content) => {
+      if (win.isDestroyed()) return;
+
+      if (filename === "history.jsonl") {
         const lines = content.trim().split("\n");
         const lastLine = lines[lines.length - 1];
         if (lastLine) {
-          win.webContents.send("history-updated", lastLine);
+          pendingUpdates.set("history", { type: "history-updated", content: lastLine });
         }
-      } catch {}
-    } else if (filename === "stats-cache.json") {
-      try {
-        const content = fs.readFileSync(filePath, "utf-8");
-        win.webContents.send("stats-updated", content);
-      } catch {}
-    } else if (filename === "config.json" && filePath.includes("teams")) {
-      try {
-        const content = fs.readFileSync(filePath, "utf-8");
-        win.webContents.send("team-updated", content);
-      } catch {}
-    } else if (filePath.includes("tasks") && filename.endsWith(".json")) {
-      try {
-        const content = fs.readFileSync(filePath, "utf-8");
-        win.webContents.send("task-updated", content);
-      } catch {}
-    }
+      } else if (filename === "stats-cache.json") {
+        pendingUpdates.set("stats", { type: "stats-updated", content });
+      } else if (filename === "config.json" && filePath.includes("teams")) {
+        pendingUpdates.set(`team-${filePath}`, { type: "team-updated", content });
+      } else if (filePath.includes("tasks") && filename.endsWith(".json")) {
+        pendingUpdates.set(`task-${filePath}`, { type: "task-updated", content });
+      }
+
+      if (!flushTimer) {
+        flushTimer = setTimeout(flushWatcherUpdates, WATCHER_BATCH_INTERVAL);
+      }
+    }).catch(() => {});
+  });
+
+  // Clean up watcher when window closes
+  win.on("closed", () => {
+    if (flushTimer) clearTimeout(flushTimer);
+    pendingUpdates.clear();
+    watcher.close();
+    windowWatchers.delete(win);
   });
 }

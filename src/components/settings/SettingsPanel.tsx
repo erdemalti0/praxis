@@ -1,14 +1,23 @@
 import { useState, useCallback, useEffect } from "react";
-import { X, Palette, Bot, Layout, Plus, Trash2, Edit3, Check, Settings } from "lucide-react";
+import { X, Palette, Bot, Layout, Plus, Trash2, Edit3, Check, Settings, Keyboard, RotateCcw } from "lucide-react";
 import { useSettingsStore, type UserAgent } from "../../stores/settingsStore";
 import { BUILTIN_THEMES, createDefaultThemeColors, type ThemeDefinition, type ThemeColors } from "../../lib/themes";
 import { useUIStore } from "../../stores/uiStore";
 import { invoke } from "../../lib/ipc";
+import {
+  ALL_SHORTCUTS,
+  SHORTCUT_CATEGORIES,
+  formatShortcut,
+  getShortcutKey,
+  keyEventToAccelerator,
+  findConflict,
+} from "../../lib/shortcuts";
 
-type SettingsTab = "general" | "themes" | "agents" | "workspaces";
+type SettingsTab = "general" | "themes" | "agents" | "workspaces" | "shortcuts";
 
 const TABS: { id: SettingsTab; label: string; icon: typeof Palette }[] = [
   { id: "general", label: "General", icon: Settings },
+  { id: "shortcuts", label: "Shortcuts", icon: Keyboard },
   { id: "themes", label: "Themes", icon: Palette },
   { id: "agents", label: "Agents", icon: Bot },
   { id: "workspaces", label: "Workspaces", icon: Layout },
@@ -63,14 +72,201 @@ export default function SettingsPanel() {
   const [cliToggling, setCliToggling] = useState(false);
   const [cliError, setCliError] = useState<string | null>(null);
 
+  const customShortcuts = useSettingsStore((s) => s.customShortcuts);
+  const setCustomShortcut = useSettingsStore((s) => s.setCustomShortcut);
+  const resetShortcut = useSettingsStore((s) => s.resetShortcut);
+  const resetAllShortcuts = useSettingsStore((s) => s.resetAllShortcuts);
+
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
   const [editingTheme, setEditingTheme] = useState<ThemeDefinition | null>(null);
   const [showNewAgent, setShowNewAgent] = useState(false);
   const [newAgent, setNewAgent] = useState<Partial<UserAgent>>({ label: "", cmd: "", color: "#60a5fa", args: [], flags: [] });
+  const [recordingShortcutId, setRecordingShortcutId] = useState<string | null>(null);
+  const [shortcutConflict, setShortcutConflict] = useState<string | null>(null);
 
   const close = useCallback(() => setShow(false), [setShow]);
 
+  // Shortcut recording keydown handler — must be before conditional return
+  useEffect(() => {
+    if (!recordingShortcutId || !show) return;
+
+    const handler = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Escape cancels recording
+      if (e.key === "Escape") {
+        setRecordingShortcutId(null);
+        setShortcutConflict(null);
+        return;
+      }
+
+      // Backspace/Delete clears the shortcut
+      if (e.key === "Backspace" || e.key === "Delete") {
+        setCustomShortcut(recordingShortcutId, "");
+        setRecordingShortcutId(null);
+        setShortcutConflict(null);
+        return;
+      }
+
+      const accel = keyEventToAccelerator(e);
+      if (!accel) return; // modifier-only press
+
+      const conflict = findConflict(accel, recordingShortcutId, customShortcuts);
+      if (conflict) {
+        setShortcutConflict(`Conflicts with "${conflict.label}"`);
+        return;
+      }
+
+      setCustomShortcut(recordingShortcutId, accel);
+      setRecordingShortcutId(null);
+      setShortcutConflict(null);
+    };
+
+    window.addEventListener("keydown", handler, true);
+    return () => window.removeEventListener("keydown", handler, true);
+  }, [recordingShortcutId, customShortcuts, setCustomShortcut, show]);
+
   if (!show) return null;
+
+  /* ── Shortcuts Tab ── */
+  const renderShortcutsTab = () => (
+    <div className="space-y-5">
+      {SHORTCUT_CATEGORIES.map((category) => {
+        const shortcuts = ALL_SHORTCUTS.filter((s) => s.category === category);
+        if (shortcuts.length === 0) return null;
+
+        return (
+          <div key={category}>
+            <label style={{ color: "var(--vp-text-muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              {category}
+            </label>
+            <div style={{ marginTop: 8 }}>
+              {shortcuts.map((shortcut) => {
+                const currentKey = getShortcutKey(shortcut.id, customShortcuts);
+                const isCustom = customShortcuts[shortcut.id] !== undefined;
+                const isRecording = recordingShortcutId === shortcut.id;
+
+                return (
+                  <div
+                    key={shortcut.id}
+                    className="flex items-center justify-between"
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      marginBottom: 2,
+                      background: isRecording ? "var(--vp-bg-surface-hover)" : "transparent",
+                      transition: "background 0.15s",
+                    }}
+                    onMouseEnter={(e) => { if (!isRecording) e.currentTarget.style.background = "var(--vp-bg-surface)"; }}
+                    onMouseLeave={(e) => { if (!isRecording) e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <span style={{ fontSize: 12, color: "var(--vp-text-primary)", fontWeight: 400 }}>
+                      {shortcut.label}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {isRecording ? (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                          <span
+                            style={{
+                              fontSize: 11,
+                              color: "var(--vp-accent-blue)",
+                              fontWeight: 500,
+                              padding: "3px 10px",
+                              background: "var(--vp-bg-surface)",
+                              border: "1px solid var(--vp-accent-blue)",
+                              borderRadius: 6,
+                              animation: "pulse 1.5s ease-in-out infinite",
+                            }}
+                          >
+                            Press shortcut...
+                          </span>
+                          {shortcutConflict && (
+                            <span style={{ fontSize: 10, color: "var(--vp-accent-red)", marginTop: 4 }}>
+                              {shortcutConflict}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setRecordingShortcutId(shortcut.id);
+                            setShortcutConflict(null);
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            padding: "3px 10px",
+                            background: "var(--vp-bg-surface)",
+                            border: "1px solid var(--vp-border-subtle)",
+                            borderRadius: 6,
+                            cursor: "pointer",
+                            fontSize: 11,
+                            fontFamily: "monospace",
+                            color: currentKey ? "var(--vp-text-primary)" : "var(--vp-text-dim)",
+                            fontWeight: isCustom ? 600 : 400,
+                            transition: "all 0.15s",
+                          }}
+                        >
+                          {currentKey ? formatShortcut(currentKey) : "—"}
+                        </button>
+                      )}
+                      {isCustom && !isRecording && (
+                        <button
+                          onClick={() => resetShortcut(shortcut.id)}
+                          title="Reset to default"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            padding: 3,
+                            background: "transparent",
+                            border: "none",
+                            cursor: "pointer",
+                            color: "var(--vp-text-dim)",
+                            borderRadius: 4,
+                            transition: "color 0.15s",
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--vp-accent-blue)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--vp-text-dim)")}
+                        >
+                          <RotateCcw size={12} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      {Object.keys(customShortcuts).length > 0 && (
+        <div style={{ borderTop: "1px solid var(--vp-border-subtle)", paddingTop: 16, marginTop: 8 }}>
+          <button
+            onClick={resetAllShortcuts}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 16px",
+              borderRadius: 8,
+              background: "transparent",
+              border: "1px solid var(--vp-border-light)",
+              color: "var(--vp-accent-red)",
+              fontSize: 12,
+              cursor: "pointer",
+              fontWeight: 500,
+            }}
+          >
+            <RotateCcw size={13} />
+            Reset All to Defaults
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   /* ── General Tab ── */
   const handleCliToggle = async () => {
@@ -540,7 +736,6 @@ export default function SettingsPanel() {
               saveWorkspaces(
                 currentWorkspaces.map((ws) => ({
                   id: ws.id, name: ws.name, color: ws.color,
-                  useWidgetMode: ws.useWidgetMode,
                 }))
               );
             }}
@@ -686,6 +881,7 @@ export default function SettingsPanel() {
 
           <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
             {activeTab === "general" && renderGeneralTab()}
+            {activeTab === "shortcuts" && renderShortcutsTab()}
             {activeTab === "themes" && renderThemesTab()}
             {activeTab === "agents" && renderAgentsTab()}
             {activeTab === "workspaces" && renderWorkspacesTab()}
@@ -701,6 +897,10 @@ export default function SettingsPanel() {
         @keyframes scaleIn {
           from { opacity: 0; transform: scale(0.96); }
           to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
         }
       `}</style>
     </div>

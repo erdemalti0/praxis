@@ -1,20 +1,21 @@
-import { useEffect, useRef, lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { useShallow } from "zustand/shallow";
 import StatsBar from "../stats/StatsBar";
 import Sidebar from "./Sidebar";
 import MainPanel from "./MainPanel";
-import MissionBoard from "../missions/MissionBoard";
-import SpawnDialog from "../terminal/SpawnDialog";
-import BrowserPanel from "../browser/BrowserPanel";
-import EditorPanel from "../editor/EditorPanel";
-import WorkspaceContent from "../widgets/WorkspaceContent";
+import DualPaneLayout from "./DualPaneLayout";
 import { useUIStore } from "../../stores/uiStore";
 import { useBrowserStore } from "../../stores/browserStore";
 import { useWidgetStore } from "../../stores/widgetStore";
 import { useSettingsStore } from "../../stores/settingsStore";
-import OnboardingOverlay from "../ui/OnboardingOverlay";
+import { refitAllTerminals } from "../../lib/terminal/terminalCache";
 
-const WidgetCatalog = lazy(() => import("../widgets/WidgetCatalog"));
+const MissionBoard = lazy(() => import("../missions/MissionBoard"));
+const SpawnDialog = lazy(() => import("../terminal/SpawnDialog"));
+const BrowserPanel = lazy(() => import("../browser/BrowserPanel"));
+const EditorPanel = lazy(() => import("../editor/EditorPanel"));
+const CustomizePanel = lazy(() => import("../widgets/CustomizePanel"));
+const OnboardingOverlay = lazy(() => import("../ui/OnboardingOverlay"));
 
 const SIDEBAR_COLLAPSED_WIDTH = 48;
 const TASK_PANEL_WIDTH = 340;
@@ -23,7 +24,8 @@ export default function AppShell() {
   const {
     sidebarWidth, sidebarCollapsed, viewMode, draggingTab, terminalMaximized,
     selectedProject, addWorkspace, workspaces, activeWorkspaceId,
-    showWidgetCatalog, setShowWidgetCatalog, showMissionPanel,
+    showCustomizePanel, showMissionPanel,
+    topPaneContent, widgetDividerRatio,
   } = useUIStore(useShallow((s) => ({
     sidebarWidth: s.sidebarWidth,
     sidebarCollapsed: s.sidebarCollapsed,
@@ -34,17 +36,16 @@ export default function AppShell() {
     addWorkspace: s.addWorkspace,
     workspaces: s.workspaces,
     activeWorkspaceId: s.activeWorkspaceId,
-    showWidgetCatalog: s.showWidgetCatalog,
-    setShowWidgetCatalog: s.setShowWidgetCatalog,
+    showCustomizePanel: s.showCustomizePanel,
     showMissionPanel: s.showMissionPanel,
+    topPaneContent: s.topPaneContent,
+    widgetDividerRatio: s.widgetDividerRatio,
   })));
 
-  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
   const widgetStoreWidgets = useWidgetStore((s) => s.workspaceWidgets);
   const hasWidgets = activeWorkspaceId
     ? (widgetStoreWidgets[activeWorkspaceId]?.length ?? 0) > 0
     : false;
-  const isWidgetMode = activeWorkspace?.useWidgetMode ?? false;
   const onboardingDone = useSettingsStore((s) => s.onboardingDone);
 
   const initRef = useRef(false);
@@ -77,7 +78,6 @@ export default function AppShell() {
       useSettingsStore.getState().saveWorkspaces(
         workspaces.map((ws) => ({
           id: ws.id, name: ws.name, color: ws.color,
-          useWidgetMode: ws.useWidgetMode,
         }))
       );
     }, 1000);
@@ -91,6 +91,13 @@ export default function AppShell() {
     overflow: "hidden" as const,
     border: "1px solid var(--vp-border-panel)",
   };
+
+  // Re-fit terminals when view mode or workspace changes
+  // This catches cases not covered by MainPanel's effect (e.g., switching from
+  // widget mode back to terminal, changing workspaces, toggling split view)
+  useEffect(() => {
+    refitAllTerminals();
+  }, [viewMode, activeWorkspaceId, terminalMaximized, sidebarCollapsed, showCustomizePanel, topPaneContent]);
 
   // Listen for custom tab-drop event from StatsBar's mouse-based drag
   useEffect(() => {
@@ -127,30 +134,58 @@ export default function AppShell() {
   // Maximized browser — hide everything else
   if (browserMaximized && viewMode === "browser") {
     return (
-      <div
-        className="h-screen w-screen flex flex-col"
-        style={{
-          background: "var(--vp-bg-primary)",
-          color: "var(--vp-text-primary)",
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", "Segoe UI", sans-serif',
-        }}
-      >
-        <div className="flex-1 min-h-0" style={{ padding: 8 }}>
-          <div
-            className="h-full"
-            style={{ ...panelStyle, background: "var(--vp-bg-surface)" }}
-          >
-            <BrowserPanel />
+      <Suspense fallback={null}>
+        <div
+          className="h-screen w-screen flex flex-col"
+          style={{
+            background: "var(--vp-bg-primary)",
+            color: "var(--vp-text-primary)",
+            fontFamily:
+              '-apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", "Segoe UI", sans-serif',
+          }}
+        >
+          <div className="flex-1 min-h-0" style={{ padding: 8 }}>
+            <div
+              className="h-full"
+              style={{ ...panelStyle, background: "var(--vp-bg-surface)" }}
+            >
+              <BrowserPanel />
+            </div>
           </div>
         </div>
-      </div>
+      </Suspense>
     );
   }
 
   // Maximized terminal — hide everything else
   if (terminalMaximized) {
     return (
+      <Suspense fallback={null}>
+        <div
+          className="h-screen w-screen flex flex-col"
+          style={{
+            background: "var(--vp-bg-primary)",
+            color: "var(--vp-text-primary)",
+            fontFamily:
+              '-apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", "Segoe UI", sans-serif',
+          }}
+        >
+          <div className="flex-1 min-h-0" style={{ padding: 8 }}>
+            <div
+              className="h-full"
+              style={{ ...panelStyle, background: "var(--vp-bg-surface)" }}
+            >
+              <MainPanel />
+            </div>
+          </div>
+          <SpawnDialog />
+        </div>
+      </Suspense>
+    );
+  }
+
+  return (
+    <Suspense fallback={null}>
       <div
         className="h-screen w-screen flex flex-col"
         style={{
@@ -160,101 +195,24 @@ export default function AppShell() {
             '-apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", "Segoe UI", sans-serif',
         }}
       >
-        <div className="flex-1 min-h-0" style={{ padding: 8 }}>
-          <div
-            className="h-full"
-            style={{ ...panelStyle, background: "var(--vp-bg-surface)" }}
-          >
-            <MainPanel />
-          </div>
-        </div>
-        <SpawnDialog />
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="h-screen w-screen flex flex-col"
-      style={{
-        background: "var(--vp-bg-primary)",
-        color: "var(--vp-text-primary)",
-        fontFamily:
-          '-apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", "Segoe UI", sans-serif',
-      }}
-    >
-      <StatsBar />
-      <div className="flex flex-1 min-h-0" style={{ padding: 8, gap: 8 }}>
-        {/* Sidebar — always visible */}
-        <div
-          style={{
-            width: currentSidebarWidth,
-            minWidth: currentSidebarWidth,
-            ...panelStyle,
-            background: "var(--vp-bg-surface)",
-            transition:
-              "width 0.3s cubic-bezier(0.16, 1, 0.3, 1), min-width 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-          }}
-        >
-          <Sidebar />
-        </div>
-
-        {/* Mission panel — shown in widget mode when toggled from catalog */}
-        {isWidgetMode && showMissionPanel && activeWorkspaceId && viewMode !== "browser" && viewMode !== "missions" && viewMode !== "editor" && (
+        <StatsBar />
+        <div className="flex flex-1 min-h-0" style={{ padding: 8, gap: 8 }}>
+          {/* Sidebar — always visible */}
           <div
             style={{
-              width: TASK_PANEL_WIDTH,
-              minWidth: TASK_PANEL_WIDTH,
+              width: currentSidebarWidth,
+              minWidth: currentSidebarWidth,
               ...panelStyle,
               background: "var(--vp-bg-surface)",
+              transition:
+                "width 0.3s cubic-bezier(0.16, 1, 0.3, 1), min-width 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           >
-            <MissionBoard variant="panel" />
+            <Sidebar />
           </div>
-        )}
 
-        {/* Widget grid — replaces terminal/split, but never browser or tasks */}
-        {isWidgetMode && activeWorkspaceId && viewMode !== "browser" && viewMode !== "missions" && viewMode !== "editor" && (
-          <div
-            className="flex-1 min-w-0 min-h-0"
-            style={{
-              ...panelStyle,
-              background: "var(--vp-bg-surface)",
-            }}
-          >
-            <WorkspaceContent workspaceId={activeWorkspaceId} />
-          </div>
-        )}
-
-        {/* Tasks view — always shown when viewMode is tasks */}
-        {viewMode === "missions" && (
-          <div
-            className="flex-1 min-w-0 min-h-0"
-            style={{
-              ...panelStyle,
-              background: "var(--vp-bg-surface)",
-              position: "relative",
-            }}
-          >
-            <MissionBoard variant="full" />
-            {canDrop && <DropOverlay label={dropLabel} />}
-          </div>
-        )}
-
-        {/* Terminal view — shown when not replaced by widgets */}
-        {viewMode === "terminal" && !isWidgetMode && (
-          <div
-            className="flex-1 min-w-0 min-h-0"
-            style={{ ...panelStyle, background: "var(--vp-bg-surface)", position: "relative", zIndex: 1, overflow: "hidden" }}
-          >
-            <MainPanel />
-            {canDrop && <DropOverlay label={dropLabel} />}
-          </div>
-        )}
-
-        {/* Split view — shown when not replaced by widgets */}
-        {viewMode === "split" && !isWidgetMode && (
-          <>
+          {/* Mission panel — toggled via ⌘+⇧+M, works in terminal and widget modes */}
+          {showMissionPanel && activeWorkspaceId && viewMode !== "browser" && viewMode !== "missions" && viewMode !== "split" && viewMode !== "editor" && (
             <div
               style={{
                 width: TASK_PANEL_WIDTH,
@@ -265,59 +223,93 @@ export default function AppShell() {
             >
               <MissionBoard variant="panel" />
             </div>
+          )}
+
+          {/* Tasks view — always shown when viewMode is tasks */}
+          {viewMode === "missions" && (
+            <div
+              className="flex-1 min-w-0 min-h-0"
+              style={{
+                ...panelStyle,
+                background: "var(--vp-bg-surface)",
+                position: "relative",
+              }}
+            >
+              <MissionBoard variant="full" />
+              {canDrop && <DropOverlay label={dropLabel} />}
+            </div>
+          )}
+
+          {/* Terminal view — now uses DualPaneLayout for terminal + widget strip */}
+          {(viewMode === "terminal") && (
+            <div
+              className="flex-1 min-w-0 min-h-0"
+              style={{ ...panelStyle, background: "var(--vp-bg-surface)", position: "relative", zIndex: 1, overflow: "hidden" }}
+            >
+              <DualPaneLayout
+                topPaneContent={topPaneContent}
+                dividerRatio={hasWidgets ? widgetDividerRatio : 1.0}
+                hasWidgets={hasWidgets}
+                workspaceId={activeWorkspaceId || ""}
+              />
+              {showCustomizePanel && activeWorkspaceId && (
+                <CustomizePanel workspaceId={activeWorkspaceId} />
+              )}
+              {canDrop && <DropOverlay label={dropLabel} />}
+            </div>
+          )}
+
+          {/* Split view */}
+          {viewMode === "split" && (
+            <>
+              <div
+                style={{
+                  width: TASK_PANEL_WIDTH,
+                  minWidth: TASK_PANEL_WIDTH,
+                  ...panelStyle,
+                  background: "var(--vp-bg-surface)",
+                }}
+              >
+                <MissionBoard variant="panel" />
+              </div>
+              <div
+                className="flex-1 min-w-0 min-h-0"
+                style={{ ...panelStyle, background: "var(--vp-bg-surface)" }}
+              >
+                <MainPanel />
+              </div>
+            </>
+          )}
+
+          {/* Editor view */}
+          {viewMode === "editor" && (
             <div
               className="flex-1 min-w-0 min-h-0"
               style={{ ...panelStyle, background: "var(--vp-bg-surface)" }}
             >
-              <MainPanel />
+              <EditorPanel />
             </div>
-          </>
-        )}
+          )}
 
-        {/* Editor view */}
-        {viewMode === "editor" && (
+          {/* Browser view — kept mounted to preserve webview state, hidden via CSS */}
           <div
             className="flex-1 min-w-0 min-h-0"
-            style={{ ...panelStyle, background: "var(--vp-bg-surface)" }}
-          >
-            <EditorPanel />
-          </div>
-        )}
-
-        {/* Browser view — kept mounted to preserve webview state, hidden via CSS */}
-        <div
-          className="flex-1 min-w-0 min-h-0"
-          style={{
-            ...panelStyle,
-            background: "var(--vp-bg-surface)",
-            position: "relative",
-            display: viewMode === "browser" ? undefined : "none",
-          }}
-        >
-          <BrowserPanel />
-        </div>
-
-        {/* Widget catalog side panel — shown during customize, not on browser/tasks */}
-        {isWidgetMode && showWidgetCatalog && activeWorkspaceId && viewMode !== "browser" && viewMode !== "missions" && viewMode !== "editor" && (
-          <div
             style={{
               ...panelStyle,
               background: "var(--vp-bg-surface)",
-              transition: "width 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+              position: "relative",
+              display: viewMode === "browser" ? undefined : "none",
             }}
           >
-            <Suspense fallback={null}>
-              <WidgetCatalog
-                workspaceId={activeWorkspaceId}
-                onClose={() => setShowWidgetCatalog(false)}
-              />
-            </Suspense>
+            <BrowserPanel />
           </div>
-        )}
+
+          {/* Widget catalog is now inside CustomizePanel */}
+        </div>
+        <SpawnDialog />
+        {!onboardingDone && <OnboardingOverlay />}
       </div>
-      <SpawnDialog />
-      {!onboardingDone && <OnboardingOverlay />}
-    </div>
+    </Suspense>
   );
 }
 

@@ -15,11 +15,11 @@ export default function AgentMonitorWidget({
   const sessions = useTerminalStore((s) => s.sessions);
   const outputActivity = useTerminalStore((s) => s.outputActivity);
   const workspaces = useUIStore((s) => s.workspaces);
-  const [now, setNow] = useState(Date.now());
+  const [, setTick] = useState(0);
 
   // Tick every second to update "working" status
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
+    const timer = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(timer);
   }, []);
 

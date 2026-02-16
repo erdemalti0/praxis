@@ -1,8 +1,11 @@
 import { ipcMain } from "electron";
-import { execSync } from "child_process";
+import { exec } from "child_process";
+import { promisify } from "util";
 import fs from "fs";
 import path from "path";
 import os from "os";
+
+const execAsync = promisify(exec);
 
 interface AgentProcess {
   pid: number;
@@ -16,36 +19,51 @@ const BUILTIN_KEYWORDS = ["claude", "opencode", "aider", "gemini", "amp"];
 const isWin = process.platform === "win32";
 const isLinux = process.platform === "linux";
 
+// Cached agent keywords with TTL
+let cachedKeywords: string[] | null = null;
+let keywordsCacheTime = 0;
+const KEYWORDS_CACHE_TTL = 30000; // 30 seconds
+
 function getAgentKeywords(): string[] {
+  const now = Date.now();
+  if (cachedKeywords && now - keywordsCacheTime < KEYWORDS_CACHE_TTL) {
+    return cachedKeywords;
+  }
   try {
     const settingsPath = path.join(os.homedir(), ".praxis", "settings.json");
     if (fs.existsSync(settingsPath)) {
       const settings = JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
       const customKeywords = (settings.userAgents || []).map((a: any) => a.cmd?.toLowerCase().trim()).filter(Boolean);
-      return [...BUILTIN_KEYWORDS, ...customKeywords];
+      cachedKeywords = [...BUILTIN_KEYWORDS, ...customKeywords];
+    } else {
+      cachedKeywords = BUILTIN_KEYWORDS;
     }
-  } catch {}
-  return BUILTIN_KEYWORDS;
+  } catch {
+    cachedKeywords = BUILTIN_KEYWORDS;
+  }
+  keywordsCacheTime = now;
+  return cachedKeywords!;
 }
 
 export function registerAgentsHandlers() {
-  ipcMain.handle("detect_running_agents", (): AgentProcess[] => {
+  ipcMain.handle("detect_running_agents", async (): Promise<AgentProcess[]> => {
     try {
       const keywords = getAgentKeywords();
       if (isWin) {
-        return detectAgentsWindows(keywords);
+        return await detectAgentsWindows(keywords);
       }
-      return detectAgentsUnix(keywords);
+      return await detectAgentsUnix(keywords);
     } catch {
       return [];
     }
   });
 }
 
-function detectAgentsUnix(keywords: string[]): AgentProcess[] {
-  const output = execSync("ps aux", { encoding: "utf-8", timeout: 5000 });
-  const lines = output.split("\n").slice(1);
+async function detectAgentsUnix(keywords: string[]): Promise<AgentProcess[]> {
+  const { stdout } = await execAsync("ps aux", { encoding: "utf-8", timeout: 5000 });
+  const lines = stdout.split("\n").slice(1);
   const agents: AgentProcess[] = [];
+  const cwdPromises: Promise<void>[] = [];
 
   for (const line of lines) {
     const parts = line.trim().split(/\s+/);
@@ -62,40 +80,47 @@ function detectAgentsUnix(keywords: string[]): AgentProcess[] {
     const cmdParts = cmd.split(/\s+/);
     const name = cmdParts[0].split("/").pop() || cmdParts[0];
 
-    let cwd = "";
-    try {
-      if (isLinux) {
-        cwd = fs.readlinkSync(`/proc/${pid}/cwd`);
-      } else {
-        // macOS
-        const lsofOutput = execSync(`lsof -p ${pid} -Fn 2>/dev/null | grep '^n/' | head -1`, {
-          encoding: "utf-8",
-          timeout: 2000,
-        });
-        cwd = lsofOutput.trim().replace(/^n/, "");
-      }
-    } catch {}
-
-    agents.push({
+    const agent: AgentProcess = {
       pid,
       name,
       cmd: cmdParts,
-      cwd,
+      cwd: "",
       cpu_usage: parseFloat(cpuStr) || 0,
-    });
+    };
+    agents.push(agent);
+
+    // Resolve cwd asynchronously in parallel
+    cwdPromises.push(
+      (async () => {
+        try {
+          if (isLinux) {
+            agent.cwd = await fs.promises.readlink(`/proc/${pid}/cwd`);
+          } else {
+            // macOS
+            const { stdout: lsofOutput } = await execAsync(
+              `lsof -p ${pid} -Fn 2>/dev/null | grep '^n/' | head -1`,
+              { encoding: "utf-8", timeout: 2000 }
+            );
+            agent.cwd = lsofOutput.trim().replace(/^n/, "");
+          }
+        } catch {}
+      })()
+    );
   }
+
+  // Wait for all cwd resolutions in parallel
+  await Promise.allSettled(cwdPromises);
 
   return agents;
 }
 
-function detectAgentsWindows(keywords: string[]): AgentProcess[] {
-  const output = execSync("tasklist /V /FO CSV", { encoding: "utf-8", timeout: 5000 });
-  const lines = output.split("\n").slice(1);
+async function detectAgentsWindows(keywords: string[]): Promise<AgentProcess[]> {
+  const { stdout } = await execAsync("tasklist /V /FO CSV", { encoding: "utf-8", timeout: 5000 });
+  const lines = stdout.split("\n").slice(1);
   const agents: AgentProcess[] = [];
 
   for (const line of lines) {
     if (!line.trim()) continue;
-    // CSV format: "Image Name","PID","Session Name","Session#","Mem Usage","Status","User Name","CPU Time","Window Title"
     const match = line.match(/"([^"]*?)","(\d+)"/);
     if (!match) continue;
 

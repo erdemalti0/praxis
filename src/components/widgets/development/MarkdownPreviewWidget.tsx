@@ -1,6 +1,42 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { marked } from "marked";
-import hljs from "highlight.js";
+import hljs from "highlight.js/lib/core";
+// Register only commonly used languages
+import javascript from "highlight.js/lib/languages/javascript";
+import typescript from "highlight.js/lib/languages/typescript";
+import python from "highlight.js/lib/languages/python";
+import bash from "highlight.js/lib/languages/bash";
+import json from "highlight.js/lib/languages/json";
+import css from "highlight.js/lib/languages/css";
+import xml from "highlight.js/lib/languages/xml";
+import markdown from "highlight.js/lib/languages/markdown";
+import yaml from "highlight.js/lib/languages/yaml";
+import sql from "highlight.js/lib/languages/sql";
+import rust from "highlight.js/lib/languages/rust";
+import go from "highlight.js/lib/languages/go";
+import java from "highlight.js/lib/languages/java";
+import diff from "highlight.js/lib/languages/diff";
+hljs.registerLanguage("javascript", javascript);
+hljs.registerLanguage("js", javascript);
+hljs.registerLanguage("typescript", typescript);
+hljs.registerLanguage("ts", typescript);
+hljs.registerLanguage("python", python);
+hljs.registerLanguage("bash", bash);
+hljs.registerLanguage("sh", bash);
+hljs.registerLanguage("shell", bash);
+hljs.registerLanguage("json", json);
+hljs.registerLanguage("css", css);
+hljs.registerLanguage("html", xml);
+hljs.registerLanguage("xml", xml);
+hljs.registerLanguage("markdown", markdown);
+hljs.registerLanguage("yaml", yaml);
+hljs.registerLanguage("yml", yaml);
+hljs.registerLanguage("sql", sql);
+hljs.registerLanguage("rust", rust);
+hljs.registerLanguage("go", go);
+hljs.registerLanguage("java", java);
+hljs.registerLanguage("diff", diff);
+
 import { invoke } from "../../../lib/ipc";
 import { useUIStore } from "../../../stores/uiStore";
 import { useWidgetStore } from "../../../stores/widgetStore";
@@ -14,7 +50,11 @@ marked.setOptions({
         return hljs.highlight(code, { language: lang }).value;
       } catch {}
     }
-    return hljs.highlightAuto(code).value;
+    // Fallback: try auto-detect with registered subset only
+    try {
+      return hljs.highlightAuto(code).value;
+    } catch {}
+    return code;
   },
   breaks: true,
   gfm: true,

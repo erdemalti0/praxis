@@ -3,6 +3,8 @@ import { listen } from "../lib/ipc";
 import { useUIStore } from "../stores/uiStore";
 import { useTerminalStore } from "../stores/terminalStore";
 import { useSettingsStore } from "../stores/settingsStore";
+import { useConfirmStore } from "../stores/confirmStore";
+import { useGitStore } from "../stores/gitStore";
 import { invoke } from "../lib/ipc";
 import { cleanupTerminal } from "../lib/terminal/terminalCache";
 import { closePane, getSessionIds } from "../lib/layout/layoutUtils";
@@ -32,7 +34,7 @@ export function useMenuEvents() {
       })
     );
 
-    // File > Close Terminal
+    // File > Close Terminal (with confirmation)
     unsubs.push(
       listen("menu:close-terminal", () => {
         const ui = useUIStore.getState();
@@ -40,22 +42,35 @@ export function useMenuEvents() {
         const sessionId = ui.focusedPaneSessionId || ts.activeSessionId;
         if (!sessionId || !ui.activeWorkspaceId) return;
 
-        const activeGroupId = ui.activeTerminalGroup[ui.activeWorkspaceId];
-        if (!activeGroupId) return;
+        useConfirmStore.getState().showConfirm(
+          "Close Terminal",
+          "Are you sure you want to close this terminal?",
+          () => {
+            const activeGroupId = ui.activeTerminalGroup[ui.activeWorkspaceId!];
+            if (!activeGroupId) return;
+            const layout = ui.workspaceLayouts[activeGroupId];
+            if (layout) {
+              const newLayout = closePane(layout, sessionId);
+              if (newLayout) {
+                ui.setWorkspaceLayout(activeGroupId, newLayout);
+              } else {
+                ui.removeTerminalGroup(ui.activeWorkspaceId!, activeGroupId);
+              }
+            }
+            invoke("close_pty", { id: sessionId }).catch(() => {});
+            cleanupTerminal(sessionId);
+            ts.removeSession(sessionId);
+          },
+          { danger: true }
+        );
+      })
+    );
 
-        const layout = ui.workspaceLayouts[activeGroupId];
-        if (layout) {
-          const newLayout = closePane(layout, sessionId);
-          if (newLayout) {
-            ui.setWorkspaceLayout(activeGroupId, newLayout);
-          } else {
-            // No sessions left — remove the group (tab)
-            ui.removeTerminalGroup(ui.activeWorkspaceId!, activeGroupId);
-          }
-        }
-        invoke("close_pty", { id: sessionId }).catch(() => {});
-        cleanupTerminal(sessionId);
-        ts.removeSession(sessionId);
+    // Settings
+    unsubs.push(
+      listen("menu:settings", () => {
+        const settings = useSettingsStore.getState();
+        settings.setShowSettingsPanel(!settings.showSettingsPanel);
       })
     );
 
@@ -71,7 +86,6 @@ export function useMenuEvents() {
             id: ws.id,
             name: ws.name,
             color: ws.color,
-            useWidgetMode: ws.useWidgetMode,
           }))
         );
         useSettingsStore.getState().saveSettings();
@@ -146,6 +160,40 @@ export function useMenuEvents() {
       })
     );
 
+    // View > Toggle Mission Panel
+    unsubs.push(
+      listen("menu:toggle-mission-panel", () => {
+        useUIStore.getState().toggleMissionPanel();
+      })
+    );
+
+    // View > Sidebar Panels
+    unsubs.push(
+      listen("menu:sidebar-agents", () => {
+        useUIStore.getState().setActiveSidebarTab("agents");
+      })
+    );
+    unsubs.push(
+      listen("menu:sidebar-explorer", () => {
+        useUIStore.getState().setActiveSidebarTab("explorer");
+      })
+    );
+    unsubs.push(
+      listen("menu:sidebar-search", () => {
+        useUIStore.getState().setActiveSidebarTab("search");
+      })
+    );
+    unsubs.push(
+      listen("menu:sidebar-git", () => {
+        useUIStore.getState().setActiveSidebarTab("git");
+      })
+    );
+    unsubs.push(
+      listen("menu:sidebar-services", () => {
+        useUIStore.getState().setActiveSidebarTab("services");
+      })
+    );
+
     // Terminal > Next Terminal Group
     unsubs.push(
       listen("menu:next-terminal-group", () => {
@@ -173,6 +221,75 @@ export function useMenuEvents() {
         if (idx > 0) {
           store.setActiveTerminalGroup(wsId, groups[idx - 1]);
         }
+      })
+    );
+
+    // File > Clone Repository
+    unsubs.push(
+      listen("menu:clone-repository", () => {
+        const ui = useUIStore.getState();
+        // If on landing page, set clone modal flag; if in project, go to landing first
+        if (ui.selectedProject) {
+          // Switch to landing page where clone modal is available
+          ui.setSelectedProject(null);
+        }
+        // The clone modal will be triggered from ProjectSelect via a global event
+        window.dispatchEvent(new CustomEvent("open-clone-modal"));
+      })
+    );
+
+    // Git > Pull
+    unsubs.push(
+      listen("menu:git-pull", () => {
+        const project = useUIStore.getState().selectedProject;
+        if (project) useGitStore.getState().pull(project.path);
+      })
+    );
+
+    // Git > Push
+    unsubs.push(
+      listen("menu:git-push", () => {
+        const project = useUIStore.getState().selectedProject;
+        if (project) useGitStore.getState().push(project.path);
+      })
+    );
+
+    // Git > Commit — switch to git panel in sidebar
+    unsubs.push(
+      listen("menu:git-commit", () => {
+        const ui = useUIStore.getState();
+        ui.setActiveSidebarTab("git");
+        if (ui.sidebarCollapsed) ui.toggleSidebar();
+      })
+    );
+
+    // Git > Stash
+    unsubs.push(
+      listen("menu:git-stash", async () => {
+        const project = useUIStore.getState().selectedProject;
+        if (project) {
+          await invoke("run_quick_command", { command: "git stash", projectPath: project.path });
+          useGitStore.getState().refresh(project.path);
+        }
+      })
+    );
+
+    // Git > Stash Pop
+    unsubs.push(
+      listen("menu:git-stash-pop", async () => {
+        const project = useUIStore.getState().selectedProject;
+        if (project) {
+          await invoke("run_quick_command", { command: "git stash pop", projectPath: project.path });
+          useGitStore.getState().refresh(project.path);
+        }
+      })
+    );
+
+    // Git > Refresh Status
+    unsubs.push(
+      listen("menu:git-refresh", () => {
+        const project = useUIStore.getState().selectedProject;
+        if (project) useGitStore.getState().refresh(project.path);
       })
     );
 

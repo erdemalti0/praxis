@@ -22,8 +22,14 @@ declare module "*.gif" {
 
 interface ElectronAPI {
   invoke: (channel: string, ...args: any[]) => Promise<any>;
+  send: (channel: string, ...args: any[]) => void;
   on: (channel: string, callback: (...args: any[]) => void) => () => void;
   off: (channel: string, callback: (...args: any[]) => void) => void;
+  readFileSync: (filePath: string) => string;
+  writeFileSync: (filePath: string, content: string) => void;
+  writeFileBinary: (filePath: string, base64Data: string) => void;
+  fileExists: (filePath: string) => boolean;
+  getTempDir: () => string;
 }
 
 interface Window {

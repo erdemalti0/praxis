@@ -95,6 +95,20 @@ export function resizePty(id: string, cols: number, rows: number): void {
   session.rows = rows;
 }
 
+export function pausePty(id: string): void {
+  const session = sessions.get(id);
+  if (session) {
+    session.pty.pause();
+  }
+}
+
+export function resumePty(id: string): void {
+  const session = sessions.get(id);
+  if (session) {
+    session.pty.resume();
+  }
+}
+
 export function closePty(id: string): void {
   const session = sessions.get(id);
   if (session) {

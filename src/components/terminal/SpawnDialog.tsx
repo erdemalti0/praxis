@@ -5,8 +5,9 @@ import { useTerminalStore } from "../../stores/terminalStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { splitPane, fillEmptyLeaf, hasEmptyLeaf } from "../../lib/layout/layoutUtils";
 import type { LayoutNode } from "../../types/layout";
-import { invoke, listen } from "../../lib/ipc";
+import { invoke } from "../../lib/ipc";
 import { getOrCreateTerminal } from "../../lib/terminal/terminalCache";
+import { setupPtyConnection } from "../../lib/terminal/ptyConnection";
 import { getDefaultShell } from "../../lib/platform";
 
 import claudeLogo from "../../assets/logos/claude.png";
@@ -315,81 +316,10 @@ export default function SpawnDialog() {
     const id = `pty-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
     try {
-      // Step 1: Create the xterm instance in cache and set up PTY listeners
-      // BEFORE spawning the PTY. This ensures no output is lost.
+      // Step 1: Create xterm instance and wire up PTY listeners with flow control
+      // BEFORE spawning the PTY so no output is lost.
       const { terminal } = getOrCreateTerminal(id);
-      const ptyKey = `__pty_${id}`;
-      (terminal as any)[ptyKey] = true;
-
-      let lastMark = 0;
-      let pendingBytes = 0;
-      let flushTimer: ReturnType<typeof setTimeout> | null = null;
-      const flushOutput = () => {
-        if (pendingBytes > 0) {
-          useTerminalStore.getState().markOutput(id, pendingBytes);
-          pendingBytes = 0;
-          lastMark = Date.now();
-        }
-      };
-      const unsubOutput = listen(`pty-output-${id}`, (data: string) => {
-        terminal.write(data);
-        pendingBytes += (typeof data === "string" ? data.length : 0);
-        const now = Date.now();
-        if (now - lastMark > 200) {
-          flushOutput();
-        } else {
-          if (flushTimer) clearTimeout(flushTimer);
-          flushTimer = setTimeout(flushOutput, 250);
-        }
-      });
-      const unsubExit = listen(`pty-exit-${id}`, (info?: { exitCode: number; signal?: number }) => {
-        const store = useTerminalStore.getState();
-        const session = store.sessions.find((s) => s.id === id);
-        const isShell = session?.agentType === "shell";
-
-        if (!isShell) {
-          // Non-shell agent exited → drop to shell automatically
-          const shellCwd = session?.projectPath || cwd;
-          terminal.write("\r\n\x1b[90m[Process exited — starting shell...]\x1b[0m\r\n\r\n");
-          getDefaultShell().then((defaultShell) => invoke<{ id: string; cwd: string }>("spawn_pty", {
-            id,
-            cmd: defaultShell,
-            args: [],
-            cwd: shellCwd,
-          })).then((res) => {
-            const actualCwd = res?.cwd || shellCwd;
-            store.updateSession(id, {
-              agentType: "shell",
-              title: `Shell@${actualCwd.split("/").pop() || actualCwd}`,
-              projectPath: actualCwd,
-            });
-          }).catch(() => {
-            terminal.write("\x1b[91m[Failed to start shell]\x1b[0m\r\n");
-          });
-        } else {
-          // Shell exited → show exit info
-          const code = info?.exitCode ?? -1;
-          const sig = info?.signal;
-          const details = sig ? `signal=${sig}` : `code=${code}`;
-          terminal.write(`\r\n\x1b[90m[Shell exited: ${details}]\x1b[0m\r\n`);
-        }
-      });
-      const dataDisposable = terminal.onData((data) => {
-        invoke("write_pty", { id, data }).catch(() => {});
-      });
-      const resizeDisposable = terminal.onResize(({ cols, rows }) => {
-        invoke("resize_pty", { id, cols, rows }).catch(() => {});
-      });
-
-      (terminal as any)[`${ptyKey}_cleanup`] = () => {
-        if (flushTimer) clearTimeout(flushTimer);
-        unsubOutput();
-        unsubExit();
-        dataDisposable.dispose();
-        resizeDisposable.dispose();
-        delete (terminal as any)[ptyKey];
-        delete (terminal as any)[`${ptyKey}_cleanup`];
-      };
+      setupPtyConnection({ sessionId: id, terminal, fallbackCwd: cwd });
 
       // Step 2: Now spawn the PTY - listeners are already active
       const result = await invoke<{ id: string; cwd: string }>("spawn_pty", {
@@ -448,59 +378,9 @@ export default function SpawnDialog() {
     const spawnCwd = selectedProject?.path ?? "~";
 
     try {
+      // Wire up PTY ↔ xterm with flow control before spawning
       const { terminal } = getOrCreateTerminal(id);
-      const ptyKey = `__pty_${id}`;
-      (terminal as any)[ptyKey] = true;
-
-      let lastMark2 = 0;
-      let pendingBytes2 = 0;
-      let flushTimer2: ReturnType<typeof setTimeout> | null = null;
-      const flushOutput2 = () => {
-        if (pendingBytes2 > 0) {
-          useTerminalStore.getState().markOutput(id, pendingBytes2);
-          pendingBytes2 = 0;
-          lastMark2 = Date.now();
-        }
-      };
-      const unsubOutput = listen(`pty-output-${id}`, (data: string) => {
-        terminal.write(data);
-        pendingBytes2 += (typeof data === "string" ? data.length : 0);
-        const now = Date.now();
-        if (now - lastMark2 > 200) {
-          flushOutput2();
-        } else {
-          if (flushTimer2) clearTimeout(flushTimer2);
-          flushTimer2 = setTimeout(flushOutput2, 250);
-        }
-      });
-      const unsubExit = listen(`pty-exit-${id}`, (info?: { exitCode: number; signal?: number }) => {
-        const store = useTerminalStore.getState();
-        const session = store.sessions.find((s) => s.id === id);
-        const isShell = session?.agentType === "shell";
-        if (!isShell) {
-          const shellCwd = session?.projectPath || spawnCwd;
-          terminal.write("\r\n\x1b[90m[Process exited — starting shell...]\x1b[0m\r\n\r\n");
-          getDefaultShell().then((defaultShell) => invoke<{ id: string; cwd: string }>("spawn_pty", { id, cmd: defaultShell, args: [], cwd: shellCwd }))
-            .then((res) => {
-              const actualCwd = res?.cwd || shellCwd;
-              store.updateSession(id, { agentType: "shell", title: `Shell@${actualCwd.split("/").pop() || actualCwd}`, projectPath: actualCwd });
-            })
-            .catch(() => { terminal.write("\x1b[91m[Failed to start shell]\x1b[0m\r\n"); });
-        } else {
-          const code = info?.exitCode ?? -1;
-          const sig = info?.signal;
-          const details = sig ? `signal=${sig}` : `code=${code}`;
-          terminal.write(`\r\n\x1b[90m[Shell exited: ${details}]\x1b[0m\r\n`);
-        }
-      });
-      const dataDisposable = terminal.onData((data) => { invoke("write_pty", { id, data }).catch(() => {}); });
-      const resizeDisposable = terminal.onResize(({ cols, rows }) => { invoke("resize_pty", { id, cols, rows }).catch(() => {}); });
-
-      (terminal as any)[`${ptyKey}_cleanup`] = () => {
-        if (flushTimer2) clearTimeout(flushTimer2);
-        unsubOutput(); unsubExit(); dataDisposable.dispose(); resizeDisposable.dispose();
-        delete (terminal as any)[ptyKey]; delete (terminal as any)[`${ptyKey}_cleanup`];
-      };
+      setupPtyConnection({ sessionId: id, terminal, fallbackCwd: spawnCwd });
 
       // Build args from saved flags
       const finalArgs = [...matchedPreset.args];

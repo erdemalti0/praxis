@@ -7,15 +7,17 @@ import { useWidgetStore } from "../../stores/widgetStore";
 import { useUIStore } from "../../stores/uiStore";
 import { getWidgetDefinition } from "./registry";
 import type { WidgetInstance, WidgetLayoutItem } from "../../types/widget";
+import { LayoutGrid, Terminal, GitBranch, Timer, Plus } from "lucide-react";
 
 interface WorkspaceContentProps {
   workspaceId: string;
+  isCustomizeMode?: boolean;
 }
 
 const EMPTY_WIDGETS: WidgetInstance[] = [];
 const EMPTY_LAYOUT: WidgetLayoutItem[] = [];
 
-export default function WorkspaceContent({ workspaceId }: WorkspaceContentProps) {
+export default function WorkspaceContent({ workspaceId, isCustomizeMode = false }: WorkspaceContentProps) {
   const widgets = useWidgetStore((s) => s.workspaceWidgets[workspaceId] ?? EMPTY_WIDGETS);
   const layout = useWidgetStore((s) => s.workspaceLayouts[workspaceId] ?? EMPTY_LAYOUT);
   const updateLayout = useWidgetStore((s) => s.updateLayout);
@@ -26,6 +28,7 @@ export default function WorkspaceContent({ workspaceId }: WorkspaceContentProps)
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1200);
   const [dragOver, setDragOver] = useState(false);
+  const [resizing, setResizing] = useState<{ w: number; h: number } | null>(null);
 
   // ESC to exit fullscreen
   useEffect(() => {
@@ -110,6 +113,15 @@ export default function WorkspaceContent({ workspaceId }: WorkspaceContentProps)
     });
   }, [layout, widgets]);
 
+  const setShowWidgetCatalog = useUIStore((s) => s.setShowWidgetCatalog);
+  const setShowCustomizePanel = useUIStore((s) => s.setShowCustomizePanel);
+
+  const popularWidgets = [
+    { type: "terminal", name: "Terminal", icon: <Terminal size={20} />, color: "var(--vp-accent-green)" },
+    { type: "git-status", name: "Git Status", icon: <GitBranch size={20} />, color: "var(--vp-accent-blue)" },
+    { type: "pomodoro", name: "Pomodoro", icon: <Timer size={20} />, color: "var(--vp-accent-amber)" },
+  ];
+
   if (widgets.length === 0) {
     return (
       <div
@@ -120,7 +132,7 @@ export default function WorkspaceContent({ workspaceId }: WorkspaceContentProps)
         onDrop={handleDrop}
         style={{
           color: "var(--vp-text-subtle)",
-          gap: 8,
+          gap: 24,
           border: dragOver ? "2px dashed var(--vp-accent-blue-glow)" : "2px dashed transparent",
           background: dragOver ? "var(--vp-accent-blue-bg)" : "transparent",
           borderRadius: 10,
@@ -133,10 +145,63 @@ export default function WorkspaceContent({ workspaceId }: WorkspaceContentProps)
           </span>
         ) : (
           <>
-            <span style={{ fontSize: 14, fontWeight: 500 }}>No widgets yet</span>
-            <span style={{ fontSize: 12, color: "var(--vp-text-subtle)" }}>
-              Drag a widget from the panel or click "Add Widget"
-            </span>
+            {/* Hero */}
+            <div style={{ textAlign: "center" }}>
+              <LayoutGrid size={48} style={{ color: "var(--vp-accent-blue)", marginBottom: 12 }} />
+              <h3 style={{ fontSize: 16, fontWeight: 600, color: "var(--vp-text-primary)", marginBottom: 6 }}>
+                Add Your First Widget
+              </h3>
+              <p style={{ fontSize: 12, color: "var(--vp-text-muted)", maxWidth: 320 }}>
+                Customize your workspace with terminals, git status, timers, and more
+              </p>
+            </div>
+
+            {/* Popular widgets */}
+            <div style={{ display: "flex", gap: 12 }}>
+              {popularWidgets.map((pw) => (
+                <button
+                  key={pw.type}
+                  onClick={() => addWidget(workspaceId, pw.type)}
+                  style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+                    padding: "16px 20px", borderRadius: 12, minWidth: 100,
+                    background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-light)",
+                    color: pw.color, cursor: "pointer", transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.borderColor = "var(--vp-border-medium)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.borderColor = "var(--vp-border-light)";
+                  }}
+                >
+                  {pw.icon}
+                  <span style={{ fontSize: 11, fontWeight: 500 }}>{pw.name}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Browse all */}
+            <button
+              onClick={() => {
+                if (isCustomizeMode) {
+                  setShowWidgetCatalog(true);
+                } else {
+                  setShowCustomizePanel(true);
+                }
+              }}
+              style={{
+                padding: "8px 20px", borderRadius: 8, fontSize: 12, fontWeight: 500,
+                background: "var(--vp-accent-blue-bg)", border: "1px solid var(--vp-accent-blue-border)",
+                color: "var(--vp-accent-blue)", cursor: "pointer", transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--vp-accent-blue-bg-hover)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "var(--vp-accent-blue-bg)"; }}
+            >
+              Browse All Widgets
+            </button>
           </>
         )}
       </div>
@@ -196,6 +261,9 @@ export default function WorkspaceContent({ workspaceId }: WorkspaceContentProps)
         isResizable
         draggableHandle=".widget-drag-handle"
         onLayoutChange={handleLayoutChange}
+        onResizeStart={(_layout: any, _oldItem: any, newItem: any) => setResizing({ w: newItem.w, h: newItem.h })}
+        onResize={(_layout: any, _oldItem: any, newItem: any) => setResizing({ w: newItem.w, h: newItem.h })}
+        onResizeStop={() => setResizing(null)}
         compactType="vertical"
         useCSSTransforms
       >
@@ -210,6 +278,45 @@ export default function WorkspaceContent({ workspaceId }: WorkspaceContentProps)
           </div>
         ))}
       </ResponsiveGridLayout>
+
+      {/* Resize size indicator */}
+      {resizing && (
+        <div style={{
+          position: "fixed", bottom: 24, left: "50%",
+          transform: "translateX(-50%)",
+          background: "var(--vp-bg-overlay)", backdropFilter: "blur(8px)",
+          border: "1px solid var(--vp-border-panel)",
+          borderRadius: 8, padding: "6px 14px",
+          zIndex: 100,
+          fontSize: 13, fontWeight: 600, color: "var(--vp-text-primary)",
+          fontFamily: "monospace",
+          pointerEvents: "none",
+        }}>
+          {resizing.w} × {resizing.h}
+        </div>
+      )}
+
+      {/* Floating add widget button — hidden in customize mode (catalog is inline) */}
+      {!fullscreenWidgetId && !isCustomizeMode && (
+        <button
+          onClick={() => setShowCustomizePanel(true)}
+          title="Add Widget"
+          style={{
+            position: "fixed", bottom: 24, right: 24,
+            width: 48, height: 48, borderRadius: "50%",
+            background: "var(--vp-accent-blue)",
+            border: "2px solid var(--vp-accent-blue-border)",
+            color: "#fff", cursor: "pointer", zIndex: 10,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 16px var(--vp-accent-blue-glow)",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.1)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+        >
+          <Plus size={22} />
+        </button>
+      )}
 
       {/* Fullscreen overlay */}
       {fullscreenWidgetId && (() => {
@@ -227,12 +334,16 @@ export default function WorkspaceContent({ workspaceId }: WorkspaceContentProps)
               alignItems: "stretch",
               justifyContent: "stretch",
               padding: 16,
+              animation: "fsOverlayIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
             }}
             onClick={(e) => {
               if (e.target === e.currentTarget) setFullscreenWidgetId(null);
             }}
           >
-            <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
+            <div style={{
+              flex: 1, minWidth: 0, minHeight: 0,
+              animation: "fsContentIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}>
               <WidgetCard
                 widgetId={fsWidget.id}
                 widgetType={fsWidget.type}
@@ -240,6 +351,16 @@ export default function WorkspaceContent({ workspaceId }: WorkspaceContentProps)
                 config={fsWidget.config}
               />
             </div>
+            <style>{`
+              @keyframes fsOverlayIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+              }
+              @keyframes fsContentIn {
+                from { opacity: 0; transform: scale(0.92); }
+                to { opacity: 1; transform: scale(1); }
+              }
+            `}</style>
           </div>
         );
       })()}

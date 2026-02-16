@@ -78,6 +78,7 @@ export function createWindow(projectName?: string, projectPath?: string) {
     height: 900,
     minWidth: 900,
     minHeight: 600,
+    show: false,
     backgroundColor: "#000000",
     icon: path.join(__dirname, "../resources/logo.png"),
     ...(process.platform === "darwin"
@@ -94,6 +95,11 @@ export function createWindow(projectName?: string, projectPath?: string) {
     },
   });
 
+  // Show window only after content is ready to avoid white flash
+  win.once("ready-to-show", () => {
+    win.show();
+  });
+
   allWindows.add(win);
   if (projectPath) {
     windowProjectPaths.set(win, projectPath);
@@ -107,7 +113,7 @@ export function createWindow(projectName?: string, projectPath?: string) {
   // Register IPC handlers only once (they are global, not per-window)
   if (!ipcHandlersRegistered) {
     ipcHandlersRegistered = true;
-    registerTerminalHandlers(win);
+    registerTerminalHandlers();
     registerFilesystemHandlers();
     registerSessionsHandlers();
     registerStatsHandlers();
@@ -307,6 +313,14 @@ export function createWindow(projectName?: string, projectPath?: string) {
 
   return win;
 }
+
+// Rebuild menu with custom shortcuts
+ipcMain.handle("rebuild_menu", (_event, args?: { customShortcuts?: Record<string, string> }) => {
+  const win = BrowserWindow.getFocusedWindow() || mainWindow;
+  if (win) {
+    buildMenu(win, args?.customShortcuts);
+  }
+});
 
 // Native folder picker dialog — registered once, outside createWindow
 ipcMain.handle("open_directory_dialog", async () => {

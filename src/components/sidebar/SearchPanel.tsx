@@ -4,7 +4,16 @@ import { useSearchStore } from "../../stores/searchStore";
 import { useUIStore } from "../../stores/uiStore";
 
 export default function SearchPanel() {
-  const { query, isRegex, caseSensitive, results, loading, setQuery, setIsRegex, setCaseSensitive, search, clearResults } = useSearchStore();
+  const query = useSearchStore((s) => s.query);
+  const isRegex = useSearchStore((s) => s.isRegex);
+  const caseSensitive = useSearchStore((s) => s.caseSensitive);
+  const results = useSearchStore((s) => s.results);
+  const loading = useSearchStore((s) => s.loading);
+  const setQuery = useSearchStore((s) => s.setQuery);
+  const setIsRegex = useSearchStore((s) => s.setIsRegex);
+  const setCaseSensitive = useSearchStore((s) => s.setCaseSensitive);
+  const search = useSearchStore((s) => s.search);
+  const clearResults = useSearchStore((s) => s.clearResults);
   const selectedProject = useUIStore((s) => s.selectedProject);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const inputRef = useRef<HTMLInputElement>(null);

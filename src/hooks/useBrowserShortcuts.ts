@@ -1,7 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useBrowserStore } from "../stores/browserStore";
+import { useUIStore } from "../stores/uiStore";
 
 export function useBrowserShortcuts(webviewRef: React.RefObject<Electron.WebviewTag | null>) {
+  const viewMode = useUIStore((s) => s.viewMode);
   const createLandingTab = useBrowserStore((s) => s.createLandingTab);
   const removeTab = useBrowserStore((s) => s.removeTab);
   const tabs = useBrowserStore((s) => s.tabs);
@@ -10,8 +12,14 @@ export function useBrowserShortcuts(webviewRef: React.RefObject<Electron.Webview
   const reopenClosedTab = useBrowserStore((s) => s.reopenClosedTab);
   const setTabLoading = useBrowserStore((s) => s.setTabLoading);
 
+  // Cache DOM element reference to avoid querySelector on every keydown
+  const urlInputRef = useRef<HTMLInputElement | null>(null);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle browser shortcuts when browser view is active
+      if (viewMode !== "browser") return;
+
       const isMetaKey = e.metaKey || e.ctrlKey;
 
       if (isMetaKey && e.key === "t") {
@@ -54,7 +62,12 @@ export function useBrowserShortcuts(webviewRef: React.RefObject<Electron.Webview
 
       if (isMetaKey && e.key === "l") {
         e.preventDefault();
-        const urlInput = document.querySelector<HTMLInputElement>('[data-url-input="true"]');
+        // Use cached ref, fallback to querySelector if stale
+        let urlInput = urlInputRef.current;
+        if (!urlInput || !urlInput.isConnected) {
+          urlInput = document.querySelector<HTMLInputElement>('[data-url-input="true"]');
+          urlInputRef.current = urlInput;
+        }
         if (urlInput) {
           urlInput.focus();
           urlInput.select();
@@ -204,5 +217,6 @@ export function useBrowserShortcuts(webviewRef: React.RefObject<Electron.Webview
     reopenClosedTab,
     setTabLoading,
     webviewRef,
+    viewMode,
   ]);
 }

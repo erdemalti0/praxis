@@ -1,4 +1,4 @@
-import { Suspense, memo, useCallback } from "react";
+import { Suspense, memo, useCallback, useState, useEffect } from "react";
 import { GripVertical, Maximize2, Minimize2, X } from "lucide-react";
 import { getWidgetComponent, getWidgetDefinition } from "./registry";
 import { useUIStore } from "../../stores/uiStore";
@@ -23,7 +23,8 @@ export default memo(function WidgetCard({ widgetId, widgetType, workspaceId, con
   const fullscreenWidgetId = useUIStore((s) => s.fullscreenWidgetId);
   const setFullscreenWidgetId = useUIStore((s) => s.setFullscreenWidgetId);
   const isFullscreen = fullscreenWidgetId === widgetId;
-  const isCustomizeMode = useUIStore((s) => s.showWidgetCatalog);
+  const isCustomizeMode = useUIStore((s) => s.showCustomizePanel);
+  const topPaneContent = useUIStore((s) => s.topPaneContent);
   const removeWidget = useWidgetStore((s) => s.removeWidget);
 
   const toggleFullscreen = useCallback(() => {
@@ -50,6 +51,9 @@ export default memo(function WidgetCard({ widgetId, widgetType, workspaceId, con
         border: "1px solid var(--vp-border-subtle)",
         borderRadius: 10,
         overflow: "hidden",
+        transition: "box-shadow 0.25s ease, border-color 0.25s ease",
+        boxShadow: isFullscreen ? "0 8px 40px rgba(0,0,0,0.4)" : "none",
+        borderColor: isFullscreen ? "var(--vp-border-medium)" : "var(--vp-border-subtle)",
       }}
     >
       <div
@@ -106,9 +110,15 @@ export default memo(function WidgetCard({ widgetId, widgetType, workspaceId, con
           >
             <X size={13} />
           </button>
-        ) : (
+        ) : topPaneContent === "widgets" ? (
+          /* Widget pane is on top (main view) — show fullscreen button */
           <button
-            onClick={toggleFullscreen}
+            onClick={(e) => {
+              const btn = e.currentTarget;
+              btn.style.transform = "scale(0.8)";
+              setTimeout(() => { btn.style.transform = "scale(1)"; }, 150);
+              toggleFullscreen();
+            }}
             style={{
               background: "none",
               border: "none",
@@ -119,20 +129,23 @@ export default memo(function WidgetCard({ widgetId, widgetType, workspaceId, con
               alignItems: "center",
               borderRadius: 4,
               flexShrink: 0,
+              transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = "var(--vp-text-primary)";
               e.currentTarget.style.background = "var(--vp-border-subtle)";
+              e.currentTarget.style.transform = "scale(1.15)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.color = "var(--vp-text-subtle)";
               e.currentTarget.style.background = "none";
+              e.currentTarget.style.transform = "scale(1)";
             }}
             title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
           >
             {isFullscreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
           </button>
-        )}
+        ) : null}
       </div>
       <div className="flex-1 min-h-0" style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <Suspense fallback={LOADING_FALLBACK}>

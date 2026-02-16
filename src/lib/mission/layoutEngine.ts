@@ -61,8 +61,11 @@ export function computeTreeLayout(steps: MissionStep[]): LayoutResult {
     return myLayer;
   }
 
+  // Single shared visited set to avoid creating new Set per step
+  const globalVisited = new Set<string>();
   for (const s of steps) {
-    computeLayer(s.id, new Set());
+    globalVisited.clear();
+    computeLayer(s.id, globalVisited);
   }
 
   // Group steps by layer
@@ -73,24 +76,33 @@ export function computeTreeLayout(steps: MissionStep[]): LayoutResult {
     layers[l].push(s.id);
   }
 
+  // Build position index per layer for O(1) lookups (avoids O(n) indexOf in sort)
+  const layerPosition = new Map<string, number>();
+  for (let l = 0; l < layers.length; l++) {
+    for (let i = 0; i < layers[l].length; i++) {
+      layerPosition.set(layers[l][i], i);
+    }
+  }
+
   // Sort within each layer: prefer order based on parent position in previous layer
   // For root layer (0), use original step order
+  function getMinParentIdx(id: string): number {
+    const incoming = incomingEdges.get(id);
+    if (!incoming || incoming.size === 0) return Infinity;
+    let min = Infinity;
+    for (const p of incoming) {
+      const idx = layerPosition.get(p);
+      if (idx !== undefined && idx < min) min = idx;
+    }
+    return min;
+  }
+
   for (let l = 1; l < layers.length; l++) {
-    layers[l].sort((a, b) => {
-      const aIncoming = [...(incomingEdges.get(a) || [])];
-      const bIncoming = [...(incomingEdges.get(b) || [])];
-      const aParentIdx = Math.min(...aIncoming.map((p) => {
-        const pLayer = layer.get(p);
-        if (pLayer === undefined) return Infinity;
-        return layers[pLayer]?.indexOf(p) ?? Infinity;
-      }));
-      const bParentIdx = Math.min(...bIncoming.map((p) => {
-        const pLayer = layer.get(p);
-        if (pLayer === undefined) return Infinity;
-        return layers[pLayer]?.indexOf(p) ?? Infinity;
-      }));
-      return aParentIdx - bParentIdx;
-    });
+    layers[l].sort((a, b) => getMinParentIdx(a) - getMinParentIdx(b));
+    // Update position index after sort
+    for (let i = 0; i < layers[l].length; i++) {
+      layerPosition.set(layers[l][i], i);
+    }
   }
 
   // Position nodes: each layer is a row, nodes arranged side by side
@@ -117,8 +129,10 @@ export function computeTreeLayout(steps: MissionStep[]): LayoutResult {
     return width;
   }
 
+  const widthVisited = new Set<string>();
   for (const s of steps) {
-    computeWidth(s.id, new Set());
+    widthVisited.clear();
+    computeWidth(s.id, widthVisited);
   }
 
   // Position each layer

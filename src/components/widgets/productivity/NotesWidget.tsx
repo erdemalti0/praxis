@@ -124,6 +124,14 @@ export default function NotesWidget({
     }
   };
 
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
   const saveNote = () => {
     if (!activeNoteId) return;
     setSaving(true);
@@ -134,7 +142,9 @@ export default function NotesWidget({
           : n
       )
     );
-    setTimeout(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null;
       setSaving(false);
       setLastSaved(Date.now());
     }, 300);

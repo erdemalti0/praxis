@@ -1,13 +1,36 @@
 import { useEffect, useState, useCallback } from "react";
-import { GitBranch, GitCommitHorizontal, Plus, Minus, ChevronDown, ChevronRight, ArrowUp, ArrowDown, RefreshCw } from "lucide-react";
+import { GitBranch, GitCommitHorizontal, Plus, Minus, ChevronDown, ChevronRight, ArrowUp, ArrowDown, RefreshCw, AlertCircle } from "lucide-react";
 import { useGitStore } from "../../stores/gitStore";
 import { useUIStore } from "../../stores/uiStore";
 
 export default function GitPanel() {
-  const { status, branches, commitMessage, loading, error, refresh, stage, unstage, commit, pull, push, switchBranch, loadBranches, setCommitMessage } = useGitStore();
+  const status = useGitStore((s) => s.status);
+  const branches = useGitStore((s) => s.branches);
+  const commitMessage = useGitStore((s) => s.commitMessage);
+  const loading = useGitStore((s) => s.loading);
+  const error = useGitStore((s) => s.error);
+  const refresh = useGitStore((s) => s.refresh);
+  const stage = useGitStore((s) => s.stage);
+  const unstage = useGitStore((s) => s.unstage);
+  const commit = useGitStore((s) => s.commit);
+  const pull = useGitStore((s) => s.pull);
+  const push = useGitStore((s) => s.push);
+  const switchBranch = useGitStore((s) => s.switchBranch);
+  const loadBranches = useGitStore((s) => s.loadBranches);
+  const setCommitMessage = useGitStore((s) => s.setCommitMessage);
   const selectedProject = useUIStore((s) => s.selectedProject);
   const [showBranches, setShowBranches] = useState(false);
   const [sections, setSections] = useState({ staged: true, unstaged: true, untracked: true });
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingTimeout(false);
+      return;
+    }
+    const timer = setTimeout(() => setLoadingTimeout(true), 5000);
+    return () => clearTimeout(timer);
+  }, [loading]);
 
   const projectPath = selectedProject?.path || "";
 
@@ -50,9 +73,47 @@ export default function GitPanel() {
   }
 
   if (!status) {
+    if (loading && !loadingTimeout) {
+      return (
+        <div className="h-full flex flex-col items-center justify-center gap-3" style={{ padding: 16 }}>
+          {[80, 60, 70].map((w, i) => (
+            <div
+              key={i}
+              style={{
+                width: `${w}%`, height: 10, borderRadius: 6,
+                background: "var(--vp-bg-surface-hover)",
+                animation: "pulse 1.5s ease-in-out infinite",
+                animationDelay: `${i * 0.2}s`,
+              }}
+            />
+          ))}
+          <style>{`@keyframes pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 0.7; } }`}</style>
+        </div>
+      );
+    }
+    if (loading && loadingTimeout) {
+      return (
+        <div className="h-full flex flex-col items-center justify-center" style={{ color: "var(--vp-text-faint)", padding: 16, textAlign: "center" }}>
+          <AlertCircle size={20} style={{ color: "var(--vp-accent-amber)", marginBottom: 8 }} />
+          <span style={{ fontSize: 11, color: "var(--vp-text-muted)" }}>Could not load git status</span>
+          <button
+            onClick={() => projectPath && refresh(projectPath)}
+            style={{
+              marginTop: 8, padding: "4px 12px", borderRadius: 6,
+              background: "var(--vp-bg-surface)", border: "1px solid var(--vp-bg-surface-hover)",
+              color: "var(--vp-text-muted)", fontSize: 10, cursor: "pointer",
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
     return (
-      <div className="h-full flex items-center justify-center" style={{ color: "var(--vp-text-faint)", fontSize: 11 }}>
-        {loading ? "Loading..." : "No git repository"}
+      <div className="h-full flex flex-col items-center justify-center" style={{ color: "var(--vp-text-faint)", padding: 16, textAlign: "center" }}>
+        <GitBranch size={20} style={{ color: "var(--vp-text-dim)", marginBottom: 8 }} />
+        <span style={{ fontSize: 11 }}>No git repository</span>
+        <span style={{ fontSize: 10, color: "var(--vp-text-subtle)", marginTop: 4 }}>Open a git project to see status</span>
       </div>
     );
   }
@@ -255,6 +316,29 @@ export default function GitPanel() {
             Push
           </button>
         </div>
+        {/* Quick action: Commit & Push */}
+        <button
+          onClick={async () => {
+            if (commitMessage.trim() && projectPath && status.staged.length > 0) {
+              await commit(projectPath, commitMessage.trim());
+              await push(projectPath);
+            }
+          }}
+          disabled={!commitMessage.trim() || status.staged.length === 0}
+          className="flex items-center justify-center gap-1"
+          style={{
+            width: "100%", marginTop: 6, padding: "6px 0", borderRadius: 8, fontSize: 10, fontWeight: 600,
+            background: commitMessage.trim() && status.staged.length > 0 ? "var(--vp-accent-blue-bg)" : "var(--vp-bg-surface)",
+            border: `1px solid ${commitMessage.trim() && status.staged.length > 0 ? "var(--vp-accent-blue-border)" : "var(--vp-bg-surface-hover)"}`,
+            color: commitMessage.trim() && status.staged.length > 0 ? "var(--vp-accent-blue)" : "var(--vp-text-subtle)",
+            cursor: commitMessage.trim() && status.staged.length > 0 ? "pointer" : "not-allowed",
+            transition: "all 0.15s",
+          }}
+        >
+          <GitCommitHorizontal size={11} />
+          Commit & Push
+          <ArrowUp size={11} />
+        </button>
       </div>
     </div>
   );

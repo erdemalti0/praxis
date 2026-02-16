@@ -1,16 +1,18 @@
 // Auto-refresh test
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import AppShell from "./components/layout/AppShell";
 import ProjectSelect from "./components/project/ProjectSelect";
 import ToastContainer from "./components/ui/Toast";
-import ConfirmDialog from "./components/ui/ConfirmDialog";
-import CommandPalette from "./components/ui/CommandPalette";
 import { useUIStore } from "./stores/uiStore";
+
+const ConfirmDialog = lazy(() => import("./components/ui/ConfirmDialog"));
+const CommandPalette = lazy(() => import("./components/ui/CommandPalette"));
 import { useSettingsStore } from "./stores/settingsStore";
 import { parseHistoryJsonl, parseIncrementalLine } from "./lib/parsers/historyParser";
 import { parseStatsCache } from "./lib/parsers/statsParser";
 import { invoke, listen } from "./lib/ipc";
 import { useMenuEvents } from "./hooks/useMenuEvents";
+import { useGlobalShortcuts } from "./hooks/useGlobalShortcuts";
 import { usePersistence } from "./hooks/usePersistence";
 
 function getProjectFromURL(): { name: string; path: string } | null {
@@ -23,6 +25,7 @@ function getProjectFromURL(): { name: string; path: string } | null {
 
 function App() {
   useMenuEvents();
+  useGlobalShortcuts();
   usePersistence();
 
   // Prevent Electron's default file-drop behavior (navigating to the file)
@@ -138,8 +141,12 @@ function App() {
     <>
       {content}
       <ToastContainer />
-      <ConfirmDialog />
-      <CommandPalette />
+      <Suspense fallback={null}>
+        <ConfirmDialog />
+      </Suspense>
+      <Suspense fallback={null}>
+        <CommandPalette />
+      </Suspense>
     </>
   );
 }

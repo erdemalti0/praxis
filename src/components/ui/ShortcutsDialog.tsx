@@ -1,54 +1,17 @@
 import { useEffect } from "react";
-import { X } from "lucide-react";
-import { modKey } from "../../lib/platform";
+import { X, Settings } from "lucide-react";
+import { ALL_SHORTCUTS, SHORTCUT_CATEGORIES, formatShortcut, getShortcutKey } from "../../lib/shortcuts";
+import { useSettingsStore } from "../../stores/settingsStore";
 
 interface ShortcutsDialogProps {
   open: boolean;
   onClose: () => void;
 }
 
-interface ShortcutEntry {
-  label: string;
-  keys: string;
-}
-
-const mod = modKey();
-
-const SECTIONS: { title: string; shortcuts: ShortcutEntry[] }[] = [
-  {
-    title: "General",
-    shortcuts: [
-      { label: "Command Palette", keys: `${mod}+K` },
-      { label: "Settings", keys: `${mod}+,` },
-      { label: "Shortcuts Help", keys: "?" },
-    ],
-  },
-  {
-    title: "Terminal",
-    shortcuts: [
-      { label: "New Terminal", keys: `${mod}+T` },
-      { label: "Close Tab", keys: `${mod}+W` },
-    ],
-  },
-  {
-    title: "Browser",
-    shortcuts: [
-      { label: "Focus URL", keys: `${mod}+L` },
-      { label: "Reload", keys: `${mod}+R` },
-      { label: "Back", keys: `${mod}+[` },
-      { label: "Forward", keys: `${mod}+]` },
-      { label: "New Tab", keys: `${mod}+T` },
-    ],
-  },
-  {
-    title: "Navigation",
-    shortcuts: [
-      { label: "Switch Workspace", keys: `${mod}+1-9` },
-    ],
-  },
-];
-
 export default function ShortcutsDialog({ open, onClose }: ShortcutsDialogProps) {
+  const customShortcuts = useSettingsStore((s) => s.customShortcuts);
+  const setShowSettingsPanel = useSettingsStore((s) => s.setShowSettingsPanel);
+
   useEffect(() => {
     if (!open) return;
     const handleKey = (e: KeyboardEvent) => {
@@ -59,6 +22,11 @@ export default function ShortcutsDialog({ open, onClose }: ShortcutsDialogProps)
   }, [open, onClose]);
 
   if (!open) return null;
+
+  const openShortcutSettings = () => {
+    onClose();
+    setShowSettingsPanel(true);
+  };
 
   return (
     <div
@@ -104,49 +72,82 @@ export default function ShortcutsDialog({ open, onClose }: ShortcutsDialogProps)
           <X size={16} />
         </button>
 
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--vp-text-primary)", marginBottom: 20 }}>
-          Keyboard Shortcuts
-        </h2>
-
-        {SECTIONS.map((section) => (
-          <div key={section.title} style={{ marginBottom: 16 }}>
-            <div style={{
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--vp-text-primary)", margin: 0 }}>
+            Keyboard Shortcuts
+          </h2>
+          <button
+            onClick={openShortcutSettings}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "4px 10px",
+              borderRadius: 6,
+              background: "transparent",
+              border: "1px solid var(--vp-border-light)",
+              color: "var(--vp-accent-blue)",
+              cursor: "pointer",
               fontSize: 11,
-              fontWeight: 600,
-              color: "var(--vp-text-muted)",
-              textTransform: "uppercase",
-              letterSpacing: 0.5,
-              marginBottom: 8,
-            }}>
-              {section.title}
+              marginRight: 28,
+            }}
+          >
+            <Settings size={12} />
+            Customize
+          </button>
+        </div>
+
+        {SHORTCUT_CATEGORIES.map((category) => {
+          const shortcuts = ALL_SHORTCUTS.filter((s) => s.category === category);
+          if (shortcuts.length === 0) return null;
+
+          return (
+            <div key={category} style={{ marginBottom: 16 }}>
+              <div style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: "var(--vp-text-muted)",
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+                marginBottom: 8,
+              }}>
+                {category}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                {shortcuts.map((shortcut) => {
+                  const currentKey = getShortcutKey(shortcut.id, customShortcuts);
+                  const isCustom = customShortcuts[shortcut.id] !== undefined;
+                  const display = currentKey ? formatShortcut(currentKey) : "—";
+
+                  return (
+                    <div
+                      key={shortcut.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "4px 0",
+                      }}
+                    >
+                      <span style={{ fontSize: 12, color: "var(--vp-text-primary)" }}>{shortcut.label}</span>
+                      <span style={{
+                        fontSize: 11,
+                        fontFamily: "monospace",
+                        background: "var(--vp-bg-surface-hover)",
+                        padding: "2px 6px",
+                        borderRadius: 4,
+                        color: isCustom ? "var(--vp-accent-blue)" : "var(--vp-text-muted)",
+                        fontWeight: isCustom ? 600 : 400,
+                      }}>
+                        {display}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-              {section.shortcuts.map((s) => (
-                <div
-                  key={s.label}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "4px 0",
-                  }}
-                >
-                  <span style={{ fontSize: 12, color: "var(--vp-text-primary)" }}>{s.label}</span>
-                  <span style={{
-                    fontSize: 11,
-                    fontFamily: "monospace",
-                    background: "var(--vp-bg-surface-hover)",
-                    padding: "2px 6px",
-                    borderRadius: 4,
-                    color: "var(--vp-text-muted)",
-                  }}>
-                    {s.keys}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

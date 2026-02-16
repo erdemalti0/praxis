@@ -26,10 +26,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.removeListener(channel, callback);
   },
   send: (channel: string, ...args: any[]) => {
-    const validChannels: string[] = [];
-    if (validChannels.includes(channel)) {
-      ipcRenderer.send(channel, ...args);
-    }
+    ipcRenderer.send(channel, ...args);
   },
   // Direct filesystem access (bypasses IPC)
   readFileSync: (filePath: string): string => {

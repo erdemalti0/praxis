@@ -27,7 +27,6 @@ export interface PersistedWorkspace {
   id: string;
   name: string;
   color: string;
-  useWidgetMode?: boolean;
 }
 
 export interface WorkspaceTemplate {
@@ -52,6 +51,7 @@ interface PersistedSettings {
   onboardingDone: boolean;
   cliEnabled: boolean;
   workspaceTemplates: WorkspaceTemplate[];
+  customShortcuts: Record<string, string>;
 }
 
 interface SettingsState extends PersistedSettings {
@@ -85,6 +85,10 @@ interface SettingsState extends PersistedSettings {
   addTemplate: (template: WorkspaceTemplate) => void;
   deleteTemplate: (id: string) => void;
   renameTemplate: (id: string, name: string) => void;
+
+  setCustomShortcut: (id: string, key: string) => void;
+  resetShortcut: (id: string) => void;
+  resetAllShortcuts: () => void;
 }
 
 const DEFAULT_SETTINGS: PersistedSettings = {
@@ -97,6 +101,7 @@ const DEFAULT_SETTINGS: PersistedSettings = {
   onboardingDone: false,
   cliEnabled: false,
   workspaceTemplates: [],
+  customShortcuts: {},
 };
 
 function getSettingsPath(homeDir: string): string {
@@ -148,6 +153,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       set({ ...settings, homeDir, loaded: true });
       const theme = getThemeById(settings.activeThemeId, settings.customThemes);
       applyTheme(theme);
+      // Apply custom shortcuts to menu
+      if (settings.customShortcuts && Object.keys(settings.customShortcuts).length > 0) {
+        invoke("rebuild_menu", { customShortcuts: settings.customShortcuts }).catch(() => {});
+      }
     } catch (err) {
       console.error("Failed to load settings:", err);
       set({ loaded: true });
@@ -173,6 +182,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       onboardingDone: s.onboardingDone,
       cliEnabled: s.cliEnabled,
       workspaceTemplates: s.workspaceTemplates,
+      customShortcuts: s.customShortcuts,
     });
   },
 
@@ -283,6 +293,29 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       workspaceTemplates: s.workspaceTemplates.map((t) => (t.id === id ? { ...t, name } : t)),
     }));
     debouncedSave(get);
+  },
+
+  setCustomShortcut: (id, key) => {
+    set((s) => ({ customShortcuts: { ...s.customShortcuts, [id]: key } }));
+    debouncedSave(get);
+    // Notify main process to rebuild menu with new shortcuts
+    invoke("rebuild_menu", { customShortcuts: get().customShortcuts }).catch(() => {});
+  },
+
+  resetShortcut: (id) => {
+    set((s) => {
+      const next = { ...s.customShortcuts };
+      delete next[id];
+      return { customShortcuts: next };
+    });
+    debouncedSave(get);
+    invoke("rebuild_menu", { customShortcuts: get().customShortcuts }).catch(() => {});
+  },
+
+  resetAllShortcuts: () => {
+    set({ customShortcuts: {} });
+    debouncedSave(get);
+    invoke("rebuild_menu", { customShortcuts: {} }).catch(() => {});
   },
 }));
 

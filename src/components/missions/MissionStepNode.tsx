@@ -7,7 +7,7 @@ import AgentPicker from "./AgentPicker";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useUIStore } from "../../stores/uiStore";
 import { useMissionStore } from "../../stores/missionStore";
-import { invoke } from "../../lib/ipc";
+import { send } from "../../lib/ipc";
 import { getSessionIds } from "../../lib/layout/layoutUtils";
 
 const STATUS_CONFIG: Record<MissionStepStatus, {
@@ -87,7 +87,7 @@ export default function MissionStepNode({ step, projectPath, onAddChild, onEdit,
   const sendToAgent = useCallback(
     (sessionId: string, workspaceId: string) => {
       const prompt = step.prompt || step.title;
-      invoke("write_pty", { id: sessionId, data: prompt + "\n" }).catch(() => {});
+      send("write_pty", { id: sessionId, data: prompt + "\n" });
       const ui = useUIStore.getState();
       const ts = useTerminalStore.getState();
       if (ui.activeWorkspaceId !== workspaceId) ui.setActiveWorkspaceId(workspaceId);

@@ -10,7 +10,6 @@ import { UsagePanel } from "./UsagePanel";
 import { useSettingsStore } from "../../stores/settingsStore";
 import SettingsPanel from "../settings/SettingsPanel";
 import { useConfirmStore } from "../../stores/confirmStore";
-import { useWidgetStore } from "../../stores/widgetStore";
 import { isMac } from "../../lib/platform";
 
 export default function StatsBar() {
@@ -30,9 +29,8 @@ export default function StatsBar() {
   const reorderWorkspaces = useUIStore((s) => s.reorderWorkspaces);
   const setWorkspaceEmoji = useUIStore((s) => s.setWorkspaceEmoji);
 
-  const toggleWidgetMode = useUIStore((s) => s.toggleWidgetMode);
-  const showWidgetCatalog = useUIStore((s) => s.showWidgetCatalog);
-  const setShowWidgetCatalog = useUIStore((s) => s.setShowWidgetCatalog);
+  const showCustomizePanel = useUIStore((s) => s.showCustomizePanel);
+  const setShowCustomizePanel = useUIStore((s) => s.setShowCustomizePanel);
 
   const browserTabs = useBrowserStore((s) => s.tabs);
   const createLandingTab = useBrowserStore((s) => s.createLandingTab);
@@ -41,7 +39,6 @@ export default function StatsBar() {
   const hasEditorTabs = editorTabs.length > 0;
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
-  const isWidgetMode = activeWorkspace?.useWidgetMode ?? false;
 
   const showSettingsPanel = useSettingsStore((s) => s.showSettingsPanel);
   const setShowSettingsPanel = useSettingsStore((s) => s.setShowSettingsPanel);
@@ -449,19 +446,17 @@ export default function StatsBar() {
           />
         )}
 
-        {/* Workspace tabs — scrollable container */}
+        {/* Workspace tabs — compressed container */}
         <div
-          className="flex items-center ws-scroll-container"
+          className="flex items-center"
           style={{
-            gap: 3,
-            overflowX: "auto",
-            scrollbarWidth: "none",
+            gap: 4,
+            overflow: "hidden",
             flex: 1,
             minWidth: 0,
+            flexWrap: "nowrap",
           }}
-          onWheel={(e) => { e.currentTarget.scrollLeft += e.deltaY; }}
         >
-          <style>{`.ws-scroll-container::-webkit-scrollbar { display: none; }`}</style>
         {workspaces.map((ws) => {
           const isActive = isTerminalView && activeWorkspaceId === ws.id;
           const isEditing = editingId === ws.id;
@@ -469,7 +464,7 @@ export default function StatsBar() {
           const isDraggedOver = dragOverWsId === ws.id && draggedWsId !== ws.id;
 
           return (
-            <div key={ws.id} style={{ position: "relative", flexShrink: 0 }}>
+            <div key={ws.id} style={{ position: "relative", flexShrink: 1, minWidth: 60 }}>
             <button
               draggable={true}
               onDragStart={(e) => {
@@ -506,8 +501,10 @@ export default function StatsBar() {
                 cursor: "grab",
                 transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
                 userSelect: "none",
-                minWidth: 90,
+                minWidth: 0,
                 maxWidth: 200,
+                width: "100%",
+                overflow: "hidden",
                 opacity: draggedWsId === ws.id ? 0.4 : 1,
               }}
             >
@@ -576,6 +573,8 @@ export default function StatsBar() {
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
+                    flex: 1,
+                    minWidth: 0,
                   }}
                 >
                   {ws.name}
@@ -632,8 +631,8 @@ export default function StatsBar() {
                   top: "100%",
                   left: 0,
                   marginTop: 4,
-                  background: "var(--vp-bg-surface)",
-                  border: "1px solid var(--vp-border-light)",
+                  background: "var(--vp-bg-tertiary)",
+                  border: "1px solid var(--vp-border-medium)",
                   borderRadius: 8,
                   padding: 6,
                   display: "grid",
@@ -675,9 +674,8 @@ export default function StatsBar() {
             </div>
           );
         })}
-        </div>
 
-        {/* Add workspace button — outside scroll, always visible */}
+        {/* Add workspace button — inline after last tab */}
         <button
           onClick={handleAddWorkspace}
           className="flex items-center justify-center"
@@ -706,6 +704,7 @@ export default function StatsBar() {
         >
           <Plus size={14} />
         </button>
+        </div>
       </div>
 
       {/* Widget mode controls */}
@@ -714,7 +713,7 @@ export default function StatsBar() {
         <button
           onClick={() => setShowUsagePanel(!showUsagePanel)}
           className="flex items-center justify-center"
-          title="AI Usage Monitor"
+          title="AI Usage Monitor (⌘U)"
           style={{
             width: 32,
             height: 32,
@@ -746,7 +745,7 @@ export default function StatsBar() {
         <button
           onClick={() => setShowSettingsPanel(!showSettingsPanel)}
           className="flex items-center justify-center"
-          title="Settings"
+          title="Settings (⌘,)"
           style={{
             width: 32,
             height: 32,
@@ -775,52 +774,43 @@ export default function StatsBar() {
         {/* Settings modal */}
         <SettingsPanel />
 
-        {/* Customize — enters widget mode (permanent) or toggles catalog; hidden on browser/tasks */}
+        {/* Customize — opens slide-up panel for widget configuration */}
         {activeWorkspaceId && viewMode !== "browser" && viewMode !== "missions" && (
           <button
             onClick={() => {
-              if (!isWidgetMode) {
-                // Auto-add terminal widget when entering widget mode from terminal/split view
-                if (viewMode === "terminal" || viewMode === "split") {
-                  useWidgetStore.getState().addWidget(activeWorkspaceId, "terminal");
-                }
-                toggleWidgetMode(activeWorkspaceId);
-                setShowWidgetCatalog(true);
+              if (showCustomizePanel) {
+                setShowCustomizePanel(false);
               } else {
-                setShowWidgetCatalog(!showWidgetCatalog);
+                setShowCustomizePanel(true);
               }
             }}
             className="flex items-center gap-1.5 px-3 py-1.5"
-            title={isWidgetMode
-              ? (showWidgetCatalog ? "Close widget panel" : "Open widget panel")
-              : "Switch to customizable widget layout"}
+            title={showCustomizePanel ? "Close customize panel" : "Customize widgets"}
             style={{
-              background: showWidgetCatalog && isWidgetMode
+              background: showCustomizePanel
                 ? "var(--vp-accent-blue-bg-hover)"
-                : isWidgetMode
-                  ? "var(--vp-accent-blue-bg)"
-                  : "transparent",
-              border: `1px solid ${isWidgetMode ? "var(--vp-accent-blue-border)" : "var(--vp-bg-surface-hover)"}`,
+                : "transparent",
+              border: `1px solid ${showCustomizePanel ? "var(--vp-accent-blue-border)" : "var(--vp-bg-surface-hover)"}`,
               borderRadius: 7,
               cursor: "pointer",
               transition: "all 0.2s",
             }}
             onMouseEnter={(e) => {
-              if (!isWidgetMode) {
+              if (!showCustomizePanel) {
                 e.currentTarget.style.background = "var(--vp-bg-surface-hover)";
                 e.currentTarget.style.borderColor = "var(--vp-border-medium)";
               }
             }}
             onMouseLeave={(e) => {
-              if (!isWidgetMode) {
+              if (!showCustomizePanel) {
                 e.currentTarget.style.background = "transparent";
                 e.currentTarget.style.borderColor = "var(--vp-bg-surface-hover)";
               }
             }}
           >
-            <LayoutGrid size={12} style={{ color: isWidgetMode ? "var(--vp-accent-blue)" : "var(--vp-text-faint)" }} />
-            <span style={{ fontSize: 11, color: isWidgetMode ? "var(--vp-accent-blue)" : "var(--vp-text-faint)", fontWeight: isWidgetMode ? 500 : 400 }}>
-              {isWidgetMode ? (showWidgetCatalog ? "Done" : "Customize") : "Customize"}
+            <LayoutGrid size={12} style={{ color: showCustomizePanel ? "var(--vp-accent-blue)" : "var(--vp-text-faint)" }} />
+            <span style={{ fontSize: 11, color: showCustomizePanel ? "var(--vp-accent-blue)" : "var(--vp-text-faint)", fontWeight: showCustomizePanel ? 500 : 400 }}>
+              {showCustomizePanel ? "Done" : "Customize"}
             </span>
           </button>
         )}

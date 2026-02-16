@@ -52,6 +52,10 @@ Praxis is a cross-platform desktop application that lets you orchestrate multipl
 ### Mission Planner
 - Create multi-step mission workflows
 - DAG-based flow chart visualization with multi-dependency support
+- Collapsible mission panel with expand/collapse all toggle
+- Dependency indicators showing step prerequisites in panel view
+- Hierarchical step tree with visual guide lines and chevron toggles
+- Progress badges and inline progress bars per mission
 - Assign steps to AI agents
 - Track progress and completion
 - GPT-powered mission generation from natural language

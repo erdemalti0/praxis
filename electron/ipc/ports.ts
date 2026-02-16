@@ -1,17 +1,25 @@
 import { ipcMain } from "electron";
-import { execSync } from "child_process";
+import { exec, execSync } from "child_process";
+import { promisify } from "util";
 import fs from "fs";
+
+const execAsync = promisify(exec);
 
 const isWin = process.platform === "win32";
 const isMac = process.platform === "darwin";
 
+// Cache system stats with TTL to avoid excessive subprocess calls
+let cachedStats: { cpuUsage: number; memUsed: number; memTotal: number; diskUsed: number; diskTotal: number } | null = null;
+let statsCacheTime = 0;
+const STATS_CACHE_TTL = 2000; // 2 seconds
+
 export function registerPortsHandlers() {
-  ipcMain.handle("scan_ports", () => {
+  ipcMain.handle("scan_ports", async () => {
     try {
       if (isWin) {
-        return scanPortsWindows();
+        return await scanPortsWindows();
       }
-      return scanPortsUnix();
+      return await scanPortsUnix();
     } catch {
       return [];
     }
@@ -47,22 +55,31 @@ export function registerPortsHandlers() {
     }
   });
 
-  ipcMain.handle("get_system_stats", () => {
+  ipcMain.handle("get_system_stats", async () => {
+    // Return cached stats if fresh enough
+    const now = Date.now();
+    if (cachedStats && now - statsCacheTime < STATS_CACHE_TTL) {
+      return cachedStats;
+    }
     try {
-      if (isWin) return getSystemStatsWindows();
-      if (isMac) return getSystemStatsMac();
-      return getSystemStatsLinux();
+      let result;
+      if (isWin) result = await getSystemStatsWindows();
+      else if (isMac) result = await getSystemStatsMac();
+      else result = await getSystemStatsLinux();
+      cachedStats = result;
+      statsCacheTime = now;
+      return result;
     } catch {
       return { cpuUsage: 0, memUsed: 0, memTotal: 0, diskUsed: 0, diskTotal: 0 };
     }
   });
 }
 
-/* ── Port scanning ── */
+/* ── Port scanning (async) ── */
 
-function scanPortsUnix(): { port: number; pid: number; process: string; protocol: string }[] {
-  const output = execSync("lsof -i -P -n -sTCP:LISTEN 2>/dev/null | tail -n +2", { encoding: "utf-8", timeout: 5000 });
-  const lines = output.trim().split("\n").filter(Boolean);
+async function scanPortsUnix(): Promise<{ port: number; pid: number; process: string; protocol: string }[]> {
+  const { stdout } = await execAsync("lsof -i -P -n -sTCP:LISTEN 2>/dev/null | tail -n +2", { encoding: "utf-8", timeout: 5000 });
+  const lines = stdout.trim().split("\n").filter(Boolean);
   const ports: { port: number; pid: number; process: string; protocol: string }[] = [];
 
   for (const line of lines) {
@@ -81,9 +98,9 @@ function scanPortsUnix(): { port: number; pid: number; process: string; protocol
   return ports.filter((p) => { if (seen.has(p.port)) return false; seen.add(p.port); return true; });
 }
 
-function scanPortsWindows(): { port: number; pid: number; process: string; protocol: string }[] {
-  const output = execSync("netstat -ano | findstr LISTENING", { encoding: "utf-8", timeout: 5000 });
-  const lines = output.trim().split("\n").filter(Boolean);
+async function scanPortsWindows(): Promise<{ port: number; pid: number; process: string; protocol: string }[]> {
+  const { stdout } = await execAsync("netstat -ano | findstr LISTENING", { encoding: "utf-8", timeout: 5000 });
+  const lines = stdout.trim().split("\n").filter(Boolean);
   const ports: { port: number; pid: number; process: string; protocol: string }[] = [];
 
   for (const line of lines) {
@@ -101,14 +118,20 @@ function scanPortsWindows(): { port: number; pid: number; process: string; proto
   return ports.filter((p) => { if (seen.has(p.port)) return false; seen.add(p.port); return true; });
 }
 
-/* ── System stats ── */
+/* ── System stats (async) ── */
 
-function getSystemStatsMac() {
-  const cpuOutput = execSync("top -l 1 -n 0 | grep 'CPU usage'", { encoding: "utf-8", timeout: 5000 });
-  const cpuMatch = cpuOutput.match(/([\d.]+)% user/);
+async function getSystemStatsMac() {
+  // Run all commands in parallel
+  const [cpuResult, vmResult, dfResult] = await Promise.all([
+    execAsync("top -l 1 -n 0 | grep 'CPU usage'", { encoding: "utf-8", timeout: 5000 }),
+    execAsync("vm_stat", { encoding: "utf-8", timeout: 5000 }),
+    execAsync("df -k / | tail -1", { encoding: "utf-8", timeout: 5000 }),
+  ]);
+
+  const cpuMatch = cpuResult.stdout.match(/([\d.]+)% user/);
   const cpuUsage = cpuMatch ? parseFloat(cpuMatch[1]) : 0;
 
-  const vmOutput = execSync("vm_stat", { encoding: "utf-8", timeout: 5000 });
+  const vmOutput = vmResult.stdout;
   const pageSize = 16384;
   const freeMatch = vmOutput.match(/Pages free:\s+(\d+)/);
   const activeMatch = vmOutput.match(/Pages active:\s+(\d+)/);
@@ -121,8 +144,7 @@ function getSystemStatsMac() {
   const memTotal = free + active + inactive + wired;
   const memUsed = active + wired;
 
-  const dfOutput = execSync("df -k / | tail -1", { encoding: "utf-8", timeout: 5000 });
-  const dfParts = dfOutput.trim().split(/\s+/);
+  const dfParts = dfResult.stdout.trim().split(/\s+/);
   const diskTotal = parseInt(dfParts[1] || "0") * 1024;
   const diskUsed = parseInt(dfParts[2] || "0") * 1024;
 
@@ -135,40 +157,38 @@ function getSystemStatsMac() {
   };
 }
 
-function getSystemStatsLinux() {
-  // CPU from /proc/stat (instantaneous idle percentage)
-  let cpuUsage = 0;
-  try {
-    const stat = fs.readFileSync("/proc/stat", "utf-8");
-    const cpuLine = stat.split("\n").find((l) => l.startsWith("cpu "));
-    if (cpuLine) {
-      const vals = cpuLine.split(/\s+/).slice(1).map(Number);
-      const idle = vals[3] || 0;
-      const total = vals.reduce((a, b) => a + b, 0);
-      cpuUsage = total > 0 ? ((total - idle) / total) * 100 : 0;
-    }
-  } catch {}
+async function getSystemStatsLinux() {
+  // Read /proc files async and df in parallel
+  const [statContent, meminfoContent, dfResult] = await Promise.all([
+    fs.promises.readFile("/proc/stat", "utf-8").catch(() => ""),
+    fs.promises.readFile("/proc/meminfo", "utf-8").catch(() => ""),
+    execAsync("df -k / | tail -1", { encoding: "utf-8", timeout: 5000 }).catch(() => ({ stdout: "" })),
+  ]);
 
-  // Memory from /proc/meminfo
+  // CPU
+  let cpuUsage = 0;
+  const cpuLine = statContent.split("\n").find((l) => l.startsWith("cpu "));
+  if (cpuLine) {
+    const vals = cpuLine.split(/\s+/).slice(1).map(Number);
+    const idle = vals[3] || 0;
+    const total = vals.reduce((a, b) => a + b, 0);
+    cpuUsage = total > 0 ? ((total - idle) / total) * 100 : 0;
+  }
+
+  // Memory
   let memTotal = 0, memUsed = 0;
-  try {
-    const meminfo = fs.readFileSync("/proc/meminfo", "utf-8");
-    const totalMatch = meminfo.match(/MemTotal:\s+(\d+)/);
-    const availMatch = meminfo.match(/MemAvailable:\s+(\d+)/);
-    const totalKB = parseInt(totalMatch?.[1] || "0");
-    const availKB = parseInt(availMatch?.[1] || "0");
-    memTotal = totalKB * 1024;
-    memUsed = (totalKB - availKB) * 1024;
-  } catch {}
+  const totalMatch = meminfoContent.match(/MemTotal:\s+(\d+)/);
+  const availMatch = meminfoContent.match(/MemAvailable:\s+(\d+)/);
+  const totalKB = parseInt(totalMatch?.[1] || "0");
+  const availKB = parseInt(availMatch?.[1] || "0");
+  memTotal = totalKB * 1024;
+  memUsed = (totalKB - availKB) * 1024;
 
   // Disk
   let diskTotal = 0, diskUsed = 0;
-  try {
-    const dfOutput = execSync("df -k / | tail -1", { encoding: "utf-8", timeout: 5000 });
-    const dfParts = dfOutput.trim().split(/\s+/);
-    diskTotal = parseInt(dfParts[1] || "0") * 1024;
-    diskUsed = parseInt(dfParts[2] || "0") * 1024;
-  } catch {}
+  const dfParts = dfResult.stdout.trim().split(/\s+/);
+  diskTotal = parseInt(dfParts[1] || "0") * 1024;
+  diskUsed = parseInt(dfParts[2] || "0") * 1024;
 
   return {
     cpuUsage,
@@ -179,41 +199,34 @@ function getSystemStatsLinux() {
   };
 }
 
-function getSystemStatsWindows() {
-  let cpuUsage = 0;
-  try {
-    const cpuOutput = execSync("wmic cpu get loadpercentage /value", { encoding: "utf-8", timeout: 5000 });
-    const match = cpuOutput.match(/LoadPercentage=(\d+)/);
-    cpuUsage = match ? parseInt(match[1]) : 0;
-  } catch {}
+async function getSystemStatsWindows() {
+  // Run wmic commands in parallel
+  const [cpuResult, memResult, diskResult] = await Promise.all([
+    execAsync("wmic cpu get loadpercentage /value", { encoding: "utf-8", timeout: 5000 }).catch(() => ({ stdout: "" })),
+    execAsync("wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /value", { encoding: "utf-8", timeout: 5000 }).catch(() => ({ stdout: "" })),
+    execAsync("wmic logicaldisk where \"DeviceID='C:'\" get Size,FreeSpace /value", { encoding: "utf-8", timeout: 5000 }).catch(() => ({ stdout: "" })),
+  ]);
 
-  let memTotal = 0, memUsed = 0;
-  try {
-    const memOutput = execSync("wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /value", { encoding: "utf-8", timeout: 5000 });
-    const freeMatch = memOutput.match(/FreePhysicalMemory=(\d+)/);
-    const totalMatch = memOutput.match(/TotalVisibleMemorySize=(\d+)/);
-    const freeKB = parseInt(freeMatch?.[1] || "0");
-    const totalKB = parseInt(totalMatch?.[1] || "0");
-    memTotal = totalKB * 1024;
-    memUsed = (totalKB - freeKB) * 1024;
-  } catch {}
+  const cpuMatch = cpuResult.stdout.match(/LoadPercentage=(\d+)/);
+  const cpuUsage = cpuMatch ? parseInt(cpuMatch[1]) : 0;
 
-  let diskTotal = 0, diskUsed = 0;
-  try {
-    const diskOutput = execSync("wmic logicaldisk where \"DeviceID='C:'\" get Size,FreeSpace /value", { encoding: "utf-8", timeout: 5000 });
-    const freeMatch = diskOutput.match(/FreeSpace=(\d+)/);
-    const sizeMatch = diskOutput.match(/Size=(\d+)/);
-    const free = parseInt(freeMatch?.[1] || "0");
-    const total = parseInt(sizeMatch?.[1] || "0");
-    diskTotal = total;
-    diskUsed = total - free;
-  } catch {}
+  const freeMemMatch = memResult.stdout.match(/FreePhysicalMemory=(\d+)/);
+  const totalMemMatch = memResult.stdout.match(/TotalVisibleMemorySize=(\d+)/);
+  const freeKB = parseInt(freeMemMatch?.[1] || "0");
+  const totalKB = parseInt(totalMemMatch?.[1] || "0");
+  const memTotal = totalKB * 1024;
+  const memUsed = (totalKB - freeKB) * 1024;
+
+  const freeDiskMatch = diskResult.stdout.match(/FreeSpace=(\d+)/);
+  const sizeDiskMatch = diskResult.stdout.match(/Size=(\d+)/);
+  const freeDisk = parseInt(freeDiskMatch?.[1] || "0");
+  const totalDisk = parseInt(sizeDiskMatch?.[1] || "0");
 
   return {
     cpuUsage,
     memUsed: memUsed / (1024 ** 3),
     memTotal: memTotal / (1024 ** 3),
-    diskUsed: diskUsed / (1024 ** 3),
-    diskTotal: diskTotal / (1024 ** 3),
+    diskUsed: (totalDisk - freeDisk) / (1024 ** 3),
+    diskTotal: totalDisk / (1024 ** 3),
   };
 }

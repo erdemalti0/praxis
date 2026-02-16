@@ -2,9 +2,9 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Columns2, Rows2, Plus, Hand } from "lucide-react";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useUIStore } from "../../stores/uiStore";
-import { invoke, listen } from "../../lib/ipc";
+import { invoke, send } from "../../lib/ipc";
 import { getOrCreateTerminal, activateWebGL } from "../../lib/terminal/terminalCache";
-import { getDefaultShell } from "../../lib/platform";
+import { setupPtyConnection } from "../../lib/terminal/ptyConnection";
 import { swapPanes } from "../../lib/layout/layoutUtils";
 import "@xterm/xterm/css/xterm.css";
 
@@ -31,7 +31,8 @@ async function saveImageToTemp(file: File): Promise<string> {
 
 /** Write text to PTY using bracket paste mode */
 function pasteToTerminal(sessionId: string, text: string) {
-  invoke("write_pty", { id: sessionId, data: BRACKET_PASTE_START + text + BRACKET_PASTE_END }).catch(() => {});
+  const data = BRACKET_PASTE_START + text + BRACKET_PASTE_END;
+  try { send("write_pty", { id: sessionId, data }); } catch { invoke("write_pty", { id: sessionId, data }).catch(() => {}); }
 }
 
 interface TerminalPaneProps {
@@ -196,102 +197,33 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
     if (!terminal.element) {
       terminal.open(container);
     } else if (!container.contains(terminal.element)) {
-      container.innerHTML = "";
+      // Clear any stale children safely before re-attaching
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
       container.appendChild(terminal.element);
     }
 
-    // Fit terminal + activate WebGL after mount
+    // Fit terminal + activate WebGL after mount.
+    // Multiple fit attempts to handle layout not being settled yet (black screen fix).
+    const fitWithRetry = () => {
+      // Skip if container has no dimensions yet (layout not settled)
+      if (container.offsetWidth === 0 || container.offsetHeight === 0) return;
+      try { fitAddon.fit(); } catch {}
+    };
     requestAnimationFrame(() => {
-      try {
-        fitAddon.fit();
-      } catch {}
+      fitWithRetry();
       activateWebGL(sessionId);
     });
+    // Retry fits to handle cases where container dimensions aren't ready yet
+    const retryTimers = [
+      setTimeout(fitWithRetry, 50),
+      setTimeout(fitWithRetry, 150),
+      setTimeout(fitWithRetry, 400),
+    ];
 
-    // Set up PTY connection if not already connected
-    const ptyKey = `__pty_${sessionId}`;
-    if (!(terminal as any)[ptyKey]) {
-      (terminal as any)[ptyKey] = true;
-
-      // Single PTY output listener: write to xterm + track activity
-      let lastMark = 0;
-      let pendingBytes = 0;
-      let flushTimer: ReturnType<typeof setTimeout> | null = null;
-      const flushOutput = () => {
-        if (pendingBytes > 0) {
-          useTerminalStore.getState().markOutput(sessionId!, pendingBytes);
-          pendingBytes = 0;
-          lastMark = Date.now();
-        }
-      };
-      const unsubOutput = listen(`pty-output-${sessionId}`, (data: string) => {
-        terminal.write(data);
-        pendingBytes += (typeof data === "string" ? data.length : 0);
-        const now = Date.now();
-        if (now - lastMark > 200) {
-          flushOutput();
-        } else {
-          // Schedule trailing flush to capture the last batch
-          if (flushTimer) clearTimeout(flushTimer);
-          flushTimer = setTimeout(flushOutput, 250);
-        }
-      });
-
-      const unsubExit = listen(`pty-exit-${sessionId}`, (info?: { exitCode: number; signal?: number }) => {
-        const store = useTerminalStore.getState();
-        const session = store.sessions.find((s) => s.id === sessionId);
-        const isShell = session?.agentType === "shell";
-
-        if (!isShell) {
-          const shellCwd = session?.projectPath || "~";
-          terminal.write("\r\n\x1b[90m[Process exited — starting shell...]\x1b[0m\r\n\r\n");
-          getDefaultShell().then((defaultShell) => invoke<{ id: string; cwd: string }>("spawn_pty", {
-            id: sessionId,
-            cmd: defaultShell,
-            args: [],
-            cwd: shellCwd,
-          })).then((res) => {
-            const actualCwd = res?.cwd || shellCwd;
-            store.updateSession(sessionId!, {
-              agentType: "shell",
-              title: `Shell@${actualCwd.split("/").pop() || actualCwd}`,
-              projectPath: actualCwd,
-            });
-          }).catch(() => {
-            terminal.write("\x1b[91m[Failed to start shell]\x1b[0m\r\n");
-          });
-        } else {
-          const code = info?.exitCode ?? -1;
-          const sig = info?.signal;
-          const details = sig ? `signal=${sig}` : `code=${code}`;
-          terminal.write(`\r\n\x1b[90m[Shell exited: ${details}]\x1b[0m\r\n`);
-        }
-      });
-
-      const dataDisposable = terminal.onData((data) => {
-        invoke("write_pty", { id: sessionId, data }).catch(() => {});
-        useTerminalStore.getState().markUserInput(sessionId!);
-      });
-
-      const resizeDisposable = terminal.onResize(({ cols, rows }) => {
-        invoke("resize_pty", { id: sessionId, cols, rows }).catch(() => {});
-      });
-
-      invoke("resize_pty", {
-        id: sessionId,
-        cols: terminal.cols,
-        rows: terminal.rows
-      }).catch(() => {});
-
-      (terminal as any)[`${ptyKey}_cleanup`] = () => {
-        unsubOutput();
-        unsubExit();
-        dataDisposable.dispose();
-        resizeDisposable.dispose();
-        delete (terminal as any)[ptyKey];
-        delete (terminal as any)[`${ptyKey}_cleanup`];
-      };
-    }
+    // Set up PTY ↔ xterm connection with flow control (shared helper)
+    setupPtyConnection({ sessionId, terminal });
 
     // Handle image paste on xterm's internal textarea
     const xtermTextarea = terminal.element?.querySelector("textarea");
@@ -327,15 +259,25 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
       if (resizeTimer) clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
         try { fitAddon.fit(); } catch {}
-      }, 50);
+      }, 150);
     });
     resizeObserverRef.current.observe(container);
 
     return () => {
+      retryTimers.forEach(clearTimeout);
       resizeObserverRef.current?.disconnect();
       if (resizeTimer) clearTimeout(resizeTimer);
       if (xtermTextarea) {
         xtermTextarea.removeEventListener("paste", pasteHandler as EventListener);
+      }
+      // Detach xterm element from container so it doesn't leak into other workspaces.
+      // Use try/catch to guard against React already having removed the DOM node.
+      try {
+        if (terminal.element && container.contains(terminal.element)) {
+          container.removeChild(terminal.element);
+        }
+      } catch {
+        // Node already removed by React — safe to ignore
       }
     };
   }, [sessionId]);

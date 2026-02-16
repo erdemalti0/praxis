@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Plus, Trash2, Map, Download, Upload } from "lucide-react";
 import type { Mission } from "../../types/mission";
 import { useMissionStore } from "../../stores/missionStore";
@@ -13,7 +14,9 @@ interface MissionListProps {
 }
 
 export default function MissionList({ missions, activeMissionId, projectPath }: MissionListProps) {
-  const { setActiveMission, addMission, deleteMission } = useMissionStore();
+  const setActiveMission = useMissionStore((s) => s.setActiveMission);
+  const addMission = useMissionStore((s) => s.addMission);
+  const deleteMission = useMissionStore((s) => s.deleteMission);
   const [showCreate, setShowCreate] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [showExportImport, setShowExportImport] = useState(false);
@@ -107,119 +110,15 @@ export default function MissionList({ missions, activeMissionId, projectPath }: 
       </div>
 
       {/* Mission list */}
-      <div className="flex-1 overflow-y-auto" style={{ padding: "6px 0" }}>
-        {missions.length === 0 && (
-          <div className="flex flex-col items-center justify-center" style={{
-            padding: "32px 12px", textAlign: "center", color: "var(--vp-text-subtle)", gap: 8,
-          }}>
-            <Map size={20} style={{ color: "var(--vp-text-subtle)" }} />
-            <span style={{ fontSize: 11, color: "var(--vp-text-subtle)" }}>No missions yet</span>
-            <span style={{ fontSize: 10, color: "var(--vp-text-subtle)" }}>Create one to get started</span>
-          </div>
-        )}
-        {missions.map((mission) => {
-          const isActive = mission.id === activeMissionId;
-          const isHovered = mission.id === hoveredId;
-          const progress = getProgress(mission);
-          return (
-            <div
-              key={mission.id}
-              onClick={() => setActiveMission(mission.id)}
-              onMouseEnter={() => setHoveredId(mission.id)}
-              onMouseLeave={() => setHoveredId(null)}
-              style={{
-                padding: "10px 12px",
-                margin: "2px 6px",
-                borderRadius: 10,
-                background: isActive
-                  ? "var(--vp-accent-blue-bg)"
-                  : isHovered
-                    ? "var(--vp-bg-surface)"
-                    : "transparent",
-                border: isActive
-                  ? "1px solid var(--vp-accent-blue-border)"
-                  : "1px solid transparent",
-                cursor: "pointer",
-                transition: "all 0.15s",
-                position: "relative",
-              }}
-            >
-              <div className="flex items-center gap-2" style={{ minWidth: 0 }}>
-                <Map size={13} style={{
-                  color: isActive ? "var(--vp-accent-blue)" : "var(--vp-text-subtle)",
-                  flexShrink: 0,
-                  transition: "color 0.15s",
-                }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontSize: 11, fontWeight: 600,
-                    color: isActive ? "var(--vp-text-primary)" : "var(--vp-text-muted)",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>
-                    {mission.title}
-                  </div>
-                  {mission.description && (
-                    <div style={{
-                      fontSize: 9, color: "var(--vp-text-subtle)", marginTop: 2,
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}>
-                      {mission.description}
-                    </div>
-                  )}
-                </div>
-
-                {/* Delete — shown on hover */}
-                {isHovered && (
-                  <button
-                    onClick={(e) => handleDelete(e, mission.id)}
-                    title="Delete mission"
-                    style={{
-                      width: 20, height: 20, borderRadius: 5,
-                      background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)",
-                      color: "var(--vp-accent-red)", cursor: "pointer",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Trash2 size={10} />
-                  </button>
-                )}
-              </div>
-
-              {/* Progress bar */}
-              {progress && (
-                <div style={{ marginTop: 8 }}>
-                  <div className="flex items-center justify-between" style={{ marginBottom: 3 }}>
-                    <span style={{ fontSize: 9, color: "var(--vp-text-faint)" }}>
-                      {progress.done}/{progress.total} steps
-                    </span>
-                    <span style={{
-                      fontSize: 9, fontWeight: 600,
-                      color: progress.pct === 100 ? "var(--vp-accent-green)" : "var(--vp-text-faint)",
-                    }}>
-                      {progress.pct}%
-                    </span>
-                  </div>
-                  <div style={{
-                    width: "100%", height: 3, borderRadius: 2,
-                    background: "var(--vp-bg-surface)",
-                    overflow: "hidden",
-                  }}>
-                    <div style={{
-                      width: `${progress.pct}%`,
-                      height: "100%", borderRadius: 2,
-                      background: progress.pct === 100
-                        ? "linear-gradient(90deg, var(--vp-accent-green), #22c55e)"
-                        : "linear-gradient(90deg, var(--vp-accent-blue), #3b82f6)",
-                      transition: "width 0.3s ease",
-                    }} />
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      <MissionVirtualList
+        missions={missions}
+        activeMissionId={activeMissionId}
+        hoveredId={hoveredId}
+        setHoveredId={setHoveredId}
+        setActiveMission={setActiveMission}
+        handleDelete={handleDelete}
+        getProgress={getProgress}
+      />
 
       <MissionCreateDialog
         open={showCreate}
@@ -234,6 +133,166 @@ export default function MissionList({ missions, activeMissionId, projectPath }: 
         projectPath={projectPath}
         initialTab={exportImportTab}
       />
+    </div>
+  );
+}
+
+/* ── Virtualized mission list ── */
+const MISSION_ROW_HEIGHT = 58; // estimated px per mission row
+
+function MissionVirtualList({
+  missions,
+  activeMissionId,
+  hoveredId,
+  setHoveredId,
+  setActiveMission,
+  handleDelete,
+  getProgress,
+}: {
+  missions: Mission[];
+  activeMissionId: string | null;
+  hoveredId: string | null;
+  setHoveredId: (id: string | null) => void;
+  setActiveMission: (id: string) => void;
+  handleDelete: (e: React.MouseEvent, id: string) => void;
+  getProgress: (m: Mission) => { done: number; total: number; pct: number } | null;
+}) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: missions.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => MISSION_ROW_HEIGHT,
+    overscan: 5,
+  });
+
+  if (missions.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center" style={{
+        padding: "32px 12px", textAlign: "center", color: "var(--vp-text-subtle)", gap: 8,
+      }}>
+        <Map size={20} style={{ color: "var(--vp-text-subtle)" }} />
+        <span style={{ fontSize: 11, color: "var(--vp-text-subtle)" }}>No missions yet</span>
+        <span style={{ fontSize: 10, color: "var(--vp-text-subtle)" }}>Create one to get started</span>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={parentRef} className="flex-1 overflow-y-auto" style={{ padding: "6px 0" }}>
+      <div style={{ height: virtualizer.getTotalSize(), width: "100%", position: "relative" }}>
+        {virtualizer.getVirtualItems().map((virtualRow) => {
+          const mission = missions[virtualRow.index];
+          const isActive = mission.id === activeMissionId;
+          const isHovered = mission.id === hoveredId;
+          const progress = getProgress(mission);
+          return (
+            <div
+              key={mission.id}
+              ref={virtualizer.measureElement}
+              data-index={virtualRow.index}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+            >
+              <div
+                onClick={() => setActiveMission(mission.id)}
+                onMouseEnter={() => setHoveredId(mission.id)}
+                onMouseLeave={() => setHoveredId(null)}
+                style={{
+                  padding: "10px 12px",
+                  margin: "2px 6px",
+                  borderRadius: 10,
+                  background: isActive
+                    ? "var(--vp-accent-blue-bg)"
+                    : isHovered
+                      ? "var(--vp-bg-surface)"
+                      : "transparent",
+                  border: isActive
+                    ? "1px solid var(--vp-accent-blue-border)"
+                    : "1px solid transparent",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                  position: "relative",
+                }}
+              >
+                <div className="flex items-center gap-2" style={{ minWidth: 0 }}>
+                  <Map size={13} style={{
+                    color: isActive ? "var(--vp-accent-blue)" : "var(--vp-text-subtle)",
+                    flexShrink: 0,
+                    transition: "color 0.15s",
+                  }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: 11, fontWeight: 600,
+                      color: isActive ? "var(--vp-text-primary)" : "var(--vp-text-muted)",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      {mission.title}
+                    </div>
+                    {mission.description && (
+                      <div style={{
+                        fontSize: 9, color: "var(--vp-text-subtle)", marginTop: 2,
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }}>
+                        {mission.description}
+                      </div>
+                    )}
+                  </div>
+                  {isHovered && (
+                    <button
+                      onClick={(e) => handleDelete(e, mission.id)}
+                      title="Delete mission"
+                      style={{
+                        width: 20, height: 20, borderRadius: 5,
+                        background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)",
+                        color: "var(--vp-accent-red)", cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Trash2 size={10} />
+                    </button>
+                  )}
+                </div>
+                {progress && (
+                  <div style={{ marginTop: 8 }}>
+                    <div className="flex items-center justify-between" style={{ marginBottom: 3 }}>
+                      <span style={{ fontSize: 9, color: "var(--vp-text-faint)" }}>
+                        {progress.done}/{progress.total} steps
+                      </span>
+                      <span style={{
+                        fontSize: 9, fontWeight: 600,
+                        color: progress.pct === 100 ? "var(--vp-accent-green)" : "var(--vp-text-faint)",
+                      }}>
+                        {progress.pct}%
+                      </span>
+                    </div>
+                    <div style={{
+                      width: "100%", height: 3, borderRadius: 2,
+                      background: "var(--vp-bg-surface)",
+                      overflow: "hidden",
+                    }}>
+                      <div style={{
+                        width: `${progress.pct}%`,
+                        height: "100%", borderRadius: 2,
+                        background: progress.pct === 100
+                          ? "linear-gradient(90deg, var(--vp-accent-green), #22c55e)"
+                          : "linear-gradient(90deg, var(--vp-accent-blue), #3b82f6)",
+                        transition: "width 0.3s ease",
+                      }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

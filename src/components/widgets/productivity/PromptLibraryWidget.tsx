@@ -101,11 +101,23 @@ export default function PromptLibraryWidget({
     });
   }, [prompts, activeCategory, filter, favorites]);
 
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
   const handleCopy = async (prompt: Prompt) => {
     try {
       await navigator.clipboard.writeText(prompt.content);
       setCopiedId(prompt.id);
-      setTimeout(() => setCopiedId(null), 1500);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => {
+        copyTimerRef.current = null;
+        setCopiedId(null);
+      }, 1500);
       setPrompts((prev) =>
         prev.map((p) => (p.id === prompt.id ? { ...p, usageCount: p.usageCount + 1 } : p))
       );

@@ -18,7 +18,12 @@ const MAX_ZOOM = 2.5;
 const PORT_RADIUS = 6;
 
 export default function MissionFlowChart({ mission, projectPath }: MissionFlowChartProps) {
-  const { addStep, updateStep, deleteStep, cycleStepStatus, connectSteps, disconnectSteps } = useMissionStore();
+  const addStep = useMissionStore((s) => s.addStep);
+  const updateStep = useMissionStore((s) => s.updateStep);
+  const deleteStep = useMissionStore((s) => s.deleteStep);
+  const cycleStepStatus = useMissionStore((s) => s.cycleStepStatus);
+  const connectSteps = useMissionStore((s) => s.connectSteps);
+  const disconnectSteps = useMissionStore((s) => s.disconnectSteps);
   const [view, setView] = useState({ panX: PADDING, panY: PADDING, zoom: 1 });
   const pan = { x: view.panX, y: view.panY };
   const zoom = view.zoom;

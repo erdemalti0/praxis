@@ -5,7 +5,10 @@ import { useUIStore } from "../../stores/uiStore";
 import { useBrowserStore } from "../../stores/browserStore";
 
 export default function ServicesPanel() {
-  const { services, loading, refresh, stopService } = useServicesStore();
+  const services = useServicesStore((s) => s.services);
+  const loading = useServicesStore((s) => s.loading);
+  const refresh = useServicesStore((s) => s.refresh);
+  const stopService = useServicesStore((s) => s.stopService);
 
   useEffect(() => {
     refresh();
@@ -36,18 +39,35 @@ export default function ServicesPanel() {
         <span style={{ fontSize: 10, fontWeight: 600, color: "var(--vp-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
           Running Services
         </span>
-        <button
-          onClick={refresh}
-          title="Refresh"
-          style={{
-            width: 20, height: 20, borderRadius: 4,
-            background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-subtle)",
-            color: "var(--vp-text-muted)", cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}
-        >
-          <RefreshCw size={10} className={loading ? "animate-spin" : ""} />
-        </button>
+        <div className="flex items-center gap-1">
+          {services.length > 0 && (
+            <button
+              onClick={() => services.forEach((svc) => openInBrowser(svc.port))}
+              title="Open all in browser"
+              style={{
+                height: 20, borderRadius: 4, padding: "0 6px",
+                background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-subtle)",
+                color: "var(--vp-text-muted)", cursor: "pointer", fontSize: 9,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 3,
+              }}
+            >
+              <Globe size={9} />
+              All
+            </button>
+          )}
+          <button
+            onClick={refresh}
+            title="Refresh"
+            style={{
+              width: 20, height: 20, borderRadius: 4,
+              background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-subtle)",
+              color: "var(--vp-text-muted)", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <RefreshCw size={10} className={loading ? "animate-spin" : ""} />
+          </button>
+        </div>
       </div>
 
       {/* Service list */}

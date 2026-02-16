@@ -84,21 +84,20 @@ export default function WidgetCatalog({ workspaceId, onClose }: WidgetCatalogPro
   const handleSaveTemplate = () => {
     if (!templateName.trim()) return;
 
-    const ui = useUIStore.getState();
-    const ws = ui.workspaces.find((w) => w.id === workspaceId);
-    const isWidgetMode = ws?.useWidgetMode ?? false;
+    const widgetState = useWidgetStore.getState();
+    const currentWidgets = widgetState.workspaceWidgets[workspaceId] || [];
+    const hasWidgetsNow = currentWidgets.length > 0;
 
     const template: import("../../stores/settingsStore").WorkspaceTemplate = {
       id: `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       name: templateName.trim(),
       createdAt: Date.now(),
-      mode: isWidgetMode ? "widget" : "terminal",
+      mode: hasWidgetsNow ? "widget" : "terminal",
       widgets: [],
     };
 
-    if (isWidgetMode) {
-      const widgetState = useWidgetStore.getState();
-      const widgets = widgetState.workspaceWidgets[workspaceId] || [];
+    if (hasWidgetsNow) {
+      const widgets = currentWidgets;
       const layout = widgetState.workspaceLayouts[workspaceId] || [];
       template.widgets = widgets.map((w) => {
         const li = layout.find((l) => l.i === w.id);
@@ -110,6 +109,7 @@ export default function WidgetCatalog({ workspaceId, onClose }: WidgetCatalogPro
         };
       });
     } else {
+      const ui = useUIStore.getState();
       const activeGroup = ui.activeTerminalGroup[workspaceId];
       if (activeGroup && ui.workspaceLayouts[activeGroup]) {
         template.terminalLayout = ui.workspaceLayouts[activeGroup];

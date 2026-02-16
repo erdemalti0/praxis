@@ -155,16 +155,17 @@ export default function DiffViewerWidget({
   }, [showLineNumbers, workspaceId, widgetId]);
 
   useEffect(() => {
+    let mounted = true;
     const fetchDiff = (showLoader = false) => {
       if (showLoader) setLoading(true);
       invoke<string>("git_diff", { staged })
-        .then(setDiff)
-        .catch(() => setDiff(""))
-        .finally(() => { if (showLoader) setLoading(false); });
+        .then((d) => { if (mounted) setDiff(d); })
+        .catch(() => { if (mounted) setDiff(""); })
+        .finally(() => { if (mounted && showLoader) setLoading(false); });
     };
     fetchDiff(true);
     const interval = setInterval(() => fetchDiff(false), 1000);
-    return () => clearInterval(interval);
+    return () => { mounted = false; clearInterval(interval); };
   }, [staged]);
 
   const parsedDiffs = useMemo(() => parseDiff(diff), [diff]);

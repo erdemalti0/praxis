@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { createPortal } from "react-dom";
-import { Plus, X, Columns2, Rows2, Maximize2, Minimize2, Pencil, Copy } from "lucide-react";
+import { Plus, X, Columns2, Rows2, Maximize2, Minimize2, ArrowUpDown, Pencil, Copy } from "lucide-react";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useUIStore } from "../../stores/uiStore";
 import { closePane, getSessionIds } from "../../lib/layout/layoutUtils";
-import { cleanupTerminal } from "../../lib/terminal/terminalCache";
+import { cleanupTerminal, refitAllTerminals } from "../../lib/terminal/terminalCache";
 import { invoke } from "../../lib/ipc";
 import { useConfirmStore } from "../../stores/confirmStore";
+import { useWidgetStore } from "../../stores/widgetStore";
 
 export default memo(function TerminalTabs() {
   const allSessions = useTerminalStore((s) => s.sessions);
@@ -21,6 +22,14 @@ export default memo(function TerminalTabs() {
   const setSplitEnabled = useUIStore((s) => s.setSplitEnabled);
   const terminalMaximized = useUIStore((s) => s.terminalMaximized);
   const setTerminalMaximized = useUIStore((s) => s.setTerminalMaximized);
+  const swapPanes = useUIStore((s) => s.swapPanes);
+  const topPaneContent = useUIStore((s) => s.topPaneContent);
+  const workspaceWidgets = useWidgetStore((s) => s.workspaceWidgets);
+  const hasWidgets = activeWorkspaceId
+    ? (workspaceWidgets[activeWorkspaceId]?.length ?? 0) > 0
+    : false;
+  // Terminal is at the bottom when widgets are on top
+  const terminalIsBottom = hasWidgets && topPaneContent === "widgets";
   const focusedPaneSessionId = useUIStore((s) => s.focusedPaneSessionId);
   const setSplitSpawnContext = useUIStore((s) => s.setSplitSpawnContext);
   const workspaceLayouts = useUIStore((s) => s.workspaceLayouts);
@@ -269,29 +278,54 @@ export default memo(function TerminalTabs() {
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Maximize button */}
-      <button
-        onClick={() => setTerminalMaximized(!terminalMaximized)}
-        title={terminalMaximized ? "Exit full screen" : "Full screen"}
-        className="flex items-center justify-center"
-        style={{
-          color: "var(--vp-text-dim)",
-          width: 28,
-          height: 28,
-          borderRadius: 8,
-          transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = "var(--vp-text-primary)";
-          e.currentTarget.style.background = "var(--vp-bg-surface-hover)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = "var(--vp-text-dim)";
-          e.currentTarget.style.background = "transparent";
-        }}
-      >
-        {terminalMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-      </button>
+      {/* Swap button (when widgets exist) or Maximize button */}
+      {terminalIsBottom && !terminalMaximized ? (
+        <button
+          onClick={() => { swapPanes(); setTimeout(() => refitAllTerminals(), 50); }}
+          title="Swap terminal &amp; widgets"
+          className="flex items-center justify-center"
+          style={{
+            color: "var(--vp-text-dim)",
+            width: 28,
+            height: 28,
+            borderRadius: 8,
+            transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "var(--vp-text-primary)";
+            e.currentTarget.style.background = "var(--vp-bg-surface-hover)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "var(--vp-text-dim)";
+            e.currentTarget.style.background = "transparent";
+          }}
+        >
+          <ArrowUpDown size={13} />
+        </button>
+      ) : (
+        <button
+          onClick={() => setTerminalMaximized(!terminalMaximized)}
+          title={terminalMaximized ? "Exit full screen" : "Full screen"}
+          className="flex items-center justify-center"
+          style={{
+            color: "var(--vp-text-dim)",
+            width: 28,
+            height: 28,
+            borderRadius: 8,
+            transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "var(--vp-text-primary)";
+            e.currentTarget.style.background = "var(--vp-bg-surface-hover)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "var(--vp-text-dim)";
+            e.currentTarget.style.background = "transparent";
+          }}
+        >
+          {terminalMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+        </button>
+      )}
 
       {/* Bar context menu (split screen toggle) */}
       {barCtxMenu &&

@@ -2,8 +2,14 @@ import { Menu, BrowserWindow, app, dialog } from "electron";
 import path from "path";
 import { createWindow } from "./main";
 
-export function buildMenu(win: BrowserWindow) {
+export function buildMenu(win: BrowserWindow, customShortcuts?: Record<string, string>) {
   const isMac = process.platform === "darwin";
+  const shortcuts = customShortcuts || {};
+
+  // Get accelerator for a shortcut id, falling back to default
+  const accel = (id: string, defaultKey: string): string => {
+    return shortcuts[id] !== undefined ? shortcuts[id] : defaultKey;
+  };
 
   const send = (channel: string) => {
     if (!win.isDestroyed()) {
@@ -22,7 +28,7 @@ export function buildMenu(win: BrowserWindow) {
               { type: "separator" as const },
               {
                 label: "Settings...",
-                accelerator: "CmdOrCtrl+,",
+                accelerator: accel("settings", "CmdOrCtrl+,"),
                 click: () => send("menu:settings"),
               },
               { type: "separator" as const },
@@ -44,7 +50,7 @@ export function buildMenu(win: BrowserWindow) {
           ? [
               {
                 label: "Settings...",
-                accelerator: "CmdOrCtrl+," as string,
+                accelerator: accel("settings", "CmdOrCtrl+,") as string,
                 click: () => send("menu:settings"),
               },
               { type: "separator" as const },
@@ -52,23 +58,23 @@ export function buildMenu(win: BrowserWindow) {
           : []),
         {
           label: "New Terminal",
-          accelerator: "CmdOrCtrl+T",
+          accelerator: accel("new-terminal", "CmdOrCtrl+T"),
           click: () => send("menu:new-terminal"),
         },
         {
           label: "New Workspace",
-          accelerator: "CmdOrCtrl+N",
+          accelerator: accel("new-workspace", "CmdOrCtrl+N"),
           click: () => send("menu:new-workspace"),
         },
         { type: "separator" },
         {
           label: "Switch Project...",
-          accelerator: "CmdOrCtrl+O",
+          accelerator: accel("switch-project", "CmdOrCtrl+O"),
           click: () => send("menu:switch-project"),
         },
         {
           label: "Open Project in New Window...",
-          accelerator: "CmdOrCtrl+Shift+O",
+          accelerator: accel("open-new-window", "CmdOrCtrl+Shift+O"),
           click: async () => {
             const result = await dialog.showOpenDialog(win, {
               properties: ["openDirectory"],
@@ -81,10 +87,15 @@ export function buildMenu(win: BrowserWindow) {
             }
           },
         },
+        {
+          label: "Clone Repository...",
+          accelerator: accel("clone-repository", "CmdOrCtrl+Shift+C"),
+          click: () => send("menu:clone-repository"),
+        },
         { type: "separator" },
         {
           label: "Close Terminal",
-          accelerator: "CmdOrCtrl+W",
+          accelerator: accel("close-terminal", "CmdOrCtrl+W"),
           click: () => send("menu:close-terminal"),
         },
       ],
@@ -104,8 +115,14 @@ export function buildMenu(win: BrowserWindow) {
         { type: "separator" },
         {
           label: "Find...",
-          accelerator: "CmdOrCtrl+F",
+          accelerator: accel("find", "CmdOrCtrl+F"),
           click: () => send("menu:find"),
+        },
+        { type: "separator" },
+        {
+          label: "Command Palette",
+          accelerator: accel("command-palette", "CmdOrCtrl+K"),
+          click: () => send("menu:command-palette"),
         },
       ],
     },
@@ -116,34 +133,61 @@ export function buildMenu(win: BrowserWindow) {
       submenu: [
         {
           label: "Terminal View",
-          accelerator: "CmdOrCtrl+1",
           click: () => send("menu:view-terminal"),
         },
         {
           label: "Widget View",
-          accelerator: "CmdOrCtrl+2",
           click: () => send("menu:view-tasks"),
         },
         {
           label: "Split View",
-          accelerator: "CmdOrCtrl+3",
           click: () => send("menu:view-split"),
         },
         {
           label: "Browser",
-          accelerator: "CmdOrCtrl+4",
           click: () => send("menu:view-browser"),
         },
         { type: "separator" },
         {
           label: "Toggle Sidebar",
-          accelerator: "CmdOrCtrl+B",
+          accelerator: accel("toggle-sidebar", "CmdOrCtrl+B"),
           click: () => send("menu:toggle-sidebar"),
         },
         {
           label: "Toggle Fullscreen Terminal",
-          accelerator: "CmdOrCtrl+Shift+F",
+          accelerator: accel("fullscreen-terminal", "CmdOrCtrl+Shift+F"),
           click: () => send("menu:toggle-fullscreen-terminal"),
+        },
+        {
+          label: "Toggle Mission Panel",
+          accelerator: accel("mission-panel", "CmdOrCtrl+Shift+M"),
+          click: () => send("menu:toggle-mission-panel"),
+        },
+        { type: "separator" },
+        {
+          label: "Agents Panel",
+          accelerator: accel("sidebar-agents", "CmdOrCtrl+Shift+A"),
+          click: () => send("menu:sidebar-agents"),
+        },
+        {
+          label: "Explorer Panel",
+          accelerator: accel("sidebar-explorer", "CmdOrCtrl+Shift+E"),
+          click: () => send("menu:sidebar-explorer"),
+        },
+        {
+          label: "Search Panel",
+          accelerator: accel("sidebar-search", "CmdOrCtrl+Shift+H"),
+          click: () => send("menu:sidebar-search"),
+        },
+        {
+          label: "Git Panel",
+          accelerator: accel("sidebar-git", "CmdOrCtrl+Shift+G"),
+          click: () => send("menu:sidebar-git"),
+        },
+        {
+          label: "Services Panel",
+          accelerator: accel("sidebar-services", "CmdOrCtrl+Shift+U"),
+          click: () => send("menu:sidebar-services"),
         },
         { type: "separator" },
         { role: "resetZoom", label: "Actual Size" },
@@ -160,24 +204,63 @@ export function buildMenu(win: BrowserWindow) {
       submenu: [
         {
           label: "Split Right",
-          accelerator: "CmdOrCtrl+D",
+          accelerator: accel("split-right", "CmdOrCtrl+D"),
           click: () => send("menu:split-right"),
         },
         {
           label: "Split Down",
-          accelerator: "CmdOrCtrl+Shift+D",
+          accelerator: accel("split-down", "CmdOrCtrl+Shift+D"),
           click: () => send("menu:split-down"),
         },
         { type: "separator" },
         {
           label: "Next Terminal Group",
-          accelerator: "CmdOrCtrl+Shift+]",
+          accelerator: accel("next-terminal-group", "CmdOrCtrl+Shift+]"),
           click: () => send("menu:next-terminal-group"),
         },
         {
           label: "Previous Terminal Group",
-          accelerator: "CmdOrCtrl+Shift+[",
+          accelerator: accel("prev-terminal-group", "CmdOrCtrl+Shift+["),
           click: () => send("menu:prev-terminal-group"),
+        },
+      ],
+    },
+
+    // Git
+    {
+      label: "Git",
+      submenu: [
+        {
+          label: "Pull",
+          accelerator: accel("git-pull", "") || undefined,
+          click: () => send("menu:git-pull"),
+        },
+        {
+          label: "Push",
+          accelerator: accel("git-push", "") || undefined,
+          click: () => send("menu:git-push"),
+        },
+        {
+          label: "Commit...",
+          accelerator: accel("git-commit", "") || undefined,
+          click: () => send("menu:git-commit"),
+        },
+        { type: "separator" },
+        {
+          label: "Stash",
+          accelerator: accel("git-stash", "") || undefined,
+          click: () => send("menu:git-stash"),
+        },
+        {
+          label: "Stash Pop",
+          accelerator: accel("git-stash-pop", "") || undefined,
+          click: () => send("menu:git-stash-pop"),
+        },
+        { type: "separator" },
+        {
+          label: "Refresh Status",
+          accelerator: accel("git-refresh", "") || undefined,
+          click: () => send("menu:git-refresh"),
         },
       ],
     },
@@ -205,7 +288,7 @@ export function buildMenu(win: BrowserWindow) {
       submenu: [
         {
           label: "Toggle Developer Tools",
-          accelerator: "CmdOrCtrl+Shift+I",
+          accelerator: accel("browser-devtools", "CmdOrCtrl+Shift+I"),
           click: () => {
             if (!win.isDestroyed()) {
               win.webContents.toggleDevTools();

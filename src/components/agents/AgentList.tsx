@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useUIStore, type Workspace } from "../../stores/uiStore";
 import AgentCard from "./AgentCard";
-import { Bot, Layout } from "lucide-react";
+import { Bot, Layout, Plus } from "lucide-react";
 import type { Agent } from "../../types/agent";
 import { getSessionIds } from "../../lib/layout/layoutUtils";
 
@@ -61,18 +61,59 @@ export default function AgentList() {
   if (groups.length === 0) {
     return (
       <div
-        className="flex flex-col items-center justify-center py-8 gap-2"
+        className="flex flex-col items-center justify-center py-8 gap-3"
         style={{ color: "var(--vp-text-faint)" }}
       >
-        <Bot size={32} />
-        <p className="text-xs">No agents running</p>
-        <p style={{ fontSize: 10 }}>Open a terminal to see it here</p>
+        <Bot size={40} style={{ color: "var(--vp-text-dim)" }} />
+        <div style={{ textAlign: "center" }}>
+          <p style={{ fontSize: 13, fontWeight: 500, color: "var(--vp-text-secondary)", marginBottom: 4 }}>
+            No agents running
+          </p>
+          <p style={{ fontSize: 11, color: "var(--vp-text-dim)" }}>
+            Spawn an agent to get started
+          </p>
+        </div>
+        <button
+          onClick={() => useUIStore.getState().setShowSpawnDialog(true)}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "6px 14px", fontSize: 11,
+            background: "var(--vp-accent-blue-bg)",
+            border: "1px solid var(--vp-accent-blue-border)",
+            borderRadius: 8, color: "var(--vp-accent-blue)",
+            cursor: "pointer", transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--vp-accent-blue-bg-hover)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "var(--vp-accent-blue-bg)"; }}
+        >
+          <Plus size={14} />
+          Spawn Agent
+        </button>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-1">
+      {/* Spawn agent header button */}
+      <div style={{ display: "flex", justifyContent: "flex-end", padding: "4px 10px 0" }}>
+        <button
+          onClick={() => useUIStore.getState().setShowSpawnDialog(true)}
+          style={{
+            display: "flex", alignItems: "center", gap: 4,
+            padding: "3px 8px", fontSize: 10,
+            background: "var(--vp-bg-surface)",
+            border: "1px solid var(--vp-border-light)",
+            borderRadius: 6, color: "var(--vp-text-muted)",
+            cursor: "pointer", transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--vp-accent-blue-border)"; e.currentTarget.style.color = "var(--vp-accent-blue)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--vp-border-light)"; e.currentTarget.style.color = "var(--vp-text-muted)"; }}
+        >
+          <Plus size={10} />
+          Spawn
+        </button>
+      </div>
       {groups.map((group) => {
         const isActive = group.workspace.id === activeWorkspaceId;
         return (

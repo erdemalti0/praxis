@@ -57,8 +57,8 @@ export const darkTheme: ThemeDefinition = {
     bgPrimary: "#000000",
     bgSecondary: "#0a0a0a",
     bgTertiary: "#1a1a1a",
-    bgSurface: "rgba(255,255,255,0.02)",
-    bgSurfaceHover: "rgba(255,255,255,0.06)",
+    bgSurface: "rgba(255,255,255,0.04)",
+    bgSurfaceHover: "rgba(255,255,255,0.08)",
     bgOverlay: "rgba(0,0,0,0.7)",
     bgInset: "#050505",
     textPrimary: "#e0e0e0",
@@ -67,9 +67,9 @@ export const darkTheme: ThemeDefinition = {
     textDim: "#666666",
     textFaint: "#555555",
     textSubtle: "#444444",
-    borderSubtle: "rgba(255,255,255,0.06)",
-    borderLight: "rgba(255,255,255,0.10)",
-    borderMedium: "rgba(255,255,255,0.15)",
+    borderSubtle: "rgba(255,255,255,0.08)",
+    borderLight: "rgba(255,255,255,0.12)",
+    borderMedium: "rgba(255,255,255,0.18)",
     borderStrong: "rgba(255,255,255,0.25)",
     borderPanel: "rgba(255,255,255,0.45)",
     accentBlue: "#60a5fa",
@@ -86,7 +86,7 @@ export const darkTheme: ThemeDefinition = {
     accentRedBorder: "rgba(239,68,68,0.15)",
     accentOrange: "#f97316",
     accentAmber: "#f59e0b",
-    scrollbarThumb: "#1e1e1e",
+    scrollbarThumb: "#252525",
     scrollbarHover: "#333333",
     inputBg: "#000000",
     inputBorder: "#1e1e1e",
@@ -207,6 +207,13 @@ export function applyTheme(theme: ThemeDefinition): void {
   for (const [key, value] of Object.entries(theme.colors)) {
     root.style.setProperty(`--vp-${camelToKebab(key)}`, value);
   }
+  // Sync xterm terminal colors with the new theme
+  // Use dynamic import to avoid circular dependency
+  requestAnimationFrame(() => {
+    import("./terminal/terminalCache").then(({ updateAllTerminalThemes }) => {
+      updateAllTerminalThemes();
+    }).catch(() => {});
+  });
 }
 
 export function getThemeById(id: string, customThemes: ThemeDefinition[] = []): ThemeDefinition {

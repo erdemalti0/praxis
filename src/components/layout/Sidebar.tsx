@@ -1,13 +1,12 @@
-import { useState } from "react";
-import AgentList from "../agents/AgentList";
-import FileExplorer from "../explorer/FileExplorer";
-import SearchPanel from "../sidebar/SearchPanel";
-import GitPanel from "../sidebar/GitPanel";
-import ServicesPanel from "../sidebar/ServicesPanel";
+import { lazy, Suspense } from "react";
 import { Cpu, FolderOpen, Search, GitBranch, Activity, PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import { useUIStore } from "../../stores/uiStore";
 
-type SidebarTab = "agents" | "explorer" | "search" | "git" | "services";
+const AgentList = lazy(() => import("../agents/AgentList"));
+const FileExplorer = lazy(() => import("../explorer/FileExplorer"));
+const SearchPanel = lazy(() => import("../sidebar/SearchPanel"));
+const GitPanel = lazy(() => import("../sidebar/GitPanel"));
+const ServicesPanel = lazy(() => import("../sidebar/ServicesPanel"));
+import { useUIStore, type SidebarTab } from "../../stores/uiStore";
 
 const tabs: { key: SidebarTab; label: string; icon: typeof Cpu }[] = [
   { key: "agents", label: "Agents", icon: Cpu },
@@ -18,7 +17,8 @@ const tabs: { key: SidebarTab; label: string; icon: typeof Cpu }[] = [
 ];
 
 export default function Sidebar() {
-  const [activeTab, setActiveTab] = useState<SidebarTab>("agents");
+  const activeTab = useUIStore((s) => s.activeSidebarTab);
+  const setActiveTab = useUIStore((s) => s.setActiveSidebarTab);
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
@@ -170,15 +170,17 @@ export default function Sidebar() {
 
       {/* Tab content */}
       <div className="flex-1 min-h-0 overflow-hidden">
-        {activeTab === "agents" && (
-          <div className="h-full overflow-y-auto px-2 py-2">
-            <AgentList />
-          </div>
-        )}
-        {activeTab === "explorer" && <FileExplorer />}
-        {activeTab === "search" && <SearchPanel />}
-        {activeTab === "git" && <GitPanel />}
-        {activeTab === "services" && <ServicesPanel />}
+        <Suspense fallback={<div style={{ padding: 12, color: "var(--vp-text-dim)", fontSize: 12 }}>Loading...</div>}>
+          {activeTab === "agents" && (
+            <div className="h-full overflow-y-auto px-2 py-2">
+              <AgentList />
+            </div>
+          )}
+          {activeTab === "explorer" && <FileExplorer />}
+          {activeTab === "search" && <SearchPanel />}
+          {activeTab === "git" && <GitPanel />}
+          {activeTab === "services" && <ServicesPanel />}
+        </Suspense>
       </div>
     </div>
   );

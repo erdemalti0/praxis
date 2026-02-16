@@ -173,8 +173,8 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
         {/* Status dot */}
         <span
           style={{
-            width: 8,
-            height: 8,
+            width: 10,
+            height: 10,
             borderRadius: "50%",
             background: isWorking ? "var(--vp-accent-green)" : "var(--vp-text-faint)",
             flexShrink: 0,
@@ -239,6 +239,7 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
                   background: "var(--vp-accent-green-bg)",
                   padding: "1px 6px",
                   borderRadius: 8,
+                  animation: "workingPulse 2s ease-in-out infinite",
                 }}
               >
                 Working
@@ -258,6 +259,19 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
             {groupLabel && <span style={{ color: "var(--vp-text-dim)" }}>{groupLabel}</span>}
             {groupLabel && <span style={{ margin: "0 3px", color: "var(--vp-text-subtle)" }}>&middot;</span>}
             {dirName}
+            {lastOutputTs > 0 && (
+              <>
+                <span style={{ margin: "0 3px", color: "var(--vp-text-subtle)" }}>&middot;</span>
+                <span style={{ color: "var(--vp-text-subtle)" }}>
+                  {isWorking ? "Active now" : (() => {
+                    const diff = Math.floor((Date.now() - lastOutputTs) / 1000);
+                    if (diff < 60) return `${diff}s ago`;
+                    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+                    return `${Math.floor(diff / 3600)}h ago`;
+                  })()}
+                </span>
+              </>
+            )}
           </div>
         </div>
 
@@ -265,6 +279,10 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
           @keyframes agentPulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.4; }
+          }
+          @keyframes workingPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
           }
         `}</style>
       </button>
@@ -278,7 +296,7 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
             left: contextMenu.x,
             top: contextMenu.y,
             zIndex: 9999,
-            background: "var(--vp-bg-overlay)",
+            background: "var(--vp-bg-tertiary)",
             border: "1px solid var(--vp-border-medium)",
             borderRadius: 8,
             padding: 4,

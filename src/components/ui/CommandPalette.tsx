@@ -73,16 +73,16 @@ export default function CommandPalette() {
     },
     {
       id: "view-widget",
-      label: "Widget Mode",
+      label: "Customize Widgets",
       icon: LayoutGrid,
       category: "View",
       execute: () => {
         const wsId = useUIStore.getState().activeWorkspaceId;
         if (wsId) {
-          useUIStore.getState().toggleWidgetMode(wsId);
-          const ws = useUIStore.getState().workspaces.find((w) => w.id === wsId);
+          const state = useUIStore.getState();
+          state.setShowCustomizePanel(!state.showCustomizePanel);
           useToastStore.getState().addToast(
-            ws?.useWidgetMode ? "Widget mode enabled" : "Widget mode disabled",
+            state.showCustomizePanel ? "Customize panel closed" : "Customize panel opened",
             "info"
           );
         } else {

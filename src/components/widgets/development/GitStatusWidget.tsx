@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "../../../lib/ipc";
 import type { GitStatusConfig } from "../../../types/widget";
 import {
@@ -15,6 +15,7 @@ import {
   ArrowDown,
   X,
   FileText,
+  AlertCircle,
 } from "lucide-react";
 
 interface GitStatus {
@@ -113,23 +114,32 @@ export default function GitStatusWidget({
   const [status, setStatus] = useState<GitStatus | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [showBranches, setShowBranches] = useState(false);
   const [showCommit, setShowCommit] = useState(false);
   const [commitMsg, setCommitMsg] = useState("");
   const [commiting, setCommiting] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  const mountedRef = useRef(true);
+  useEffect(() => { return () => { mountedRef.current = false; }; }, []);
+
   const fetchStatus = async () => {
     setLoading(true);
     try {
       const data = await invoke<GitStatus>("git_status");
-      setStatus(data);
-      setError("");
+      if (mountedRef.current) { setStatus(data); setError(""); }
     } catch (e) {
-      setError("Not a git repo");
+      if (mountedRef.current) setError("Not a git repo");
     }
-    setLoading(false);
+    if (mountedRef.current) setLoading(false);
   };
+
+  useEffect(() => {
+    if (!loading) { setLoadingTimeout(false); return; }
+    const timer = setTimeout(() => setLoadingTimeout(true), 5000);
+    return () => clearTimeout(timer);
+  }, [loading]);
 
   useEffect(() => {
     fetchStatus();
@@ -184,7 +194,7 @@ export default function GitStatusWidget({
 
   const handleFileAction = (file: string, type: "staged" | "unstaged" | "untracked", action: "add" | "remove" | "view") => {
     if (action === "view") {
-      console.log("View diff for:", file);
+      // TODO: implement diff viewer
     } else if (action === "add") {
       handleAction("add", file);
     } else if (action === "remove") {
@@ -206,9 +216,38 @@ export default function GitStatusWidget({
   }
 
   if (!status) {
+    if (loading && !loadingTimeout) {
+      return (
+        <div className="h-full flex flex-col items-center justify-center gap-3" style={{ padding: 16 }}>
+          {[80, 60, 70].map((w, i) => (
+            <div key={i} style={{
+              width: `${w}%`, height: 10, borderRadius: 6,
+              background: "var(--vp-bg-surface-hover)",
+              animation: "pulse 1.5s ease-in-out infinite",
+              animationDelay: `${i * 0.2}s`,
+            }} />
+          ))}
+          <style>{`@keyframes pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 0.7; } }`}</style>
+        </div>
+      );
+    }
+    if (loading && loadingTimeout) {
+      return (
+        <div className="h-full flex flex-col items-center justify-center gap-2" style={{ color: "var(--vp-text-faint)", padding: 16, textAlign: "center" }}>
+          <AlertCircle size={20} style={{ color: "var(--vp-accent-amber)" }} />
+          <span style={{ fontSize: 11, color: "var(--vp-text-muted)" }}>Could not load git status</span>
+          <button onClick={fetchStatus} style={{
+            marginTop: 4, padding: "4px 12px", borderRadius: 6,
+            background: "var(--vp-bg-surface)", border: "1px solid var(--vp-bg-surface-hover)",
+            color: "var(--vp-text-muted)", fontSize: 10, cursor: "pointer",
+          }}>Retry</button>
+        </div>
+      );
+    }
     return (
-      <div className="h-full flex items-center justify-center" style={{ color: "var(--vp-text-faint)", fontSize: 12 }}>
-        Loading...
+      <div className="h-full flex flex-col items-center justify-center gap-2" style={{ color: "var(--vp-text-faint)", padding: 16, textAlign: "center" }}>
+        <GitBranch size={20} style={{ color: "var(--vp-text-dim)" }} />
+        <span style={{ fontSize: 11 }}>No git repository</span>
       </div>
     );
   }
