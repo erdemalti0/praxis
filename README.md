@@ -115,8 +115,8 @@ Praxis is a cross-platform desktop application that lets you orchestrate multipl
 
 ```bash
 # Clone the repository
-git clone https://github.com/erdemalti0/praxis-app.git
-cd vibepilot-electron
+git clone https://github.com/erdemalti0/praxis.git
+cd praxis
 
 # Install dependencies
 npm install
