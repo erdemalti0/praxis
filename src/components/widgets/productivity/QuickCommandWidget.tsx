@@ -4,7 +4,7 @@ import { useTerminalStore } from "../../../stores/terminalStore";
 import { useSettingsStore } from "../../../stores/settingsStore";
 import { loadJsonFile, createDebouncedSaver } from "../../../lib/persistence";
 import type { QuickCommandConfig } from "../../../types/widget";
-import { Play, Star, Plus, RefreshCw, Package, Terminal, Settings, Trash2, Search } from "lucide-react";
+import { Play, Star, Plus, RefreshCw, Terminal, Trash2, Search } from "lucide-react";
 
 interface Command {
   id: string;
@@ -55,7 +55,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function QuickCommandWidget({
-  widgetId,
+  widgetId: _widgetId,
   config = {},
 }: {
   widgetId: string;
@@ -101,7 +101,7 @@ export default function QuickCommandWidget({
     try {
       const pkg = await invoke<{ scripts?: Record<string, string> }>("read_package_json");
       if (pkg?.scripts) {
-        const scripts = Object.entries(pkg.scripts).map(([name, cmd]) => ({
+        const scripts = Object.entries(pkg.scripts).map(([name, _cmd]) => ({
           id: `pkg-${name}`,
           label: name,
           cmd: `npm run ${name}`,

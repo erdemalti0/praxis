@@ -250,7 +250,7 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
     };
 
     if (xtermTextarea) {
-      xtermTextarea.addEventListener("paste", pasteHandler as EventListener);
+      xtermTextarea.addEventListener("paste", pasteHandler as unknown as EventListener);
     }
 
     // Resize observer
@@ -268,7 +268,7 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
       resizeObserverRef.current?.disconnect();
       if (resizeTimer) clearTimeout(resizeTimer);
       if (xtermTextarea) {
-        xtermTextarea.removeEventListener("paste", pasteHandler as EventListener);
+        xtermTextarea.removeEventListener("paste", pasteHandler as unknown as EventListener);
       }
       // Detach xterm element from container so it doesn't leak into other workspaces.
       // Use try/catch to guard against React already having removed the DOM node.

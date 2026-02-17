@@ -4,13 +4,37 @@ import path from "path";
 import os from "os";
 
 /**
+ * Security: Sensitive paths that are always blocked from renderer access.
+ * Prevents accidental or malicious reads/writes to credential stores.
+ */
+const BLOCKED_PREFIXES = [
+  path.join(os.homedir(), ".ssh"),
+  path.join(os.homedir(), ".gnupg"),
+  path.join(os.homedir(), ".aws"),
+  path.join(os.homedir(), ".kube"),
+];
+
+function isBlockedPath(filePath: string): boolean {
+  const resolved = path.resolve(filePath);
+  return BLOCKED_PREFIXES.some((blocked) => resolved.startsWith(blocked));
+}
+
+/**
  * Validates that a write path is within allowed directories.
- * Permits writes to user home subdirectories (project files, .praxis config) and temp dir.
- * Blocks writes to system paths outside the user's home.
+ * Permits writes under home directory and temp dir, but blocks sensitive paths.
  */
 function isAllowedWritePath(filePath: string): boolean {
-  const home = os.homedir();
-  return filePath.startsWith(home) || filePath.startsWith(os.tmpdir());
+  const resolved = path.resolve(filePath);
+  if (isBlockedPath(resolved)) return false;
+  return resolved.startsWith(os.homedir()) || resolved.startsWith(os.tmpdir());
+}
+
+/**
+ * Validates that a read path is safe.
+ * Blocks access to sensitive credential stores (.ssh, .gnupg, .aws, .kube).
+ */
+function isAllowedReadPath(filePath: string): boolean {
+  return !isBlockedPath(filePath);
 }
 
 contextBridge.exposeInMainWorld("electronAPI", {
@@ -28,8 +52,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
   send: (channel: string, ...args: any[]) => {
     ipcRenderer.send(channel, ...args);
   },
-  // Direct filesystem access (bypasses IPC)
+  // Direct filesystem access (bypasses IPC) — restricted to allowed paths
   readFileSync: (filePath: string): string => {
+    if (!isAllowedReadPath(filePath)) {
+      console.warn(`[preload] Read rejected — path not allowed: ${filePath}`);
+      throw new Error(`Read access denied: ${filePath}`);
+    }
     return fs.readFileSync(filePath, "utf-8");
   },
   writeFileSync: (filePath: string, content: string): void => {

@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { invoke } from "../../../lib/ipc";
+import { useUIStore } from "../../../stores/uiStore";
 import type { DiffViewerConfig } from "../../../types/widget";
-import { RefreshCw, Columns, List, FileCode, ChevronDown, Settings, Hash } from "lucide-react";
+import { RefreshCw, Columns, List, FileCode, ChevronDown, Hash } from "lucide-react";
 import { useWidgetStore } from "../../../stores/widgetStore";
 
 interface DiffLine {
@@ -139,6 +140,7 @@ export default function DiffViewerWidget({
 }) {
   const [diff, setDiff] = useState("");
   const [staged, setStaged] = useState(false);
+  const projectPath = useUIStore((s) => s.selectedProject?.path) || "";
   const [viewMode, setViewMode] = useState<"unified" | "split">(config.viewMode ?? "unified");
   const [showLineNumbers, setShowLineNumbers] = useState(config.showLineNumbers ?? true);
   const [loading, setLoading] = useState(false);
@@ -158,7 +160,7 @@ export default function DiffViewerWidget({
     let mounted = true;
     const fetchDiff = (showLoader = false) => {
       if (showLoader) setLoading(true);
-      invoke<string>("git_diff", { staged })
+      invoke<string>("git_diff", { staged, projectPath })
         .then((d) => { if (mounted) setDiff(d); })
         .catch(() => { if (mounted) setDiff(""); })
         .finally(() => { if (mounted && showLoader) setLoading(false); });
@@ -166,7 +168,7 @@ export default function DiffViewerWidget({
     fetchDiff(true);
     const interval = setInterval(() => fetchDiff(false), 1000);
     return () => { mounted = false; clearInterval(interval); };
-  }, [staged]);
+  }, [staged, projectPath]);
 
   const parsedDiffs = useMemo(() => parseDiff(diff), [diff]);
 

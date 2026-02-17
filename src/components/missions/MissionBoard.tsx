@@ -186,7 +186,11 @@ function PanelVariant({
           <button
             onClick={() => {
               const ui = useUIStore.getState();
-              ui.setViewMode("terminal");
+              // Close both split view and the standalone mission panel
+              if (ui.viewMode === "split") {
+                ui.setViewMode("terminal");
+              }
+              ui.setShowMissionPanel(false);
             }}
             title="Close"
             style={{

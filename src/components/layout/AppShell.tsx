@@ -4,17 +4,17 @@ import StatsBar from "../stats/StatsBar";
 import Sidebar from "./Sidebar";
 import MainPanel from "./MainPanel";
 import DualPaneLayout from "./DualPaneLayout";
+import MissionBoard from "../missions/MissionBoard";
+import SpawnDialog from "../terminal/SpawnDialog";
+import CustomizePanel from "../widgets/CustomizePanel";
 import { useUIStore } from "../../stores/uiStore";
 import { useBrowserStore } from "../../stores/browserStore";
 import { useWidgetStore } from "../../stores/widgetStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { refitAllTerminals } from "../../lib/terminal/terminalCache";
 
-const MissionBoard = lazy(() => import("../missions/MissionBoard"));
-const SpawnDialog = lazy(() => import("../terminal/SpawnDialog"));
 const BrowserPanel = lazy(() => import("../browser/BrowserPanel"));
 const EditorPanel = lazy(() => import("../editor/EditorPanel"));
-const CustomizePanel = lazy(() => import("../widgets/CustomizePanel"));
 const OnboardingOverlay = lazy(() => import("../ui/OnboardingOverlay"));
 
 const SIDEBAR_COLLAPSED_WIDTH = 48;
@@ -134,7 +134,7 @@ export default function AppShell() {
   // Maximized browser — hide everything else
   if (browserMaximized && viewMode === "browser") {
     return (
-      <Suspense fallback={null}>
+      <Suspense fallback={<div className="h-full w-full" style={{ background: "var(--vp-bg-surface)" }} />}>
         <div
           className="h-screen w-screen flex flex-col"
           style={{
@@ -160,7 +160,7 @@ export default function AppShell() {
   // Maximized terminal — hide everything else
   if (terminalMaximized) {
     return (
-      <Suspense fallback={null}>
+      <Suspense fallback={<div className="h-full w-full" style={{ background: "var(--vp-bg-surface)" }} />}>
         <div
           className="h-screen w-screen flex flex-col"
           style={{
@@ -185,7 +185,7 @@ export default function AppShell() {
   }
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div className="h-full w-full" style={{ background: "var(--vp-bg-surface)" }} />}>
       <div
         className="h-screen w-screen flex flex-col"
         style={{
@@ -274,9 +274,17 @@ export default function AppShell() {
               </div>
               <div
                 className="flex-1 min-w-0 min-h-0"
-                style={{ ...panelStyle, background: "var(--vp-bg-surface)" }}
+                style={{ ...panelStyle, background: "var(--vp-bg-surface)", position: "relative", zIndex: 1, overflow: "hidden" }}
               >
-                <MainPanel />
+                <DualPaneLayout
+                  topPaneContent={topPaneContent}
+                  dividerRatio={hasWidgets ? widgetDividerRatio : 1.0}
+                  hasWidgets={hasWidgets}
+                  workspaceId={activeWorkspaceId || ""}
+                />
+                {showCustomizePanel && activeWorkspaceId && (
+                  <CustomizePanel workspaceId={activeWorkspaceId} />
+                )}
               </div>
             </>
           )}

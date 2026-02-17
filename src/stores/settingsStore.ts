@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { invoke } from "../lib/ipc";
 import type { ThemeDefinition, ThemeColors } from "../lib/themes";
-import { applyTheme, getThemeById, createDefaultThemeColors } from "../lib/themes";
+import { applyTheme, getThemeById } from "../lib/themes";
 import type { ProjectInfo } from "../types/session";
 import { registerUserAgentGetter } from "../lib/agentTypes";
 import { registerCustomAgentCmds } from "../lib/agents/detector";

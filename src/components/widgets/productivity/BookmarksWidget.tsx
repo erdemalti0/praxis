@@ -31,7 +31,7 @@ interface BookmarkGroup {
 }
 
 export default function BookmarksWidget({
-  widgetId,
+  widgetId: _widgetId,
   config = {},
 }: {
   widgetId: string;
@@ -195,11 +195,11 @@ export default function BookmarksWidget({
     setDraggedId(id);
   };
 
-  const handleDragOver = (e: React.DragEvent, targetGroupId: string) => {
+  const handleDragOver = (e: React.DragEvent, _targetGroupId: string) => {
     e.preventDefault();
   };
 
-  const handleDrop = (e: React.DragEvent, targetGroupId: string) => {
+  const handleDrop = (_e: React.DragEvent, targetGroupId: string) => {
     if (!draggedId) return;
     const bookmark = bookmarks.find((b) => b.id === draggedId);
     if (bookmark && bookmark.groupId !== targetGroupId) {

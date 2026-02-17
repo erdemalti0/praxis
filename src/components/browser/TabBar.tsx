@@ -1,4 +1,4 @@
-import { useRef, useState, Fragment } from "react";
+import { useRef, Fragment } from "react";
 import { Plus, X, Loader2, Pin, ChevronDown, ChevronRight } from "lucide-react";
 import { useBrowserStore, type TabGroup } from "../../stores/browserStore";
 

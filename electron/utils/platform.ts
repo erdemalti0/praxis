@@ -1,5 +1,3 @@
-import os from "os";
-
 export function getDefaultShell(): string {
   if (process.platform === "win32") {
     return process.env.COMSPEC || "powershell.exe";

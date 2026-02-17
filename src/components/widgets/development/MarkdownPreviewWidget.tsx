@@ -43,8 +43,8 @@ import { useWidgetStore } from "../../../stores/widgetStore";
 import type { MarkdownPreviewConfig } from "../../../types/widget";
 import { Download, Columns, Hash, Save, RefreshCw, FileText, ChevronDown } from "lucide-react";
 
-marked.setOptions({
-  highlight: function (code: string, lang: string) {
+(marked.setOptions as any)({
+  highlight: function (code: string, lang: string): string {
     if (lang && hljs.getLanguage(lang)) {
       try {
         return hljs.highlight(code, { language: lang }).value;

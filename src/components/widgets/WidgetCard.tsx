@@ -1,4 +1,4 @@
-import { Suspense, memo, useCallback, useState, useEffect } from "react";
+import { Suspense, memo, useCallback } from "react";
 import { GripVertical, Maximize2, Minimize2, X } from "lucide-react";
 import { getWidgetComponent, getWidgetDefinition } from "./registry";
 import { useUIStore } from "../../stores/uiStore";

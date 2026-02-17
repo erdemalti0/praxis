@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { marked } from "marked";
 import type { NotesConfig } from "../../../types/widget";
-import { Search, Download, Eye, Edit2, Folder, Plus, X, Check, Trash2 } from "lucide-react";
+import { Search, Download, Eye, Edit2, Folder, Plus, Check, Trash2 } from "lucide-react";
 import { useUIStore } from "../../../stores/uiStore";
 import { useSettingsStore } from "../../../stores/settingsStore";
 import { loadJsonFile, createDebouncedSaver } from "../../../lib/persistence";
@@ -31,7 +31,7 @@ const noteStyles = `
 `;
 
 export default function NotesWidget({
-  widgetId,
+  widgetId: _widgetId,
   config = {},
 }: {
   widgetId: string;

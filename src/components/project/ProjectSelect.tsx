@@ -31,7 +31,11 @@ function CloneModal({ onClose, onCloned }: { onClose: () => void; onCloned: (pat
         repoUrl: repoUrl.trim(),
         targetDir,
       });
-      onCloned(clonedPath);
+      if (clonedPath) {
+        onCloned(clonedPath);
+      } else {
+        setError("Clone succeeded but returned no path");
+      }
     } catch (e: any) {
       setError(e.message || "Clone failed");
     } finally {
@@ -367,7 +371,7 @@ export default function ProjectSelect() {
               background: "transparent",
             }}
           >
-            {recentProjects.map((project, idx) => (
+            {recentProjects.map((project, _idx) => (
               <div
                 key={project.path}
                 onClick={() => handleSelectRecent(project)}

@@ -1,7 +1,6 @@
 import type { IPty } from "node-pty";
 import os from "os";
 import path from "path";
-import { randomUUID } from "crypto";
 import { getUserShellEnv } from "./shell-env";
 
 interface PtySession {
@@ -119,7 +118,7 @@ export function closePty(id: string): void {
 
 /** Kill all active PTY sessions — called on app quit. */
 export function closeAllPty(): void {
-  for (const [id, session] of sessions) {
+  for (const [_id, session] of sessions) {
     try {
       session.pty.kill();
     } catch {

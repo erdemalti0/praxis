@@ -244,7 +244,7 @@ export const useMissionStore = create<MissionState>((set, get) => ({
       if (visited.has(stepId)) return false;
       visited.add(stepId);
       // Find all parents of stepId (any step whose children includes stepId)
-      for (const s of mission.steps) {
+      for (const s of mission!.steps) {
         if (s.children.includes(stepId)) {
           if (s.id === targetId) return true;
           if (isAncestor(s.id, targetId, visited)) return true;

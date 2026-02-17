@@ -14,7 +14,7 @@ export default function NavigationBar({ onNavigate, webviewRef, tabId }: Navigat
   const addFavorite = useBrowserStore((s) => s.addFavorite);
   const removeFavorite = useBrowserStore((s) => s.removeFavorite);
   const setTabLoading = useBrowserStore((s) => s.setTabLoading);
-  const setTabNavigationState = useBrowserStore((s) => s.setTabNavigationState);
+
   const showTabLanding = useBrowserStore((s) => s.showTabLanding);
   
   const activeTab = tabs.find((t) => t.id === tabId);

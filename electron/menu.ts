@@ -1,4 +1,4 @@
-import { Menu, BrowserWindow, app, dialog } from "electron";
+import { Menu, BrowserWindow, dialog } from "electron";
 import path from "path";
 import { createWindow } from "./main";
 

@@ -71,6 +71,11 @@ Praxis is a cross-platform desktop application that lets you orchestrate multipl
 - Claude Code cost tracking (per-model breakdown)
 - Gemini quota monitoring (Pro/Flash tiers)
 
+### Security
+- Filesystem access restricted from renderer — sensitive directories (`.ssh`, `.gnupg`, `.aws`, `.kube`) are blocked
+- Webview security enforcement — all embedded webviews run with `contextIsolation: true` and `nodeIntegration: false`
+- Cryptographically secure session IDs via `crypto.randomUUID()`
+
 ### Additional Features
 - Command Palette (Ctrl+K / Cmd+K)
 - Keyboard shortcuts help (?)
@@ -97,6 +102,8 @@ Praxis is a cross-platform desktop application that lets you orchestrate multipl
 - **Widgets:** react-grid-layout
 - **Markdown:** marked.js
 - **Syntax:** highlight.js
+- **Testing:** Vitest
+- **Linting:** ESLint with TypeScript + React Hooks plugins
 
 ## Getting Started
 
@@ -119,6 +126,19 @@ npm install
 
 ```bash
 npm run dev
+```
+
+### Testing & Linting
+
+```bash
+# Run tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Lint the codebase
+npm run lint
 ```
 
 ### Build & Package

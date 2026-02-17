@@ -7,7 +7,7 @@ import { useConfirmStore } from "../stores/confirmStore";
 import { useGitStore } from "../stores/gitStore";
 import { invoke } from "../lib/ipc";
 import { cleanupTerminal } from "../lib/terminal/terminalCache";
-import { closePane, getSessionIds } from "../lib/layout/layoutUtils";
+import { closePane } from "../lib/layout/layoutUtils";
 
 export function useMenuEvents() {
   useEffect(() => {
@@ -228,13 +228,16 @@ export function useMenuEvents() {
     unsubs.push(
       listen("menu:clone-repository", () => {
         const ui = useUIStore.getState();
-        // If on landing page, set clone modal flag; if in project, go to landing first
         if (ui.selectedProject) {
           // Switch to landing page where clone modal is available
+          // Delay the event so ProjectSelect mounts and registers its listener
           ui.setSelectedProject(null);
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent("open-clone-modal"));
+          }, 100);
+        } else {
+          window.dispatchEvent(new CustomEvent("open-clone-modal"));
         }
-        // The clone modal will be triggered from ProjectSelect via a global event
-        window.dispatchEvent(new CustomEvent("open-clone-modal"));
       })
     );
 

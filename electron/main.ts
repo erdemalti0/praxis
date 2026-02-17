@@ -50,15 +50,7 @@ function parseOpenProject(argv: string[]): { name: string; path: string } | null
   return null;
 }
 
-/** Send open-project event to the focused or main window */
-function sendOpenProject(project: { name: string; path: string }) {
-  const target = BrowserWindow.getFocusedWindow() || mainWindow;
-  if (target && !target.isDestroyed()) {
-    target.webContents.send("open-project", project);
-    target.show();
-    target.focus();
-  }
-}
+
 
 /** Resolve path to the CLI shell script */
 function getCliSourcePath(): string {
@@ -351,6 +343,19 @@ app.on("second-instance", (_event, argv) => {
     mainWindow.show();
     mainWindow.focus();
   }
+});
+
+// ── Security: restrict webview creation ──
+// Enforce safe defaults on any <webview> tags created by renderer code
+app.on("web-contents-created", (_event, contents) => {
+  contents.on("will-attach-webview", (_waEvent, webPreferences, _params) => {
+    // Strip away preload scripts that could grant Node.js access
+    delete webPreferences.preload;
+
+    // Enforce security defaults
+    webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
+  });
 });
 
 app.whenReady().then(() => {

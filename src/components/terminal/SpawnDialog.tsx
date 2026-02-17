@@ -6,7 +6,7 @@ import { useSettingsStore } from "../../stores/settingsStore";
 import { splitPane, fillEmptyLeaf, hasEmptyLeaf } from "../../lib/layout/layoutUtils";
 import type { LayoutNode } from "../../types/layout";
 import { invoke } from "../../lib/ipc";
-import { getOrCreateTerminal } from "../../lib/terminal/terminalCache";
+import { getOrCreateTerminal, cleanupTerminal } from "../../lib/terminal/terminalCache";
 import { setupPtyConnection } from "../../lib/terminal/ptyConnection";
 import { getDefaultShell } from "../../lib/platform";
 
@@ -144,16 +144,8 @@ export default function SpawnDialog() {
   const show = useUIStore((s) => s.showSpawnDialog);
   const setShow = useUIStore((s) => s.setShowSpawnDialog);
   const addSession = useTerminalStore((s) => s.addSession);
-  const viewMode = useUIStore((s) => s.viewMode);
-  const setViewMode = useUIStore((s) => s.setViewMode);
-  const splitEnabled = useUIStore((s) => s.splitEnabled);
   const activeWorkspaceId = useUIStore((s) => s.activeWorkspaceId);
-  const activeTerminalGroup = useUIStore((s) => s.activeTerminalGroup);
-  const splitSpawnContext = useUIStore((s) => s.splitSpawnContext);
   const setSplitSpawnContext = useUIStore((s) => s.setSplitSpawnContext);
-  const workspaceLayouts = useUIStore((s) => s.workspaceLayouts);
-  const setWorkspaceLayout = useUIStore((s) => s.setWorkspaceLayout);
-  const setFocusedPane = useUIStore((s) => s.setFocusedPane);
   const selectedProject = useUIStore((s) => s.selectedProject);
 
   const userAgents = useSettingsStore((s) => s.userAgents);
@@ -312,8 +304,8 @@ export default function SpawnDialog() {
 
     const finalArgs = buildArgs();
 
-    // Generate session ID on frontend so we can set up listeners BEFORE spawning
-    const id = `pty-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    // Generate cryptographically secure session ID before spawning
+    const id = crypto.randomUUID();
 
     try {
       // Step 1: Create xterm instance and wire up PTY listeners with flow control
@@ -353,6 +345,8 @@ export default function SpawnDialog() {
 
       handlePostSpawn(id);
     } catch (err) {
+      // Clean up the pre-created xterm instance on failure
+      cleanupTerminal(id);
       console.error("Failed to spawn:", err);
       alert(`Failed to spawn terminal: ${err}`);
     }
@@ -402,6 +396,8 @@ export default function SpawnDialog() {
       addRecentSpawn(agentType, flags);
       handlePostSpawn(id);
     } catch (err) {
+      // Clean up the pre-created xterm instance on failure
+      cleanupTerminal(id);
       console.error("Failed to quick spawn:", err);
       alert(`Failed to spawn terminal: ${err}`);
     }

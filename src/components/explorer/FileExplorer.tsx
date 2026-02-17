@@ -13,7 +13,7 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default memo(function FileExplorer({ showHidden = false }: { showHidden?: boolean } = {}) {
+export default memo(function FileExplorer({ showHidden: _showHidden = false }: { showHidden?: boolean } = {}) {
   const selectedProject = useUIStore((s) => s.selectedProject);
   const rootPath = selectedProject?.path ?? "";
 

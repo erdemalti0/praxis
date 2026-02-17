@@ -5,8 +5,8 @@ import { usePomodoroStore } from "../../../stores/pomodoroStore";
 import { Play, Pause, RotateCcw, Settings, Volume2, VolumeX, Clock, Coffee, Zap, Minus, Plus } from "lucide-react";
 
 export default function PomodoroWidget({
-  widgetId,
-  config = {},
+  widgetId: _widgetId,
+  config: _config = {},
 }: {
   widgetId: string;
   config?: PomodoroConfig;

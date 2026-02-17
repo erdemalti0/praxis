@@ -15,7 +15,7 @@ export interface LayoutResult {
 
 /**
  * Compute top-to-bottom DAG layout for mission steps.
- * Uses topological layering: each step is placed in the layer after its deepest parent/dependency.
+ * Uses Kahn's algorithm (iterative topological sort) for correct layer assignment.
  * Within each layer, nodes are arranged side by side with subtree width consideration.
  */
 export function computeTreeLayout(steps: MissionStep[]): LayoutResult {
@@ -28,44 +28,100 @@ export function computeTreeLayout(steps: MissionStep[]): LayoutResult {
     stepMap.set(s.id, s);
   }
 
-  // Build incoming edges: for each step, collect all parents (via children arrays) + dependencies
-  const incomingEdges = new Map<string, Set<string>>();
-  for (const s of steps) {
-    if (!incomingEdges.has(s.id)) incomingEdges.set(s.id, new Set());
-    for (const childId of s.children) {
-      if (!incomingEdges.has(childId)) incomingEdges.set(childId, new Set());
-      incomingEdges.get(childId)!.add(s.id);
-    }
-    for (const depId of (s.dependencies || [])) {
-      if (!incomingEdges.has(s.id)) incomingEdges.set(s.id, new Set());
-      incomingEdges.get(s.id)!.add(depId);
-    }
-  }
-
-  // Assign layers via longest-path topological ordering
-  const layer = new Map<string, number>();
-
-  function computeLayer(id: string, visited: Set<string>): number {
-    if (layer.has(id)) return layer.get(id)!;
-    if (visited.has(id)) return 0; // cycle guard
+  // Find all leaf descendants of a node's subtree (nodes with no children)
+  function getSubtreeLeaves(id: string, visited: Set<string>): string[] {
+    if (visited.has(id)) return [];
     visited.add(id);
-    const incoming = incomingEdges.get(id) || new Set();
-    let maxParentLayer = -1;
-    for (const parentId of incoming) {
-      if (stepMap.has(parentId)) {
-        maxParentLayer = Math.max(maxParentLayer, computeLayer(parentId, visited));
+    const step = stepMap.get(id);
+    if (!step || step.children.length === 0) return [id];
+    const leaves: string[] = [];
+    for (const childId of step.children) {
+      if (stepMap.has(childId)) {
+        leaves.push(...getSubtreeLeaves(childId, visited));
       }
     }
-    const myLayer = maxParentLayer + 1;
-    layer.set(id, myLayer);
-    return myLayer;
+    return leaves.length > 0 ? leaves : [id];
   }
 
-  // Single shared visited set to avoid creating new Set per step
-  const globalVisited = new Set<string>();
+  // Build incoming edges: for each step, collect all parents (via children arrays) + dependencies
+  const incomingEdges = new Map<string, Set<string>>();
+  const outgoingEdges = new Map<string, Set<string>>();
+
   for (const s of steps) {
-    globalVisited.clear();
-    computeLayer(s.id, globalVisited);
+    if (!incomingEdges.has(s.id)) incomingEdges.set(s.id, new Set());
+    if (!outgoingEdges.has(s.id)) outgoingEdges.set(s.id, new Set());
+
+    for (const childId of s.children) {
+      if (!incomingEdges.has(childId)) incomingEdges.set(childId, new Set());
+      if (!outgoingEdges.has(childId)) outgoingEdges.set(childId, new Set());
+      incomingEdges.get(childId)!.add(s.id);
+      outgoingEdges.get(s.id)!.add(childId);
+    }
+
+    for (const depId of (s.dependencies || [])) {
+      const depStep = stepMap.get(depId);
+      if (depStep && depStep.children.length > 0) {
+        // Dependency has children: connect from leaf descendants so we're placed after the whole subtree
+        const leaves = getSubtreeLeaves(depId, new Set());
+        for (const leafId of leaves) {
+          if (!outgoingEdges.has(leafId)) outgoingEdges.set(leafId, new Set());
+          incomingEdges.get(s.id)!.add(leafId);
+          outgoingEdges.get(leafId)!.add(s.id);
+        }
+      } else {
+        // No children: direct dependency edge
+        if (!outgoingEdges.has(depId)) outgoingEdges.set(depId, new Set());
+        incomingEdges.get(s.id)!.add(depId);
+        outgoingEdges.get(depId)!.add(s.id);
+      }
+    }
+  }
+
+  // ── Kahn's algorithm: assign layers via longest-path topological ordering ──
+  // inDegree tracks how many incoming edges remain for each node
+  const inDegree = new Map<string, number>();
+  for (const s of steps) {
+    inDegree.set(s.id, (incomingEdges.get(s.id) || new Set()).size);
+  }
+
+  // Layer = longest path from any root to this node
+  const layer = new Map<string, number>();
+
+  // Start with all nodes that have no incoming edges (roots)
+  const queue: string[] = [];
+  for (const s of steps) {
+    if (inDegree.get(s.id) === 0) {
+      queue.push(s.id);
+      layer.set(s.id, 0);
+    }
+  }
+
+  // Process nodes in topological order
+  let head = 0;
+  while (head < queue.length) {
+    const nodeId = queue[head++];
+    const nodeLayer = layer.get(nodeId)!;
+    const outgoing = outgoingEdges.get(nodeId) || new Set();
+
+    for (const childId of outgoing) {
+      if (!stepMap.has(childId)) continue;
+      // Child's layer is at least nodeLayer + 1 (longest path)
+      const currentChildLayer = layer.get(childId) ?? 0;
+      layer.set(childId, Math.max(currentChildLayer, nodeLayer + 1));
+
+      const remaining = (inDegree.get(childId) || 1) - 1;
+      inDegree.set(childId, remaining);
+      if (remaining === 0) {
+        queue.push(childId);
+      }
+    }
+  }
+
+  // Handle any nodes not reached (cycles) — assign layer 0
+  for (const s of steps) {
+    if (!layer.has(s.id)) {
+      layer.set(s.id, 0);
+    }
   }
 
   // Group steps by layer
@@ -76,7 +132,7 @@ export function computeTreeLayout(steps: MissionStep[]): LayoutResult {
     layers[l].push(s.id);
   }
 
-  // Build position index per layer for O(1) lookups (avoids O(n) indexOf in sort)
+  // Build position index per layer for O(1) lookups
   const layerPosition = new Map<string, number>();
   for (let l = 0; l < layers.length; l++) {
     for (let i = 0; i < layers[l].length; i++) {
@@ -85,7 +141,6 @@ export function computeTreeLayout(steps: MissionStep[]): LayoutResult {
   }
 
   // Sort within each layer: prefer order based on parent position in previous layer
-  // For root layer (0), use original step order
   function getMinParentIdx(id: string): number {
     const incoming = incomingEdges.get(id);
     if (!incoming || incoming.size === 0) return Infinity;
@@ -99,7 +154,6 @@ export function computeTreeLayout(steps: MissionStep[]): LayoutResult {
 
   for (let l = 1; l < layers.length; l++) {
     layers[l].sort((a, b) => getMinParentIdx(a) - getMinParentIdx(b));
-    // Update position index after sort
     for (let i = 0; i < layers[l].length; i++) {
       layerPosition.set(layers[l][i], i);
     }
@@ -108,31 +162,23 @@ export function computeTreeLayout(steps: MissionStep[]): LayoutResult {
   // Position nodes: each layer is a row, nodes arranged side by side
   const positions: Record<string, { x: number; y: number }> = {};
 
-  // First pass: compute subtree widths for each node (only counting direct children)
+  // ── Compute subtree widths iteratively (bottom-up by layer) ──
   const subtreeWidth = new Map<string, number>();
 
-  function computeWidth(id: string, visited: Set<string>): number {
-    if (subtreeWidth.has(id)) return subtreeWidth.get(id)!;
-    if (visited.has(id)) { subtreeWidth.set(id, NODE_WIDTH); return NODE_WIDTH; }
-    visited.add(id);
-    const step = stepMap.get(id);
-    if (!step || step.children.length === 0) {
-      subtreeWidth.set(id, NODE_WIDTH);
-      return NODE_WIDTH;
+  // Process layers bottom-up so children are computed before parents
+  for (let l = layers.length - 1; l >= 0; l--) {
+    for (const id of layers[l]) {
+      const step = stepMap.get(id);
+      if (!step || step.children.length === 0) {
+        subtreeWidth.set(id, NODE_WIDTH);
+        continue;
+      }
+      const childrenTotalWidth = step.children.reduce((sum, childId, idx) => {
+        const w = subtreeWidth.get(childId) || NODE_WIDTH;
+        return sum + w + (idx > 0 ? HORIZONTAL_GAP : 0);
+      }, 0);
+      subtreeWidth.set(id, Math.max(NODE_WIDTH, childrenTotalWidth));
     }
-    const childrenTotalWidth = step.children.reduce((sum, childId, idx) => {
-      const w = computeWidth(childId, visited);
-      return sum + w + (idx > 0 ? HORIZONTAL_GAP : 0);
-    }, 0);
-    const width = Math.max(NODE_WIDTH, childrenTotalWidth);
-    subtreeWidth.set(id, width);
-    return width;
-  }
-
-  const widthVisited = new Set<string>();
-  for (const s of steps) {
-    widthVisited.clear();
-    computeWidth(s.id, widthVisited);
   }
 
   // Position each layer
@@ -140,12 +186,6 @@ export function computeTreeLayout(steps: MissionStep[]): LayoutResult {
     const y = l * (NODE_HEIGHT + VERTICAL_GAP);
     const layerNodes = layers[l];
 
-    // Total width of this layer
-    const totalLayerWidth = layerNodes.reduce((sum, id, idx) => {
-      return sum + (subtreeWidth.get(id) || NODE_WIDTH) + (idx > 0 ? HORIZONTAL_GAP : 0);
-    }, 0);
-
-    // Center layer if it's narrower than the widest layer
     let x = 0;
     for (const id of layerNodes) {
       const w = subtreeWidth.get(id) || NODE_WIDTH;
@@ -154,7 +194,7 @@ export function computeTreeLayout(steps: MissionStep[]): LayoutResult {
     }
   }
 
-  // Second pass: for nodes with children, try to center parent over its children
+  // Second pass: for nodes with children, center parent over its children
   for (let l = layers.length - 2; l >= 0; l--) {
     for (const id of layers[l]) {
       const step = stepMap.get(id);
@@ -166,7 +206,6 @@ export function computeTreeLayout(steps: MissionStep[]): LayoutResult {
       const minX = Math.min(...childPositions.map((p) => p.x));
       const maxX = Math.max(...childPositions.map((p) => p.x + NODE_WIDTH));
       const centerX = minX + (maxX - minX - NODE_WIDTH) / 2;
-      // Only recenter if it doesn't overlap with siblings
       positions[id] = { ...positions[id], x: centerX };
     }
   }

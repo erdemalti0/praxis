@@ -42,7 +42,7 @@ export default function WidgetStrip({ workspaceId, isMainView, onSwap }: WidgetS
 
   const lastLayoutRef = useRef<string>("");
   const handleLayoutChange = useCallback(
-    (newLayout: any[]) => {
+    (newLayout: any) => {
       if (!isMainView) return; // don't allow layout changes when in strip mode
       const mapped: WidgetLayoutItem[] = newLayout.map((l: any) => {
         const x = Math.max(0, Math.min(l.x, COLS - 1));
@@ -127,12 +127,11 @@ export default function WidgetStrip({ workspaceId, isMainView, onSwap }: WidgetS
         width={containerWidth}
         margin={[8, 8]}
         containerPadding={[4, 4]}
-        isDraggable={isMainView}
-        isResizable={isMainView}
         draggableHandle=".widget-drag-handle"
         onLayoutChange={handleLayoutChange}
         compactType="vertical"
         useCSSTransforms
+        {...{ isDraggable: isMainView, isResizable: isMainView } as any}
       >
         {widgets.map((widget) => (
           <div key={widget.id}>

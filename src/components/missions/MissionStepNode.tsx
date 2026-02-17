@@ -228,8 +228,8 @@ export default function MissionStepNode({ step, projectPath, onAddChild, onEdit,
           <Plus size={11} />
         </button>
 
-        {/* Send to agent — always visible on hover, sends prompt or title */}
-        {step.status !== "done" && (
+        {/* Send to agent — only for steps with prompts */}
+        {step.status !== "done" && step.prompt && (
           <>
             <button
               ref={playBtnRef}

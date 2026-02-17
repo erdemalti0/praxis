@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Star, Plus, Search, Copy, Trash2, Edit3, Check, X, Download, Upload, BookOpen } from "lucide-react";
+import { Star, Plus, Search, Copy, Trash2, Edit3, Check, Download, Upload, BookOpen } from "lucide-react";
 import { useSettingsStore } from "../../../stores/settingsStore";
 import { loadJsonFile, createDebouncedSaver } from "../../../lib/persistence";
 
@@ -40,7 +40,7 @@ const DEFAULT_PROMPTS: Prompt[] = [
 ];
 
 export default function PromptLibraryWidget({
-  widgetId,
+  widgetId: _widgetId,
 }: {
   widgetId: string;
   config?: Record<string, any>;

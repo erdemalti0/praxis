@@ -62,7 +62,7 @@ export default function SettingsPanel() {
   const userAgents = useSettingsStore((s) => s.userAgents);
   const addUserAgent = useSettingsStore((s) => s.addUserAgent);
   const removeUserAgent = useSettingsStore((s) => s.removeUserAgent);
-  const updateUserAgent = useSettingsStore((s) => s.updateUserAgent);
+
 
   const savedWorkspaces = useSettingsStore((s) => s.savedWorkspaces);
   const saveWorkspaces = useSettingsStore((s) => s.saveWorkspaces);
@@ -103,7 +103,7 @@ export default function SettingsPanel() {
 
       // Backspace/Delete clears the shortcut
       if (e.key === "Backspace" || e.key === "Delete") {
-        setCustomShortcut(recordingShortcutId, "");
+        resetShortcut(recordingShortcutId);
         setRecordingShortcutId(null);
         setShortcutConflict(null);
         return;
@@ -493,7 +493,6 @@ export default function SettingsPanel() {
         <input
           value={theme.name}
           onChange={(e) => {
-            const updated = { ...theme, name: e.target.value };
             useSettingsStore.getState().addCustomTheme; // just for type
             // Update the theme name in store
             const store = useSettingsStore.getState();

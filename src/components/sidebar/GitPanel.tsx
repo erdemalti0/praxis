@@ -15,6 +15,7 @@ export default function GitPanel() {
   const commit = useGitStore((s) => s.commit);
   const pull = useGitStore((s) => s.pull);
   const push = useGitStore((s) => s.push);
+  const stageAll = useGitStore((s) => s.stageAll);
   const switchBranch = useGitStore((s) => s.switchBranch);
   const loadBranches = useGitStore((s) => s.loadBranches);
   const setCommitMessage = useGitStore((s) => s.setCommitMessage);
@@ -221,6 +222,7 @@ export default function GitPanel() {
           actionIcon={<Plus size={9} />}
           actionTitle="Stage"
           onAction={(f) => stage(projectPath, f)}
+          onStageAll={() => stageAll(projectPath)}
         />
 
         {/* Untracked */}
@@ -345,7 +347,7 @@ export default function GitPanel() {
 }
 
 function FileSection({
-  title, files, color, collapsed, onToggle, actionIcon, actionTitle, onAction,
+  title, files, color, collapsed, onToggle, actionIcon, actionTitle, onAction, onStageAll,
 }: {
   title: string;
   files: string[];
@@ -355,20 +357,37 @@ function FileSection({
   actionIcon: React.ReactNode;
   actionTitle: string;
   onAction: (file: string) => void;
+  onStageAll?: () => void;
 }) {
   if (files.length === 0) return null;
 
   return (
     <div>
-      <button
-        onClick={onToggle}
-        className="flex items-center gap-1 w-full"
-        style={{ padding: "4px 8px", background: "none", border: "none", cursor: "pointer" }}
-      >
-        {collapsed ? <ChevronRight size={10} style={{ color: "var(--vp-text-faint)" }} /> : <ChevronDown size={10} style={{ color: "var(--vp-text-faint)" }} />}
-        <span style={{ fontSize: 10, fontWeight: 600, color }}>{title}</span>
-        <span style={{ fontSize: 9, color: "var(--vp-text-faint)", marginLeft: 4 }}>{files.length}</span>
-      </button>
+      <div className="flex items-center w-full" style={{ padding: "4px 8px" }}>
+        <button
+          onClick={onToggle}
+          className="flex items-center gap-1 flex-1 min-w-0"
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+        >
+          {collapsed ? <ChevronRight size={10} style={{ color: "var(--vp-text-faint)" }} /> : <ChevronDown size={10} style={{ color: "var(--vp-text-faint)" }} />}
+          <span style={{ fontSize: 10, fontWeight: 600, color }}>{title}</span>
+          <span style={{ fontSize: 9, color: "var(--vp-text-faint)", marginLeft: 4 }}>{files.length}</span>
+        </button>
+        {onStageAll && (
+          <button
+            onClick={onStageAll}
+            title="Stage all"
+            style={{
+              fontSize: 9, padding: "1px 5px", borderRadius: 3,
+              background: "var(--vp-accent-green-bg)", border: "none",
+              color: "var(--vp-accent-green)", cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 2, flexShrink: 0,
+            }}
+          >
+            <Plus size={8} /> Stage All
+          </button>
+        )}
+      </div>
       {!collapsed && files.map((file) => (
         <div
           key={file}

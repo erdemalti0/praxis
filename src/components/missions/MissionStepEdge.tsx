@@ -20,7 +20,7 @@ const STATUS_COLORS: Record<string, { stroke: string; glow: string }> = {
   blocked: { stroke: "var(--vp-accent-amber)", glow: "" },
 };
 
-export default function MissionStepEdge({ fromX, fromY, toX, toY, status = "pending", edgeId, isDependency = false, onDisconnect }: MissionStepEdgeProps) {
+export default function MissionStepEdge({ fromX, fromY, toX, toY, status = "pending", edgeId: _edgeId, isDependency = false, onDisconnect }: MissionStepEdgeProps) {
   const [hovered, setHovered] = useState(false);
 
   const startX = fromX + NODE_WIDTH / 2;

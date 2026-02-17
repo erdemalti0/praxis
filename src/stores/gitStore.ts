@@ -21,6 +21,7 @@ interface GitState {
   stage: (projectPath: string, file: string) => Promise<void>;
   unstage: (projectPath: string, file: string) => Promise<void>;
   commit: (projectPath: string, message: string) => Promise<void>;
+  stageAll: (projectPath: string) => Promise<void>;
   pull: (projectPath: string) => Promise<void>;
   push: (projectPath: string) => Promise<void>;
   switchBranch: (projectPath: string, branch: string) => Promise<void>;
@@ -57,6 +58,12 @@ export const useGitStore = create<GitState>((set, get) => ({
   unstage: async (projectPath, file) => {
     await invoke("set_project_path", projectPath);
     await invoke("run_quick_command", { command: `git restore --staged "${file}"`, projectPath });
+    await get().refresh(projectPath);
+  },
+
+  stageAll: async (projectPath) => {
+    await invoke("set_project_path", projectPath);
+    await invoke("run_quick_command", { command: "git add -u", projectPath });
     await get().refresh(projectPath);
   },
 

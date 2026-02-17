@@ -465,7 +465,7 @@ function AgentPicker({
   const workspaces = useUIStore((s) => s.workspaces);
   const terminalGroups = useUIStore((s) => s.terminalGroups);
   const workspaceLayouts = useUIStore((s) => s.workspaceLayouts);
-  const [now, setNow] = useState(Date.now());
+  const [, setNow] = useState(Date.now());
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);

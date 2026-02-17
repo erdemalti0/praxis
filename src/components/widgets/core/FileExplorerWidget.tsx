@@ -2,7 +2,7 @@ import FileExplorer from "../../explorer/FileExplorer";
 import type { FileExplorerConfig } from "../../../types/widget";
 import { useState, useEffect } from "react";
 import { FolderOpen, Eye, EyeOff, FileCode } from "lucide-react";
-import { invoke } from "../../../lib/ipc";
+
 import { useUIStore } from "../../../stores/uiStore";
 import { useWidgetStore } from "../../../stores/widgetStore";
 

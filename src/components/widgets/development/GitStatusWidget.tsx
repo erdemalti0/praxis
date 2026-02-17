@@ -1,32 +1,19 @@
-import { useEffect, useRef, useState } from "react";
-import { invoke } from "../../../lib/ipc";
+import { useEffect, useState } from "react";
+import { useGitStore } from "../../../stores/gitStore";
+import { useUIStore } from "../../../stores/uiStore";
 import type { GitStatusConfig } from "../../../types/widget";
 import {
   RefreshCw,
   GitBranch,
   Plus,
   Minus,
-  Package,
   ChevronDown,
   Check,
-  Archive,
-  RotateCcw,
   ArrowUp,
   ArrowDown,
   X,
-  FileText,
   AlertCircle,
 } from "lucide-react";
-
-interface GitStatus {
-  branch: string;
-  staged: string[];
-  unstaged: string[];
-  untracked: string[];
-  ahead: number;
-  behind: number;
-  branches?: string[];
-}
 
 interface FileItemProps {
   file: string;
@@ -41,10 +28,7 @@ function FileItem({ file, type, color, onAction }: FileItemProps) {
   return (
     <div
       className="flex items-center gap-2"
-      style={{
-        padding: "3px 0",
-        fontSize: 11,
-      }}
+      style={{ padding: "3px 0", fontSize: 11 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -105,97 +89,90 @@ function FileItem({ file, type, color, onAction }: FileItemProps) {
 }
 
 export default function GitStatusWidget({
-  widgetId,
+  widgetId: _widgetId,
   config = {},
 }: {
   widgetId: string;
   config?: GitStatusConfig;
 }) {
-  const [status, setStatus] = useState<GitStatus | null>(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const projectPath = useUIStore((s) => s.selectedProject?.path) || "";
+
+  // Use the shared git store — same data source as the sidebar GitPanel
+  const status = useGitStore((s) => s.status);
+  const branches = useGitStore((s) => s.branches);
+  const loading = useGitStore((s) => s.loading);
+  const storeError = useGitStore((s) => s.error);
+  const refresh = useGitStore((s) => s.refresh);
+  const stageFile = useGitStore((s) => s.stage);
+  const stageAllFn = useGitStore((s) => s.stageAll);
+  const unstageFile = useGitStore((s) => s.unstage);
+  const commitFn = useGitStore((s) => s.commit);
+  const pullFn = useGitStore((s) => s.pull);
+  const pushFn = useGitStore((s) => s.push);
+  const switchBranch = useGitStore((s) => s.switchBranch);
+  const loadBranches = useGitStore((s) => s.loadBranches);
+
   const [showBranches, setShowBranches] = useState(false);
   const [showCommit, setShowCommit] = useState(false);
   const [commitMsg, setCommitMsg] = useState("");
-  const [commiting, setCommiting] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const mountedRef = useRef(true);
-  useEffect(() => { return () => { mountedRef.current = false; }; }, []);
-
-  const fetchStatus = async () => {
-    setLoading(true);
-    try {
-      const data = await invoke<GitStatus>("git_status");
-      if (mountedRef.current) { setStatus(data); setError(""); }
-    } catch (e) {
-      if (mountedRef.current) setError("Not a git repo");
-    }
-    if (mountedRef.current) setLoading(false);
-  };
-
+  // Refresh on mount and poll
   useEffect(() => {
-    if (!loading) { setLoadingTimeout(false); return; }
-    const timer = setTimeout(() => setLoadingTimeout(true), 5000);
-    return () => clearTimeout(timer);
-  }, [loading]);
-
-  useEffect(() => {
-    fetchStatus();
+    if (!projectPath) return;
+    refresh(projectPath);
+    loadBranches(projectPath);
     if (config.autoRefresh !== false) {
-      const interval = setInterval(fetchStatus, config.refreshInterval ?? 1000);
+      const interval = setInterval(() => refresh(projectPath), config.refreshInterval ?? 3000);
       return () => clearInterval(interval);
     }
-  }, [config.autoRefresh, config.refreshInterval]);
+  }, [projectPath, config.autoRefresh, config.refreshInterval]);
 
   const handleAction = async (action: string, file?: string) => {
+    if (!projectPath) return;
     setActionLoading(action);
     try {
       switch (action) {
         case "add":
-          await invoke("git_add", { files: file ? [file] : [] });
-          break;
-        case "addAll":
-          await invoke("git_add", { files: [] });
+          if (file) await stageFile(projectPath, file);
           break;
         case "remove":
-          await invoke("git_unstage", { files: file ? [file] : [] });
+          if (file) await unstageFile(projectPath, file);
           break;
         case "stash":
-          await invoke("git_stash");
+          // stash not in gitStore, use fallback
           break;
         case "pull":
-          await invoke("git_pull");
+          await pullFn(projectPath);
           break;
         case "push":
-          await invoke("git_push");
+          await pushFn(projectPath);
           break;
         case "checkout":
-          if (file) await invoke("git_checkout", { branch: file });
+          if (file) {
+            await switchBranch(projectPath, file);
+            await loadBranches(projectPath);
+          }
           break;
         case "reset":
-          await invoke("git_reset");
+          // reset not in gitStore, refresh after
           break;
         case "commit":
           if (commitMsg.trim()) {
-            await invoke("git_commit", { message: commitMsg.trim() });
+            await commitFn(projectPath, commitMsg.trim());
             setCommitMsg("");
             setShowCommit(false);
           }
           break;
       }
-      await fetchStatus();
     } catch (e) {
       console.error(`Git action failed: ${action}`, e);
     }
     setActionLoading(null);
   };
 
-  const handleFileAction = (file: string, type: "staged" | "unstaged" | "untracked", action: "add" | "remove" | "view") => {
-    if (action === "view") {
-      // TODO: implement diff viewer
-    } else if (action === "add") {
+  const handleFileAction = (file: string, _type: "staged" | "unstaged" | "untracked", action: "add" | "remove" | "view") => {
+    if (action === "add") {
       handleAction("add", file);
     } else if (action === "remove") {
       handleAction("remove", file);
@@ -206,48 +183,41 @@ export default function GitStatusWidget({
     ? status.staged.length + status.unstaged.length + status.untracked.length
     : 0;
 
-  if (error) {
+  if (!projectPath) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-2" style={{ color: "var(--vp-text-dim)" }}>
         <GitBranch size={20} />
-        <span style={{ fontSize: 12 }}>{error}</span>
+        <span style={{ fontSize: 12 }}>No project selected</span>
+      </div>
+    );
+  }
+
+  if (storeError) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-2" style={{ color: "var(--vp-text-dim)" }}>
+        <AlertCircle size={20} style={{ color: "var(--vp-accent-amber)" }} />
+        <span style={{ fontSize: 11, color: "var(--vp-text-muted)" }}>{storeError}</span>
+        <button onClick={() => refresh(projectPath)} style={{
+          marginTop: 4, padding: "4px 12px", borderRadius: 6,
+          background: "var(--vp-bg-surface)", border: "1px solid var(--vp-bg-surface-hover)",
+          color: "var(--vp-text-muted)", fontSize: 10, cursor: "pointer",
+        }}>Retry</button>
       </div>
     );
   }
 
   if (!status) {
-    if (loading && !loadingTimeout) {
-      return (
-        <div className="h-full flex flex-col items-center justify-center gap-3" style={{ padding: 16 }}>
-          {[80, 60, 70].map((w, i) => (
-            <div key={i} style={{
-              width: `${w}%`, height: 10, borderRadius: 6,
-              background: "var(--vp-bg-surface-hover)",
-              animation: "pulse 1.5s ease-in-out infinite",
-              animationDelay: `${i * 0.2}s`,
-            }} />
-          ))}
-          <style>{`@keyframes pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 0.7; } }`}</style>
-        </div>
-      );
-    }
-    if (loading && loadingTimeout) {
-      return (
-        <div className="h-full flex flex-col items-center justify-center gap-2" style={{ color: "var(--vp-text-faint)", padding: 16, textAlign: "center" }}>
-          <AlertCircle size={20} style={{ color: "var(--vp-accent-amber)" }} />
-          <span style={{ fontSize: 11, color: "var(--vp-text-muted)" }}>Could not load git status</span>
-          <button onClick={fetchStatus} style={{
-            marginTop: 4, padding: "4px 12px", borderRadius: 6,
-            background: "var(--vp-bg-surface)", border: "1px solid var(--vp-bg-surface-hover)",
-            color: "var(--vp-text-muted)", fontSize: 10, cursor: "pointer",
-          }}>Retry</button>
-        </div>
-      );
-    }
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-2" style={{ color: "var(--vp-text-faint)", padding: 16, textAlign: "center" }}>
-        <GitBranch size={20} style={{ color: "var(--vp-text-dim)" }} />
-        <span style={{ fontSize: 11 }}>No git repository</span>
+      <div className="h-full flex flex-col items-center justify-center gap-3" style={{ padding: 16 }}>
+        {[80, 60, 70].map((w, i) => (
+          <div key={i} style={{
+            width: `${w}%`, height: 10, borderRadius: 6,
+            background: "var(--vp-bg-surface-hover)",
+            animation: "pulse 1.5s ease-in-out infinite",
+            animationDelay: `${i * 0.2}s`,
+          }} />
+        ))}
+        <style>{`@keyframes pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 0.7; } }`}</style>
       </div>
     );
   }
@@ -260,7 +230,7 @@ export default function GitStatusWidget({
       >
         <div style={{ position: "relative" }}>
           <button
-            onClick={() => setShowBranches(!showBranches)}
+            onClick={() => { setShowBranches(!showBranches); if (!showBranches) loadBranches(projectPath); }}
             className="flex items-center gap-1"
             style={{
               background: "rgba(167,139,250,0.1)",
@@ -276,7 +246,7 @@ export default function GitStatusWidget({
             <span>{status.branch}</span>
             <ChevronDown size={10} style={{ opacity: 0.6 }} />
           </button>
-          {showBranches && status.branches && (
+          {showBranches && branches.length > 0 && (
             <div
               style={{
                 position: "absolute",
@@ -292,7 +262,7 @@ export default function GitStatusWidget({
                 zIndex: 10,
               }}
             >
-              {status.branches.map((b) => (
+              {branches.map((b) => (
                 <button
                   key={b}
                   onClick={() => {
@@ -332,7 +302,7 @@ export default function GitStatusWidget({
             </span>
           )}
           <button
-            onClick={fetchStatus}
+            onClick={() => refresh(projectPath)}
             disabled={loading}
             style={{
               background: "none",
@@ -352,67 +322,30 @@ export default function GitStatusWidget({
         style={{ padding: "6px 8px", borderBottom: "1px solid var(--vp-bg-surface)" }}
       >
         <button
-          onClick={() => handleAction("addAll")}
-          disabled={actionLoading === "addAll"}
+          onClick={() => handleAction("pull")}
+          disabled={actionLoading === "pull"}
           style={{
-            flex: 1,
-            padding: "4px 6px",
-            fontSize: 9,
-            borderRadius: 4,
-            background: "var(--vp-accent-green-bg)",
-            border: "none",
-            color: "var(--vp-accent-green)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 4,
+            flex: 1, padding: "4px 6px", fontSize: 9, borderRadius: 4,
+            background: "var(--vp-accent-blue-bg)", border: "none",
+            color: "var(--vp-accent-blue)", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
           }}
-          title="Stage all"
+          title="Pull"
         >
-          <Plus size={10} /> Add All
+          <ArrowDown size={10} /> Pull
         </button>
         <button
-          onClick={() => handleAction("stash")}
-          disabled={actionLoading === "stash"}
+          onClick={() => handleAction("push")}
+          disabled={actionLoading === "push"}
           style={{
-            flex: 1,
-            padding: "4px 6px",
-            fontSize: 9,
-            borderRadius: 4,
-            background: "var(--vp-accent-blue-bg)",
-            border: "none",
-            color: "var(--vp-accent-blue)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 4,
+            flex: 1, padding: "4px 6px", fontSize: 9, borderRadius: 4,
+            background: "var(--vp-accent-blue-bg)", border: "none",
+            color: "var(--vp-accent-blue)", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
           }}
-          title="Stash changes"
+          title="Push"
         >
-          <Package size={10} /> Stash
-        </button>
-        <button
-          onClick={() => handleAction("reset")}
-          disabled={actionLoading === "reset"}
-          style={{
-            flex: 1,
-            padding: "4px 6px",
-            fontSize: 9,
-            borderRadius: 4,
-            background: "var(--vp-accent-red-bg)",
-            border: "none",
-            color: "var(--vp-accent-red-text)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 4,
-          }}
-          title="Reset changes"
-        >
-          <RotateCcw size={10} /> Reset
+          <ArrowUp size={10} /> Push
         </button>
       </div>
 
@@ -424,6 +357,7 @@ export default function GitStatusWidget({
               value={commitMsg}
               onChange={(e) => setCommitMsg(e.target.value)}
               placeholder="Commit message..."
+              onKeyDown={(e) => { if (e.key === "Enter" && commitMsg.trim()) handleAction("commit"); }}
               style={{
                 flex: 1,
                 background: "var(--vp-bg-surface-hover)",
@@ -437,15 +371,12 @@ export default function GitStatusWidget({
             />
             <button
               onClick={() => handleAction("commit")}
-              disabled={commiting || !commitMsg.trim()}
+              disabled={!commitMsg.trim()}
               style={{
-                padding: "4px 10px",
-                fontSize: 10,
-                borderRadius: 4,
-                background: "var(--vp-accent-green-bg-hover)",
-                border: "none",
+                padding: "4px 10px", fontSize: 10, borderRadius: 4,
+                background: "var(--vp-accent-green-bg-hover)", border: "none",
                 color: "var(--vp-accent-green)",
-                cursor: commiting || !commitMsg.trim() ? "not-allowed" : "pointer",
+                cursor: !commitMsg.trim() ? "not-allowed" : "pointer",
               }}
             >
               Commit
@@ -453,13 +384,9 @@ export default function GitStatusWidget({
             <button
               onClick={() => setShowCommit(false)}
               style={{
-                padding: "4px 6px",
-                fontSize: 10,
-                borderRadius: 4,
-                background: "var(--vp-bg-surface-hover)",
-                border: "none",
-                color: "var(--vp-text-dim)",
-                cursor: "pointer",
+                padding: "4px 6px", fontSize: 10, borderRadius: 4,
+                background: "var(--vp-bg-surface-hover)", border: "none",
+                color: "var(--vp-text-dim)", cursor: "pointer",
               }}
             >
               <X size={10} />
@@ -471,24 +398,17 @@ export default function GitStatusWidget({
       <div className="flex-1 overflow-auto" style={{ padding: "8px 10px" }}>
         {status.staged.length > 0 && (
           <div style={{ marginBottom: 10 }}>
-            <div
-              className="flex items-center justify-between"
-              style={{ marginBottom: 4 }}
-            >
+            <div className="flex items-center justify-between" style={{ marginBottom: 4 }}>
               <span style={{ fontSize: 10, fontWeight: 600, color: "var(--vp-accent-green)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Staged ({status.staged.length})
               </span>
-              {!showCommit && status.staged.length > 0 && (
+              {!showCommit && (
                 <button
                   onClick={() => setShowCommit(true)}
                   style={{
-                    fontSize: 9,
-                    padding: "2px 6px",
-                    borderRadius: 3,
-                    background: "var(--vp-accent-green-bg-hover)",
-                    border: "none",
-                    color: "var(--vp-accent-green)",
-                    cursor: "pointer",
+                    fontSize: 9, padding: "2px 6px", borderRadius: 3,
+                    background: "var(--vp-accent-green-bg-hover)", border: "none",
+                    color: "var(--vp-accent-green)", cursor: "pointer",
                   }}
                 >
                   Commit
@@ -496,30 +416,32 @@ export default function GitStatusWidget({
               )}
             </div>
             {status.staged.map((f) => (
-              <FileItem
-                key={f}
-                file={f}
-                type="staged"
-                color="var(--vp-accent-green)"
-                onAction={(action) => handleFileAction(f, "staged", action)}
-              />
+              <FileItem key={f} file={f} type="staged" color="var(--vp-accent-green)" onAction={(action) => handleFileAction(f, "staged", action)} />
             ))}
           </div>
         )}
 
         {status.unstaged.length > 0 && (
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: "var(--vp-accent-amber)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
-              Modified ({status.unstaged.length})
+            <div className="flex items-center justify-between" style={{ marginBottom: 4 }}>
+              <span style={{ fontSize: 10, fontWeight: 600, color: "var(--vp-accent-amber)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Modified ({status.unstaged.length})
+              </span>
+              <button
+                onClick={() => stageAllFn(projectPath)}
+                style={{
+                  fontSize: 9, padding: "2px 6px", borderRadius: 3,
+                  background: "var(--vp-accent-green-bg)", border: "none",
+                  color: "var(--vp-accent-green)", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 2,
+                }}
+                title="Stage all changes"
+              >
+                <Plus size={8} /> Stage All
+              </button>
             </div>
             {status.unstaged.map((f) => (
-              <FileItem
-                key={f}
-                file={f}
-                type="unstaged"
-                color="var(--vp-accent-amber)"
-                onAction={(action) => handleFileAction(f, "unstaged", action)}
-              />
+              <FileItem key={f} file={f} type="unstaged" color="var(--vp-accent-amber)" onAction={(action) => handleFileAction(f, "unstaged", action)} />
             ))}
           </div>
         )}
@@ -530,13 +452,7 @@ export default function GitStatusWidget({
               Untracked ({status.untracked.length})
             </div>
             {status.untracked.map((f) => (
-              <FileItem
-                key={f}
-                file={f}
-                type="untracked"
-                color="var(--vp-text-muted)"
-                onAction={(action) => handleFileAction(f, "untracked", action)}
-              />
+              <FileItem key={f} file={f} type="untracked" color="var(--vp-text-muted)" onAction={(action) => handleFileAction(f, "untracked", action)} />
             ))}
           </div>
         )}

@@ -1,10 +1,10 @@
 import TaskBoard from "../../tasks/TaskBoard";
 import type { TasksConfig } from "../../../types/widget";
 import { useState } from "react";
-import { LayoutGrid, List, Filter } from "lucide-react";
+import { LayoutGrid, List } from "lucide-react";
 
 export default function TasksWidget({
-  widgetId,
+  widgetId: _widgetId,
   config = {},
 }: {
   widgetId: string;

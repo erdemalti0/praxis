@@ -97,26 +97,34 @@ export function registerGitHandlers() {
     }
 
     try {
-      const { stdout } = await execAsync(`git clone "${repoUrl}"`, {
+      await execAsync(`git clone "${repoUrl}"`, {
         cwd: targetDir,
         encoding: "utf-8",
         timeout: 120000,
       });
-
-      // Extract the cloned directory name from the repo URL
-      const repoName = repoUrl
-        .replace(/\.git$/, "")
-        .split("/")
-        .pop()!
-        .replace(/[^\w.\-]/g, "");
-      const clonedPath = path.join(targetDir, repoName);
-
-      // Verify the directory exists
-      await fs.promises.access(clonedPath);
-      return clonedPath;
     } catch (e: any) {
-      throw new Error(e.stderr || e.message || "Clone failed");
+      // git clone writes progress to stderr even on success;
+      // only treat it as failure if exit code is non-zero
+      if (e.code && e.code !== 0) {
+        throw new Error(e.stderr || e.message || "Clone failed");
+      }
     }
+
+    // Extract the cloned directory name from the repo URL
+    const repoName = repoUrl
+      .replace(/\.git$/, "")
+      .split("/")
+      .pop()!
+      .replace(/[^\w.\-]/g, "");
+    const clonedPath = path.join(targetDir, repoName);
+
+    // Verify the directory exists
+    try {
+      await fs.promises.access(clonedPath);
+    } catch {
+      throw new Error(`Clone completed but directory not found at ${clonedPath}`);
+    }
+    return clonedPath;
   });
 
   ipcMain.handle("git_branches", async (_event, args: { cwd: string }) => {

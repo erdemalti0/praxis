@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
+import { useState, useEffect, useRef, useMemo, memo } from "react";
 import { createPortal } from "react-dom";
-import { Plus, X, Columns2, Rows2, Maximize2, Minimize2, ArrowUpDown, Pencil, Copy } from "lucide-react";
+import { Plus, X, Columns2, Maximize2, Minimize2, ArrowUpDown, Pencil, Copy } from "lucide-react";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useUIStore } from "../../stores/uiStore";
 import { closePane, getSessionIds } from "../../lib/layout/layoutUtils";
@@ -11,8 +11,6 @@ import { useWidgetStore } from "../../stores/widgetStore";
 
 export default memo(function TerminalTabs() {
   const allSessions = useTerminalStore((s) => s.sessions);
-  const activeId = useTerminalStore((s) => s.activeSessionId);
-  const setActive = useTerminalStore((s) => s.setActiveSession);
   const removeSession = useTerminalStore((s) => s.removeSession);
   const updateSession = useTerminalStore((s) => s.updateSession);
   const setShowSpawn = useUIStore((s) => s.setShowSpawnDialog);
@@ -31,7 +29,6 @@ export default memo(function TerminalTabs() {
   // Terminal is at the bottom when widgets are on top
   const terminalIsBottom = hasWidgets && topPaneContent === "widgets";
   const focusedPaneSessionId = useUIStore((s) => s.focusedPaneSessionId);
-  const setSplitSpawnContext = useUIStore((s) => s.setSplitSpawnContext);
   const workspaceLayouts = useUIStore((s) => s.workspaceLayouts);
   const setWorkspaceLayout = useUIStore((s) => s.setWorkspaceLayout);
   const terminalGroups = useUIStore((s) => s.terminalGroups);
@@ -40,10 +37,6 @@ export default memo(function TerminalTabs() {
   const removeTerminalGroup = useUIStore((s) => s.removeTerminalGroup);
   const setActiveTerminalGroup = useUIStore((s) => s.setActiveTerminalGroup);
 
-  const sessions = useMemo(
-    () => allSessions.filter((s) => s.workspaceId === activeWorkspaceId),
-    [allSessions, activeWorkspaceId]
-  );
   const groupIds = useMemo(
     () => activeWorkspaceId ? (terminalGroups[activeWorkspaceId] || []) : [],
     [activeWorkspaceId, terminalGroups]
@@ -103,14 +96,6 @@ export default memo(function TerminalTabs() {
     e.preventDefault();
     e.stopPropagation();
     setTabCtxMenu({ x: e.clientX, y: e.clientY, groupId });
-  };
-
-  const handleSplit = (direction: "horizontal" | "vertical") => {
-    const targetSession = focusedPaneSessionId || activeId;
-    if (targetSession) {
-      setSplitSpawnContext({ sessionId: targetSession, direction });
-      setShowSpawn(true);
-    }
   };
 
   const handleCloseSession = (sessionId: string, groupId: string) => {

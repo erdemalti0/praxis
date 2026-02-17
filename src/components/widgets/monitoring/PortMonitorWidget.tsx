@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "../../../lib/ipc";
 import type { PortMonitorConfig } from "../../../types/widget";
-import { RefreshCw, Filter, XCircle, ExternalLink, Copy } from "lucide-react";
+import { RefreshCw, Filter, XCircle } from "lucide-react";
 import { useWidgetStore } from "../../../stores/widgetStore";
 
 interface PortEntry {
@@ -13,73 +13,6 @@ interface PortEntry {
   localAddress?: string;
 }
 
-function ProcessTooltip({ entry }: { entry: PortEntry }) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top: "100%",
-        left: 0,
-        right: 0,
-        background: "var(--vp-bg-secondary)",
-        border: "1px solid var(--vp-border-light)",
-        borderRadius: 6,
-        padding: 8,
-        fontSize: 10,
-        zIndex: 10,
-        marginTop: 2,
-      }}
-    >
-      <div style={{ color: "var(--vp-text-muted)", marginBottom: 4 }}>Process Details</div>
-      <div style={{ display: "grid", gap: 4 }}>
-        <div className="flex justify-between">
-          <span style={{ color: "var(--vp-text-dim)" }}>PID:</span>
-          <span style={{ color: "var(--vp-text-secondary)", fontFamily: "monospace" }}>{entry.pid}</span>
-        </div>
-        <div className="flex justify-between">
-          <span style={{ color: "var(--vp-text-dim)" }}>Protocol:</span>
-          <span style={{ color: "var(--vp-text-secondary)", fontFamily: "monospace" }}>{entry.protocol}</span>
-        </div>
-        {entry.localAddress && (
-          <div className="flex justify-between">
-            <span style={{ color: "var(--vp-text-dim)" }}>Address:</span>
-            <span style={{ color: "var(--vp-text-secondary)", fontFamily: "monospace" }}>{entry.localAddress}</span>
-          </div>
-        )}
-        {entry.state && (
-          <div className="flex justify-between">
-            <span style={{ color: "var(--vp-text-dim)" }}>State:</span>
-            <span style={{ color: "var(--vp-text-secondary)" }}>{entry.state}</span>
-          </div>
-        )}
-      </div>
-      <div style={{ marginTop: 8, display: "flex", gap: 4 }}>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            navigator.clipboard.writeText(`http://localhost:${entry.port}`);
-          }}
-          style={{
-            flex: 1,
-            background: "var(--vp-accent-blue-bg-hover)",
-            border: "none",
-            borderRadius: 4,
-            padding: "4px 6px",
-            color: "var(--vp-accent-blue)",
-            cursor: "pointer",
-            fontSize: 10,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 4,
-          }}
-        >
-          <Copy size={10} /> Copy URL
-        </button>
-      </div>
-    </div>
-  );
-}
 
 export default function PortMonitorWidget({
   widgetId,

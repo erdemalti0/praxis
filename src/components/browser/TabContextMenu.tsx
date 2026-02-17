@@ -13,7 +13,7 @@ import {
   FolderPlus,
   Trash2,
 } from "lucide-react";
-import { useBrowserStore, type BrowserTab } from "../../stores/browserStore";
+import { useBrowserStore } from "../../stores/browserStore";
 
 interface ContextMenuPosition {
   x: number;
@@ -52,8 +52,6 @@ export default function TabContextMenu({ isOpen, position, tabId, onClose }: Tab
   const addTabToGroup = useBrowserStore((s) => s.addTabToGroup);
   const removeTabFromGroup = useBrowserStore((s) => s.removeTabFromGroup);
   const createTabGroup = useBrowserStore((s) => s.createTabGroup);
-  const setActiveBrowserTabId = useBrowserStore((s) => s.setActiveBrowserTabId);
-  const navigateTab = useBrowserStore((s) => s.navigateTab);
 
   const tab = tabs.find((t) => t.id === tabId);
 

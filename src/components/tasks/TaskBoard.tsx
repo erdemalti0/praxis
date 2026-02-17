@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState, useCallback, memo } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useEffect, useState, useCallback, memo } from "react";
 import { useTaskStore } from "../../stores/taskStore";
 import { useUIStore } from "../../stores/uiStore";
 import TaskCreateDialog from "./TaskCreateDialog";

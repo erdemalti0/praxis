@@ -7,10 +7,64 @@ import { useBrowserStore } from "../stores/browserStore";
 import { invoke } from "../lib/ipc";
 import { cleanupTerminal } from "../lib/terminal/terminalCache";
 import { closePane } from "../lib/layout/layoutUtils";
+import { getShortcutKey } from "../lib/shortcuts";
+
+/**
+ * Match a KeyboardEvent against an Electron accelerator string.
+ * E.g. "CmdOrCtrl+Shift+M" matches Cmd+Shift+M on Mac or Ctrl+Shift+M on other OS.
+ */
+function matchesAccelerator(e: KeyboardEvent, accelerator: string): boolean {
+  if (!accelerator) return false;
+
+  const parts = accelerator.split("+");
+  let needMeta = false;
+  let needShift = false;
+  let needAlt = false;
+  let targetKey = "";
+
+  for (const part of parts) {
+    const p = part.trim();
+    if (p === "CmdOrCtrl" || p === "CommandOrControl" || p === "Cmd" || p === "Ctrl") {
+      needMeta = true;
+    } else if (p === "Shift") {
+      needShift = true;
+    } else if (p === "Alt" || p === "Option") {
+      needAlt = true;
+    } else {
+      targetKey = p;
+    }
+  }
+
+  const meta = e.metaKey || e.ctrlKey;
+  if (needMeta !== meta) return false;
+  if (needShift !== e.shiftKey) return false;
+  if (needAlt !== e.altKey) return false;
+
+  // Normalize the event key for comparison
+  const eventKey = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+
+  // Normalize target key
+  const keyMap: Record<string, string> = {
+    Up: "ArrowUp", Down: "ArrowDown", Left: "ArrowLeft", Right: "ArrowRight",
+    Space: " ", Escape: "Escape", Enter: "Enter", Backspace: "Backspace",
+    Delete: "Delete", Tab: "Tab",
+  };
+
+  let normalizedTarget = keyMap[targetKey] || targetKey;
+
+  // For single char keys, compare uppercase
+  if (normalizedTarget.length === 1) {
+    return eventKey === normalizedTarget.toUpperCase();
+  }
+
+  // For special keys, compare directly
+  return eventKey === normalizedTarget;
+}
 
 /**
  * Global keyboard shortcuts that work even when xterm.js terminal has focus.
  * Uses capture phase (3rd arg = true) so events are caught before terminal swallows them.
+ * Reads customShortcuts from settingsStore so user-configured shortcuts are respected.
  */
 export function useGlobalShortcuts() {
   useEffect(() => {
@@ -20,44 +74,73 @@ export function useGlobalShortcuts() {
 
       const viewMode = useUIStore.getState().viewMode;
       const isBrowser = viewMode === "browser";
+      const cs = useSettingsStore.getState().customShortcuts;
+
+      /** Helper: check if event matches a shortcut by ID */
+      const matches = (id: string) => matchesAccelerator(e, getShortcutKey(id, cs));
 
       // ── General shortcuts ──
 
-      // ⌘+K → Command Palette
-      if (e.key === "k" && !e.shiftKey) {
+      if (matches("command-palette")) {
         e.preventDefault();
         const store = useUIStore.getState();
         store.setCommandPaletteOpen(!store.commandPaletteOpen);
         return;
       }
 
-      // ⌘+, → Settings
-      if (e.key === "," && !e.shiftKey) {
+      if (matches("settings")) {
         e.preventDefault();
         const settings = useSettingsStore.getState();
         settings.setShowSettingsPanel(!settings.showSettingsPanel);
         return;
       }
 
-      // ⌘+B → Toggle Sidebar
-      if (e.key === "b" && !e.shiftKey) {
+      if (matches("toggle-sidebar")) {
         e.preventDefault();
         useUIStore.getState().toggleSidebar();
         return;
       }
 
-      // ⌘+1-4 → View switching (only when NOT in browser view)
-      if (!isBrowser && !e.shiftKey && /^[1-4]$/.test(e.key)) {
+      if (matches("fullscreen-terminal")) {
         e.preventDefault();
-        const views = ["terminal", "missions", "split", "browser"] as const;
-        useUIStore.getState().setViewMode(views[parseInt(e.key) - 1]);
+        const store = useUIStore.getState();
+        store.setTerminalMaximized(!store.terminalMaximized);
         return;
+      }
+
+      if (matches("mission-panel")) {
+        e.preventDefault();
+        useUIStore.getState().toggleMissionPanel();
+        return;
+      }
+
+      // ── View switching (only when NOT in browser view) ──
+      if (!isBrowser) {
+        if (matches("view-terminal")) {
+          e.preventDefault();
+          useUIStore.getState().setViewMode("terminal");
+          return;
+        }
+        if (matches("view-widgets")) {
+          e.preventDefault();
+          useUIStore.getState().setViewMode("missions");
+          return;
+        }
+        if (matches("view-split")) {
+          e.preventDefault();
+          useUIStore.getState().setViewMode("split");
+          return;
+        }
+        if (matches("view-browser")) {
+          e.preventDefault();
+          useUIStore.getState().setViewMode("browser");
+          return;
+        }
       }
 
       // ── Terminal shortcuts ──
 
-      // ⌘+W → Close Terminal (with confirmation)
-      if (e.key === "w" && !e.shiftKey && !isBrowser) {
+      if (matches("close-terminal") && !isBrowser) {
         e.preventDefault();
         const ui = useUIStore.getState();
         const ts = useTerminalStore.getState();
@@ -88,8 +171,7 @@ export function useGlobalShortcuts() {
         return;
       }
 
-      // ⌘+D → Split Right
-      if (e.key === "d" && !e.shiftKey) {
+      if (matches("split-right")) {
         e.preventDefault();
         const ui = useUIStore.getState();
         const ts = useTerminalStore.getState();
@@ -101,8 +183,7 @@ export function useGlobalShortcuts() {
         return;
       }
 
-      // ⌘+⇧+D → Split Down
-      if (e.key === "D" && e.shiftKey) {
+      if (matches("split-down")) {
         e.preventDefault();
         const ui = useUIStore.getState();
         const ts = useTerminalStore.getState();
@@ -114,53 +195,33 @@ export function useGlobalShortcuts() {
         return;
       }
 
-      // ⌘+⇧+M → Toggle Mission Panel
-      if (e.key === "M" && e.shiftKey) {
-        e.preventDefault();
-        useUIStore.getState().toggleMissionPanel();
-        return;
-      }
-
-      // ⌘+⇧+F → Toggle Fullscreen Terminal
-      if (e.key === "F" && e.shiftKey) {
-        e.preventDefault();
-        const store = useUIStore.getState();
-        store.setTerminalMaximized(!store.terminalMaximized);
-        return;
-      }
-
       // ── Sidebar panel shortcuts ──
 
-      // ⌘+⇧+A → Agents Panel
-      if (e.key === "A" && e.shiftKey) {
+      if (matches("sidebar-agents")) {
         e.preventDefault();
         useUIStore.getState().setActiveSidebarTab("agents");
         return;
       }
 
-      // ⌘+⇧+E → Explorer Panel
-      if (e.key === "E" && e.shiftKey) {
+      if (matches("sidebar-explorer")) {
         e.preventDefault();
         useUIStore.getState().setActiveSidebarTab("explorer");
         return;
       }
 
-      // ⌘+⇧+H → Search Panel
-      if (e.key === "H" && e.shiftKey) {
+      if (matches("sidebar-search")) {
         e.preventDefault();
         useUIStore.getState().setActiveSidebarTab("search");
         return;
       }
 
-      // ⌘+⇧+G → Git Panel
-      if (e.key === "G" && e.shiftKey) {
+      if (matches("sidebar-git")) {
         e.preventDefault();
         useUIStore.getState().setActiveSidebarTab("git");
         return;
       }
 
-      // ⌘+⇧+U → Services Panel
-      if (e.key === "U" && e.shiftKey) {
+      if (matches("sidebar-services")) {
         e.preventDefault();
         useUIStore.getState().setActiveSidebarTab("services");
         return;
@@ -171,8 +232,7 @@ export function useGlobalShortcuts() {
         const browserStore = useBrowserStore.getState();
         const activeTabId = browserStore.activeBrowserTabId;
 
-        // ⌘+R → Reload
-        if (e.key === "r" && !e.shiftKey) {
+        if (matches("browser-reload")) {
           e.preventDefault();
           const webview = document.querySelector<Electron.WebviewTag>(`webview[data-tab-id="${activeTabId}"]`);
           if (webview) {
@@ -182,8 +242,7 @@ export function useGlobalShortcuts() {
           return;
         }
 
-        // ⌘+⇧+R → Hard reload
-        if (e.key === "R" && e.shiftKey) {
+        if (matches("browser-hard-reload")) {
           e.preventDefault();
           const webview = document.querySelector<Electron.WebviewTag>(`webview[data-tab-id="${activeTabId}"]`);
           if (webview) {
@@ -193,8 +252,7 @@ export function useGlobalShortcuts() {
           return;
         }
 
-        // ⌘+[ → Back
-        if (e.key === "[" && !e.shiftKey) {
+        if (matches("browser-back")) {
           e.preventDefault();
           const webview = document.querySelector<Electron.WebviewTag>(`webview[data-tab-id="${activeTabId}"]`);
           if (webview && webview.canGoBack()) {
@@ -204,8 +262,7 @@ export function useGlobalShortcuts() {
           return;
         }
 
-        // ⌘+] → Forward
-        if (e.key === "]" && !e.shiftKey) {
+        if (matches("browser-forward")) {
           e.preventDefault();
           const webview = document.querySelector<Electron.WebviewTag>(`webview[data-tab-id="${activeTabId}"]`);
           if (webview && webview.canGoForward()) {
@@ -215,8 +272,7 @@ export function useGlobalShortcuts() {
           return;
         }
 
-        // ⌘+L → Focus URL bar
-        if (e.key === "l" && !e.shiftKey) {
+        if (matches("browser-url")) {
           e.preventDefault();
           const urlInput = document.querySelector<HTMLInputElement>('[data-url-input="true"]');
           if (urlInput) {
@@ -226,8 +282,7 @@ export function useGlobalShortcuts() {
           return;
         }
 
-        // ⌘+F → Find in page
-        if (e.key === "f" && !e.shiftKey) {
+        if (matches("find")) {
           e.preventDefault();
           const webview = document.querySelector<Electron.WebviewTag>(`webview[data-tab-id="${activeTabId}"]`);
           if (webview) {
@@ -249,37 +304,36 @@ export function useGlobalShortcuts() {
           return;
         }
 
-        // ⌘+⇧+I → DevTools
-        if (e.key === "I" && e.shiftKey) {
+        if (matches("browser-devtools")) {
           e.preventDefault();
           const webview = document.querySelector<Electron.WebviewTag>(`webview[data-tab-id="${activeTabId}"]`);
           if (webview) webview.openDevTools();
           return;
         }
 
-        // ⌘+T → New browser tab
-        if (e.key === "t" && !e.shiftKey) {
+        // ⌘+T → New browser tab (browser-specific, not in shortcuts system)
+        if (e.key === "t" && !e.shiftKey && meta) {
           e.preventDefault();
           browserStore.createLandingTab();
           return;
         }
 
-        // ⌘+W → Close browser tab
-        if (e.key === "w" && !e.shiftKey) {
+        // ⌘+W → Close browser tab (browser-specific)
+        if (e.key === "w" && !e.shiftKey && meta) {
           e.preventDefault();
           if (activeTabId) browserStore.removeTab(activeTabId);
           return;
         }
 
-        // ⌘+⇧+T → Reopen closed tab
-        if (e.key === "T" && e.shiftKey) {
+        // ⌘+⇧+T → Reopen closed tab (browser-specific)
+        if (e.key === "T" && e.shiftKey && meta) {
           e.preventDefault();
           browserStore.reopenClosedTab();
           return;
         }
 
         // ⌘+1-9 → Switch to browser tab
-        if (/^[1-9]$/.test(e.key)) {
+        if (/^[1-9]$/.test(e.key) && !e.shiftKey) {
           e.preventDefault();
           const index = parseInt(e.key) - 1;
           const unpinnedTabs = browserStore.tabs.filter((t) => !t.isPinned);

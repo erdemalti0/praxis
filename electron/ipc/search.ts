@@ -17,7 +17,7 @@ export function registerSearchHandlers() {
     const { projectPath, query, isRegex, caseSensitive } = args;
     if (!query || !projectPath) return [];
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       const worker = new Worker(getWorkerPath());
 
       const timeout = setTimeout(() => {

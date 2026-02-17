@@ -33,7 +33,6 @@ export function registerBrowserHandlers() {
     } else if (process.platform === "win32") {
       const pf = process.env.PROGRAMFILES || "C:\\Program Files";
       const pf86 = process.env["PROGRAMFILES(X86)"] || "C:\\Program Files (x86)";
-      const localApp = process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
       candidates = [
         { name: "Google Chrome", path: path.join(pf, "Google", "Chrome", "Application", "chrome.exe") },
         { name: "Brave Browser", path: path.join(pf, "BraveSoftware", "Brave-Browser", "Application", "brave.exe") },

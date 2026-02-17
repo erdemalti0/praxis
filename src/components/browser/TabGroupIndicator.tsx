@@ -79,7 +79,7 @@ interface CreateGroupDialogProps {
   tabId?: string;
 }
 
-export function CreateGroupDialog({ onClose, onCreate, tabId }: CreateGroupDialogProps) {
+export function CreateGroupDialog({ onClose, onCreate, tabId: _tabId }: CreateGroupDialogProps) {
   const [name, setName] = useState("New Group");
   const [color, setColor] = useState("#3b82f6");
 

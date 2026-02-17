@@ -3,7 +3,7 @@ import { useUIStore } from "../../stores/uiStore";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useBrowserStore } from "../../stores/browserStore";
 import { useEditorStore } from "../../stores/editorStore";
-import { Map, Plus, X, Globe, LayoutGrid, PlusCircle, Activity, FileCode2, Settings } from "lucide-react";
+import { Map, Plus, X, Globe, LayoutGrid, Activity, FileCode2, Settings } from "lucide-react";
 import { invoke } from "../../lib/ipc";
 import { cleanupTerminal } from "../../lib/terminal/terminalCache";
 import { UsagePanel } from "./UsagePanel";
@@ -38,7 +38,6 @@ export default function StatsBar() {
   const editorTabs = useEditorStore((s) => s.tabs);
   const hasEditorTabs = editorTabs.length > 0;
 
-  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
 
   const showSettingsPanel = useSettingsStore((s) => s.showSettingsPanel);
   const setShowSettingsPanel = useSettingsStore((s) => s.setShowSettingsPanel);
@@ -605,9 +604,7 @@ export default function StatsBar() {
                     e.stopPropagation();
                     useConfirmStore.getState().showConfirm("Close Workspace", "Close this workspace and all its terminals?", () => {
                       // Kill all PTY processes in this workspace before removing
-                      const uiState = useUIStore.getState();
                       const tsState = useTerminalStore.getState();
-                      const groupIds = uiState.terminalGroups[ws.id] || [];
                       const sessions = tsState.sessions.filter((s) => s.workspaceId === ws.id);
                       for (const session of sessions) {
                         invoke("close_pty", { id: session.id }).catch(() => {});

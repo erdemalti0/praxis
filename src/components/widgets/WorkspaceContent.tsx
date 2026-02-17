@@ -53,7 +53,7 @@ export default function WorkspaceContent({ workspaceId, isCustomizeMode = false 
 
   const lastLayoutRef = useRef<string>("");
   const handleLayoutChange = useCallback(
-    (newLayout: any[]) => {
+    (newLayout: any) => {
       const mapped: WidgetLayoutItem[] = newLayout.map((l: any) => {
         const x = Math.max(0, Math.min(l.x, COLS - 1));
         const w = Math.min(l.w, COLS - x);
@@ -257,8 +257,6 @@ export default function WorkspaceContent({ workspaceId, isCustomizeMode = false 
         width={containerWidth}
         margin={[8, 8]}
         containerPadding={[4, 4]}
-        isDraggable
-        isResizable
         draggableHandle=".widget-drag-handle"
         onLayoutChange={handleLayoutChange}
         onResizeStart={(_layout: any, _oldItem: any, newItem: any) => setResizing({ w: newItem.w, h: newItem.h })}
@@ -266,6 +264,7 @@ export default function WorkspaceContent({ workspaceId, isCustomizeMode = false 
         onResizeStop={() => setResizing(null)}
         compactType="vertical"
         useCSSTransforms
+        {...{ isDraggable: true, isResizable: true } as any}
       >
         {widgets.map((widget) => (
           <div key={widget.id}>

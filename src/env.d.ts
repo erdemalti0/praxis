@@ -32,6 +32,12 @@ interface ElectronAPI {
   getTempDir: () => string;
 }
 
+declare module "glob" {
+  export function glob(pattern: string, options?: any): Promise<string[]>;
+}
+
 interface Window {
   electronAPI: ElectronAPI;
+  electron?: ElectronAPI;
+  Electron?: any;
 }

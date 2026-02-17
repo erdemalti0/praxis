@@ -6,8 +6,8 @@ import type { AgentMonitorConfig } from "../../../types/widget";
 import { Bot, Terminal } from "lucide-react";
 
 export default function AgentMonitorWidget({
-  widgetId,
-  config = {},
+  widgetId: _widgetId,
+  config: _config = {},
 }: {
   widgetId: string;
   config?: AgentMonitorConfig;

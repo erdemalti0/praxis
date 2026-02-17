@@ -210,8 +210,8 @@ export function applyTheme(theme: ThemeDefinition): void {
   // Sync xterm terminal colors with the new theme
   // Use dynamic import to avoid circular dependency
   requestAnimationFrame(() => {
-    import("./terminal/terminalCache").then(({ updateAllTerminalThemes }) => {
-      updateAllTerminalThemes();
+    import("./terminal/terminalCache").then(({ refitAllTerminals }) => {
+      refitAllTerminals();
     }).catch(() => {});
   });
 }

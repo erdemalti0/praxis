@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 
 interface ResizeHandleProps {
   direction: "horizontal" | "vertical";
@@ -9,7 +9,6 @@ interface ResizeHandleProps {
 export default function ResizeHandle({ direction, onResize, containerRef }: ResizeHandleProps) {
   const [dragging, setDragging] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const startRef = useRef({ pos: 0, size: 0 });
 
   const isHorizontal = direction === "horizontal";
 
@@ -23,7 +22,6 @@ export default function ResizeHandle({ direction, onResize, containerRef }: Resi
       if (!container) return;
 
       const rect = container.getBoundingClientRect();
-      const startPos = isHorizontal ? e.clientX : e.clientY;
       const containerSize = isHorizontal ? rect.width : rect.height;
       const containerStart = isHorizontal ? rect.left : rect.top;
 

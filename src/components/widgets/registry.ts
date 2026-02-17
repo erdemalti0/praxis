@@ -4,8 +4,7 @@ import { lazy, type ComponentType } from "react";
 export const WIDGET_REGISTRY: WidgetDefinition[] = [
   // Core
   { type: "mission-board", name: "Missions", description: "Mission planner side panel", icon: "Target", category: "core", defaultSize: { w: 0, h: 0 }, minSize: { w: 0, h: 0 }, singleton: true, panelWidget: true },
-  { type: "terminal", name: "Terminal", description: "Embedded terminal view", icon: "Terminal", category: "core", defaultSize: { w: 6, h: 6 }, minSize: { w: 3, h: 3 }, singleton: true },
-  { type: "file-explorer", name: "File Explorer", description: "Directory tree browser", icon: "FolderOpen", category: "core", defaultSize: { w: 3, h: 8 }, minSize: { w: 2, h: 4 } },
+{ type: "file-explorer", name: "File Explorer", description: "Directory tree browser", icon: "FolderOpen", category: "core", defaultSize: { w: 3, h: 8 }, minSize: { w: 2, h: 4 } },
   { type: "agent-monitor", name: "Agent Monitor", description: "Running AI agents with status", icon: "Cpu", category: "monitoring", defaultSize: { w: 4, h: 6 }, minSize: { w: 2, h: 4 } },
 
   // Monitoring
