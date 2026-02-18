@@ -110,13 +110,6 @@ Praxis is a desktop application that lets you orchestrate multiple AI coding age
 - Session persistence across restarts
 - Keep-alive panel architecture for instant tab switching
 
-## Platforms
-
-| Platform | Status | Package Format |
-|----------|--------|---------------|
-| macOS    | Supported | `.dmg` |
-| Windows  | Supported | `.exe` |
-
 ## Tech Stack
 
 - **Frontend:** React 19, TypeScript, Zustand
