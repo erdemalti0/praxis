@@ -28,7 +28,7 @@ export default function TasksWidget({
           style={{
             background: "var(--vp-bg-surface-hover)",
             border: "1px solid var(--vp-border-light)",
-            borderRadius: 4,
+            borderRadius: "var(--vp-radius-sm)",
             padding: "3px 6px",
             fontSize: 10,
             color: "var(--vp-text-muted)",
@@ -50,7 +50,7 @@ export default function TasksWidget({
               color: viewMode === "kanban" ? "var(--vp-text-primary)" : "var(--vp-text-faint)",
               cursor: "pointer",
               padding: 4,
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
             }}
             title="Kanban view"
           >
@@ -64,7 +64,7 @@ export default function TasksWidget({
               color: viewMode === "list" ? "var(--vp-text-primary)" : "var(--vp-text-faint)",
               cursor: "pointer",
               padding: 4,
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
             }}
             title="List view"
           >

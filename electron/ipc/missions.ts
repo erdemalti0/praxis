@@ -100,9 +100,9 @@ export function registerMissionsHandlers() {
     }
   });
 
-  ipcMain.handle("save_missions", (_event, args: { projectPath: string; missions: Mission[] }) => {
+  ipcMain.handle("save_missions", async (_event, args: { projectPath: string; missions: Mission[] }) => {
     ensureDir(args.projectPath);
     const file = missionsFilePath(args.projectPath);
-    fs.writeFileSync(file, JSON.stringify(args.missions, null, 2), "utf-8");
+    await fs.promises.writeFile(file, JSON.stringify(args.missions, null, 2), "utf-8");
   });
 }

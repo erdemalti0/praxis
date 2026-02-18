@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useBrowserStore } from "../../stores/browserStore";
 import BrowserLanding from "./BrowserLanding";
@@ -32,6 +32,25 @@ export default function BrowserPanel() {
 
   const webviewRefs = useRef<Map<string, Electron.WebviewTag>>(new Map());
   const activeWebviewRef = useRef<Electron.WebviewTag | null>(null);
+
+  // Track recently active tabs for lazy webview mounting
+  // Only mount webviews for active tab + last 2 recently used tabs (max 3 in DOM)
+  const MAX_MOUNTED_TABS = 3;
+  const recentTabIds = useRef<string[]>([]);
+  useEffect(() => {
+    if (!activeBrowserTabId) return;
+    const ids = recentTabIds.current;
+    const idx = ids.indexOf(activeBrowserTabId);
+    if (idx !== -1) ids.splice(idx, 1);
+    ids.unshift(activeBrowserTabId);
+    if (ids.length > MAX_MOUNTED_TABS) ids.length = MAX_MOUNTED_TABS;
+  }, [activeBrowserTabId]);
+
+  const mountedTabIds = useMemo(() => {
+    const set = new Set(recentTabIds.current);
+    if (activeBrowserTabId) set.add(activeBrowserTabId);
+    return set;
+  }, [activeBrowserTabId, tabs.length]);
 
   useEffect(() => {
     if (activeBrowserTabId) {
@@ -101,48 +120,56 @@ export default function BrowserPanel() {
         className="flex-1 min-h-0"
         style={{ position: "relative", background: "var(--vp-bg-primary)" }}
       >
-        {tabs.map((tab) => (
-          <div
-            key={tab.id}
-            style={{
-              display: tab.id === activeBrowserTabId ? "flex" : "none",
-              width: "100%",
-              height: "100%",
-              position: "absolute",
-              inset: 0,
-              flexDirection: "column",
-            }}
-          >
-            {tab.showLanding ? (
-              <BrowserLanding onNavigate={handleNavigate} />
-            ) : tab.error ? (
-              <ErrorPage
-                type={tab.error.type}
-                url={tab.error.url}
-                message={tab.error.message}
-                onRetry={() => {
-                  const webview = webviewRefs.current.get(tab.id);
-                  if (webview) {
-                    updateTab(tab.id, { error: undefined, isLoading: true });
-                    webview.reload();
-                  }
-                }}
-                onHome={handleHome}
-              />
-            ) : null}
+        {tabs.map((tab) => {
+          const isActive = tab.id === activeBrowserTabId;
+          const isMounted = mountedTabIds.has(tab.id);
 
-            {tab.url && !tab.showLanding && (
-              <WebviewContainer
-                key={`wv-${tab.id}`}
-                tabId={tab.id}
-                url={tab.url}
-                isActive={tab.id === activeBrowserTabId}
-                webviewRefs={webviewRefs}
-                activeWebviewRef={activeWebviewRef}
-              />
-            )}
-          </div>
-        ))}
+          // Only render tabs that are in the mounted set (active + recent)
+          if (!isMounted && !isActive) return null;
+
+          return (
+            <div
+              key={tab.id}
+              style={{
+                display: isActive ? "flex" : "none",
+                width: "100%",
+                height: "100%",
+                position: "absolute",
+                inset: 0,
+                flexDirection: "column",
+              }}
+            >
+              {tab.showLanding ? (
+                <BrowserLanding onNavigate={handleNavigate} />
+              ) : tab.error ? (
+                <ErrorPage
+                  type={tab.error.type}
+                  url={tab.error.url}
+                  message={tab.error.message}
+                  onRetry={() => {
+                    const webview = webviewRefs.current.get(tab.id);
+                    if (webview) {
+                      updateTab(tab.id, { error: undefined, isLoading: true });
+                      webview.reload();
+                    }
+                  }}
+                  onHome={handleHome}
+                />
+              ) : null}
+
+              {tab.url && !tab.showLanding && (
+                <WebviewContainer
+                  key={`wv-${tab.id}`}
+                  tabId={tab.id}
+                  url={tab.url}
+                  isActive={isActive}
+                  webviewRefs={webviewRefs}
+                  activeWebviewRef={activeWebviewRef}
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <button
@@ -157,7 +184,7 @@ export default function BrowserPanel() {
           justifyContent: "center",
           width: 26,
           height: 26,
-          borderRadius: 6,
+          borderRadius: "var(--vp-radius-md)",
           border: "none",
           background: "var(--vp-bg-surface)",
           cursor: "pointer",
@@ -372,7 +399,7 @@ function injectCustomStyles(webview: Electron.WebviewTag) {
       style.textContent = \`
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: var(--vp-radius-sm); }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
       \`;
       document.head.appendChild(style);

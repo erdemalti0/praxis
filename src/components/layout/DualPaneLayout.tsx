@@ -114,7 +114,7 @@ export default function DualPaneLayout({ topPaneContent, dividerRatio, hasWidget
             color: "var(--vp-text-dim)",
             width: 28,
             height: 28,
-            borderRadius: 8,
+            borderRadius: "var(--vp-radius-lg)",
             border: "none",
             background: "transparent",
             cursor: "pointer",
@@ -165,7 +165,7 @@ export default function DualPaneLayout({ topPaneContent, dividerRatio, hasWidget
           style={{
             width: 32,
             height: 3,
-            borderRadius: 2,
+            borderRadius: "var(--vp-radius-xs)",
             background: isDragging ? "rgba(255,255,255,0.4)" : "var(--vp-text-subtle)",
             transition: isDragging ? "none" : "background 0.2s",
           }}

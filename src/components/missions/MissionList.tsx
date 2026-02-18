@@ -63,7 +63,7 @@ export default function MissionList({ missions, activeMissionId, projectPath }: 
             onClick={() => { setExportImportTab("import"); setShowExportImport(true); }}
             title="Import Mission"
             style={{
-              width: 24, height: 24, borderRadius: 6,
+              width: 24, height: 24, borderRadius: "var(--vp-radius-md)",
               background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-light)",
               color: "var(--vp-text-muted)", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -79,7 +79,7 @@ export default function MissionList({ missions, activeMissionId, projectPath }: 
               onClick={() => { setExportImportTab("export"); setShowExportImport(true); }}
               title="Export Missions"
               style={{
-                width: 24, height: 24, borderRadius: 6,
+                width: 24, height: 24, borderRadius: "var(--vp-radius-md)",
                 background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-light)",
                 color: "var(--vp-text-muted)", cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
@@ -95,7 +95,7 @@ export default function MissionList({ missions, activeMissionId, projectPath }: 
             onClick={() => setShowCreate(true)}
             title="New Mission"
             style={{
-              width: 24, height: 24, borderRadius: 6,
+              width: 24, height: 24, borderRadius: "var(--vp-radius-md)",
               background: "var(--vp-accent-blue-bg)", border: "1px solid var(--vp-accent-blue-border)",
               color: "var(--vp-accent-blue)", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -206,7 +206,7 @@ function MissionVirtualList({
                 style={{
                   padding: "10px 12px",
                   margin: "2px 6px",
-                  borderRadius: 10,
+                  borderRadius: "var(--vp-radius-xl)",
                   background: isActive
                     ? "var(--vp-accent-blue-bg)"
                     : isHovered
@@ -248,7 +248,7 @@ function MissionVirtualList({
                       onClick={(e) => handleDelete(e, mission.id)}
                       title="Delete mission"
                       style={{
-                        width: 20, height: 20, borderRadius: 5,
+                        width: 20, height: 20, borderRadius: "var(--vp-radius-sm)",
                         background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)",
                         color: "var(--vp-accent-red)", cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center",
@@ -273,13 +273,13 @@ function MissionVirtualList({
                       </span>
                     </div>
                     <div style={{
-                      width: "100%", height: 3, borderRadius: 2,
+                      width: "100%", height: 3, borderRadius: "var(--vp-radius-xs)",
                       background: "var(--vp-bg-surface)",
                       overflow: "hidden",
                     }}>
                       <div style={{
                         width: `${progress.pct}%`,
-                        height: "100%", borderRadius: 2,
+                        height: "100%", borderRadius: "var(--vp-radius-xs)",
                         background: progress.pct === 100
                           ? "linear-gradient(90deg, var(--vp-accent-green), #22c55e)"
                           : "linear-gradient(90deg, var(--vp-accent-blue), #3b82f6)",

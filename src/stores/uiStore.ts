@@ -4,8 +4,9 @@ import type { DailyStats } from "../types/stats";
 import type { TeamConfig } from "../types/session";
 import type { LayoutNode } from "../types/layout";
 import { loadJsonFile } from "../lib/persistence";
+import { removePaneAndCollapse, addSessionToLayout } from "../lib/layout/layoutUtils";
 
-export type ViewMode = "missions" | "terminal" | "split" | "browser" | "editor";
+export type ViewMode = "missions" | "terminal" | "split" | "browser" | "editor" | "runner";
 export type SidebarTab = "agents" | "explorer" | "search" | "git" | "services";
 
 /** Walk a LayoutNode tree and null out all sessionIds (PTY sessions are ephemeral) */
@@ -102,6 +103,7 @@ interface UIState {
   toggleMissionPanel: () => void;
   setFullscreenWidgetId: (id: string | null) => void;
   setCommandPaletteOpen: (open: boolean) => void;
+  moveSessionToGroup: (sessionId: string, sourceGroupId: string, targetGroupId: string) => void;
   reorderWorkspaces: (fromId: string, toId: string) => void;
   setWorkspaceEmoji: (id: string, emoji: string) => void;
   loadUIState: (homeDir: string) => void;
@@ -236,6 +238,58 @@ export const useUIStore = create<UIState>((set) => ({
   setFullscreenWidgetId: (id) => set({ fullscreenWidgetId: id }),
   setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
   setActiveSidebarTab: (tab) => set({ activeSidebarTab: tab, sidebarCollapsed: false }),
+
+  moveSessionToGroup: (sessionId, sourceGroupId, targetGroupId) => set((s) => {
+    if (sourceGroupId === targetGroupId) return s;
+
+    const sourceLayout = s.workspaceLayouts[sourceGroupId];
+    const targetLayout = s.workspaceLayouts[targetGroupId];
+    if (!sourceLayout || !targetLayout) return s;
+
+    // Remove from source, add to target
+    const newSourceLayout = removePaneAndCollapse(sourceLayout, sessionId);
+    const newTargetLayout = addSessionToLayout(targetLayout, sessionId);
+
+    const newLayouts = {
+      ...s.workspaceLayouts,
+      [sourceGroupId]: newSourceLayout,
+      [targetGroupId]: newTargetLayout,
+    };
+
+    // Check if source group is now empty (single null leaf) and should be removed
+    const sourceIsEmpty = newSourceLayout.type === "leaf" && !newSourceLayout.sessionId;
+    let newTerminalGroups = s.terminalGroups;
+    let newActiveTerminalGroup = s.activeTerminalGroup;
+
+    if (sourceIsEmpty) {
+      // Find which workspace owns the source group
+      const sourceWsId = Object.entries(s.terminalGroups).find(
+        ([, groups]) => groups.includes(sourceGroupId)
+      )?.[0];
+
+      if (sourceWsId) {
+        const wsGroups = s.terminalGroups[sourceWsId] || [];
+        if (wsGroups.length > 1) {
+          // Remove the empty source group
+          const filteredGroups = wsGroups.filter((g) => g !== sourceGroupId);
+          delete newLayouts[sourceGroupId];
+          newTerminalGroups = { ...newTerminalGroups, [sourceWsId]: filteredGroups };
+          if (s.activeTerminalGroup[sourceWsId] === sourceGroupId) {
+            newActiveTerminalGroup = {
+              ...newActiveTerminalGroup,
+              [sourceWsId]: filteredGroups[filteredGroups.length - 1] || "",
+            };
+          }
+        }
+      }
+    }
+
+    return {
+      workspaceLayouts: newLayouts,
+      terminalGroups: newTerminalGroups,
+      activeTerminalGroup: newActiveTerminalGroup,
+    };
+  }),
 
   reorderWorkspaces: (fromId, toId) => set((s) => {
     const workspaces = [...s.workspaces];

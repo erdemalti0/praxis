@@ -62,7 +62,7 @@ export default function GitPanel() {
         <button
           onClick={() => projectPath && refresh(projectPath)}
           style={{
-            marginTop: 8, padding: "4px 12px", borderRadius: 6,
+            marginTop: 8, padding: "4px 12px", borderRadius: "var(--vp-radius-md)",
             background: "var(--vp-bg-surface)", border: "1px solid var(--vp-bg-surface-hover)",
             color: "var(--vp-text-muted)", fontSize: 10, cursor: "pointer",
           }}
@@ -81,7 +81,7 @@ export default function GitPanel() {
             <div
               key={i}
               style={{
-                width: `${w}%`, height: 10, borderRadius: 6,
+                width: `${w}%`, height: 10, borderRadius: "var(--vp-radius-md)",
                 background: "var(--vp-bg-surface-hover)",
                 animation: "pulse 1.5s ease-in-out infinite",
                 animationDelay: `${i * 0.2}s`,
@@ -100,7 +100,7 @@ export default function GitPanel() {
           <button
             onClick={() => projectPath && refresh(projectPath)}
             style={{
-              marginTop: 8, padding: "4px 12px", borderRadius: 6,
+              marginTop: 8, padding: "4px 12px", borderRadius: "var(--vp-radius-md)",
               background: "var(--vp-bg-surface)", border: "1px solid var(--vp-bg-surface-hover)",
               color: "var(--vp-text-muted)", fontSize: 10, cursor: "pointer",
             }}
@@ -128,7 +128,7 @@ export default function GitPanel() {
             onClick={() => setShowBranches(!showBranches)}
             className="flex items-center gap-1 flex-1 min-w-0"
             style={{
-              padding: "4px 8px", borderRadius: 6,
+              padding: "4px 8px", borderRadius: "var(--vp-radius-md)",
               background: "var(--vp-bg-surface)", border: "1px solid var(--vp-bg-surface-hover)",
               cursor: "pointer", color: "var(--vp-text-primary)", fontSize: 11,
               textAlign: "left",
@@ -145,7 +145,7 @@ export default function GitPanel() {
             onClick={() => projectPath && refresh(projectPath)}
             title="Refresh"
             style={{
-              width: 24, height: 24, borderRadius: 5,
+              width: 24, height: 24, borderRadius: "var(--vp-radius-sm)",
               background: "var(--vp-bg-surface)", border: "1px solid var(--vp-bg-surface-hover)",
               color: "var(--vp-text-muted)", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -159,7 +159,7 @@ export default function GitPanel() {
         {showBranches && (
           <div style={{
             marginTop: 4, background: "var(--vp-bg-tertiary)",
-            border: "1px solid var(--vp-border-light)", borderRadius: 8,
+            border: "1px solid var(--vp-border-light)", borderRadius: "var(--vp-radius-lg)",
             maxHeight: 200, overflowY: "auto",
           }}>
             {branches.map((b) => (
@@ -252,7 +252,7 @@ export default function GitPanel() {
           </span>
           {status.staged.length > 0 && (
             <span style={{
-              fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 10,
+              fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: "var(--vp-radius-xl)",
               background: "var(--vp-accent-green-bg)", color: "var(--vp-accent-green)",
             }}>
               {status.staged.length} staged
@@ -267,7 +267,7 @@ export default function GitPanel() {
           rows={2}
           style={{
             width: "100%", background: "var(--vp-bg-surface)",
-            border: "1px solid var(--vp-border-light)", borderRadius: 8,
+            border: "1px solid var(--vp-border-light)", borderRadius: "var(--vp-radius-lg)",
             padding: "8px 10px", color: "var(--vp-text-primary)", fontSize: 11,
             outline: "none", fontFamily: "inherit", resize: "none",
           }}
@@ -278,7 +278,7 @@ export default function GitPanel() {
             disabled={!commitMessage.trim() || status.staged.length === 0}
             className="flex items-center justify-center gap-1"
             style={{
-              flex: 1, padding: "7px 0", borderRadius: 8, fontSize: 11, fontWeight: 700,
+              flex: 1, padding: "7px 0", borderRadius: "var(--vp-radius-lg)", fontSize: 11, fontWeight: 700,
               background: commitMessage.trim() && status.staged.length > 0 ? "var(--vp-accent-green-bg)" : "var(--vp-bg-surface)",
               border: `1px solid ${commitMessage.trim() && status.staged.length > 0 ? "var(--vp-accent-green)" : "var(--vp-bg-surface-hover)"}`,
               color: commitMessage.trim() && status.staged.length > 0 ? "var(--vp-accent-green)" : "var(--vp-text-subtle)",
@@ -294,7 +294,7 @@ export default function GitPanel() {
             title="Pull from remote"
             className="flex items-center justify-center gap-1"
             style={{
-              padding: "7px 12px", borderRadius: 8,
+              padding: "7px 12px", borderRadius: "var(--vp-radius-lg)",
               background: "var(--vp-accent-blue-bg)", border: "1px solid var(--vp-accent-blue-border)",
               color: "var(--vp-accent-blue)", fontSize: 10, fontWeight: 600, cursor: "pointer",
               transition: "all 0.15s",
@@ -308,7 +308,7 @@ export default function GitPanel() {
             title="Push to remote"
             className="flex items-center justify-center gap-1"
             style={{
-              padding: "7px 12px", borderRadius: 8,
+              padding: "7px 12px", borderRadius: "var(--vp-radius-lg)",
               background: "var(--vp-accent-green-bg)", border: "1px solid var(--vp-accent-green)",
               color: "var(--vp-accent-green)", fontSize: 10, fontWeight: 600, cursor: "pointer",
               transition: "all 0.15s",
@@ -329,7 +329,7 @@ export default function GitPanel() {
           disabled={!commitMessage.trim() || status.staged.length === 0}
           className="flex items-center justify-center gap-1"
           style={{
-            width: "100%", marginTop: 6, padding: "6px 0", borderRadius: 8, fontSize: 10, fontWeight: 600,
+            width: "100%", marginTop: 6, padding: "6px 0", borderRadius: "var(--vp-radius-lg)", fontSize: 10, fontWeight: 600,
             background: commitMessage.trim() && status.staged.length > 0 ? "var(--vp-accent-blue-bg)" : "var(--vp-bg-surface)",
             border: `1px solid ${commitMessage.trim() && status.staged.length > 0 ? "var(--vp-accent-blue-border)" : "var(--vp-bg-surface-hover)"}`,
             color: commitMessage.trim() && status.staged.length > 0 ? "var(--vp-accent-blue)" : "var(--vp-text-subtle)",
@@ -378,7 +378,7 @@ function FileSection({
             onClick={onStageAll}
             title="Stage all"
             style={{
-              fontSize: 9, padding: "1px 5px", borderRadius: 3,
+              fontSize: 9, padding: "1px 5px", borderRadius: "var(--vp-radius-xs)",
               background: "var(--vp-accent-green-bg)", border: "none",
               color: "var(--vp-accent-green)", cursor: "pointer",
               display: "flex", alignItems: "center", gap: 2, flexShrink: 0,
@@ -404,7 +404,7 @@ function FileSection({
             onClick={() => onAction(file)}
             title={actionTitle}
             style={{
-              width: 16, height: 16, borderRadius: 3,
+              width: 16, height: 16, borderRadius: "var(--vp-radius-xs)",
               background: "var(--vp-bg-surface)", border: "1px solid var(--vp-bg-surface-hover)",
               color: "var(--vp-text-muted)", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",

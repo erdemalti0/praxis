@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --vp-radius-xs: 3px;
+  --vp-radius-sm: 4px;
+  --vp-radius-md: 6px;
+  --vp-radius-lg: 8px;
+  --vp-radius-xl: 10px;
+  --vp-radius-2xl: 12px;
+  --vp-radius-3xl: 14px;
+  --vp-radius-4xl: 16px;
+}
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -28,7 +39,7 @@
   }
   ::-webkit-scrollbar-thumb {
     background: var(--vp-scrollbar-thumb, #1e1e1e);
-    border-radius: 6px;
+    border-radius: var(--vp-radius-md);
   }
   ::-webkit-scrollbar-thumb:hover {
     background: var(--vp-scrollbar-hover, #333333);
@@ -152,7 +163,7 @@ button, a, input, [class*="transition"] {
   background: var(--vp-accent-blue-bg, rgba(96, 165, 250, 0.08)) !important;
   opacity: 0.5 !important;
   border: 2px dashed var(--vp-accent-blue-glow, rgba(96, 165, 250, 0.5)) !important;
-  border-radius: 12px !important;
+  border-radius: var(--vp-radius-2xl) !important;
   animation: placeholderPulse 1.5s ease-in-out infinite;
 }
 

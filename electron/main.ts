@@ -16,6 +16,9 @@ import { registerLogsHandlers } from "./ipc/logs";
 import { registerMissionsHandlers } from "./ipc/missions";
 import { registerSearchHandlers } from "./ipc/search";
 import { registerUsageHandlers } from "./ipc/usage";
+import { registerNpmHandlers } from "./ipc/npm";
+import { registerHttpHandlers } from "./ipc/http";
+import { registerRunnerHandlers } from "./ipc/runner";
 import { startFileWatchers } from "./ipc/filesystem";
 import { buildMenu } from "./menu";
 import { closeAllPty } from "./utils/pty-manager";
@@ -118,6 +121,9 @@ export function createWindow(projectName?: string, projectPath?: string) {
     registerMissionsHandlers();
     registerSearchHandlers();
     registerUsageHandlers();
+    registerNpmHandlers();
+    registerHttpHandlers();
+    registerRunnerHandlers();
 
     ipcMain.handle("get_default_shell", () => getDefaultShell());
 

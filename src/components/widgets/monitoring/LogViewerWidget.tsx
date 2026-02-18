@@ -144,7 +144,7 @@ export default function LogViewerWidget({
                 style={{
                   padding: "3px 8px",
                   fontSize: 10,
-                  borderRadius: 4,
+                  borderRadius: "var(--vp-radius-sm)",
                   background: selectedSessionId === s.id ? "var(--vp-border-light)" : "transparent",
                   border: "1px solid var(--vp-border-subtle)",
                   color: selectedSessionId === s.id ? "var(--vp-text-primary)" : "var(--vp-text-dim)",
@@ -171,7 +171,7 @@ export default function LogViewerWidget({
             color: autoScroll ? "var(--vp-accent-blue)" : "var(--vp-text-faint)",
             cursor: "pointer",
             padding: 4,
-            borderRadius: 4,
+            borderRadius: "var(--vp-radius-sm)",
             flexShrink: 0,
           }}
           title={autoScroll ? "Auto-scroll ON" : "Auto-scroll OFF"}
@@ -187,7 +187,7 @@ export default function LogViewerWidget({
             color: filteredLines.length > 0 ? "var(--vp-text-faint)" : "var(--vp-text-subtle)",
             cursor: filteredLines.length > 0 ? "pointer" : "default",
             padding: 4,
-            borderRadius: 4,
+            borderRadius: "var(--vp-radius-sm)",
             flexShrink: 0,
           }}
           title="Export log"
@@ -200,7 +200,7 @@ export default function LogViewerWidget({
       <div className="flex items-center gap-2" style={{ padding: "4px 6px", borderBottom: "1px solid var(--vp-bg-surface)" }}>
         <div
           className="flex items-center gap-1"
-          style={{ flex: 1, background: "var(--vp-bg-surface)", borderRadius: 4, padding: "3px 6px" }}
+          style={{ flex: 1, background: "var(--vp-bg-surface)", borderRadius: "var(--vp-radius-sm)", padding: "3px 6px" }}
         >
           {useRegex ? <Regex size={10} style={{ color: "var(--vp-accent-blue)" }} /> : <Search size={10} style={{ color: "var(--vp-text-dim)" }} />}
           <input
@@ -221,7 +221,7 @@ export default function LogViewerWidget({
           style={{
             background: useRegex ? "var(--vp-accent-blue-bg-hover)" : "none",
             border: "1px solid var(--vp-border-subtle)",
-            borderRadius: 4,
+            borderRadius: "var(--vp-radius-sm)",
             padding: "2px 6px",
             fontSize: 9,
             color: useRegex ? "var(--vp-accent-blue)" : "var(--vp-text-faint)",

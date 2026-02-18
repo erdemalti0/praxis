@@ -1,8 +1,10 @@
 import { Terminal } from "@xterm/xterm";
+import type { ITheme } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { SearchAddon } from "@xterm/addon-search";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
+import { getTerminalThemeById, type TerminalThemeDefinition } from "./terminalThemes";
 
 interface CachedTerminal {
   terminal: Terminal;
@@ -12,29 +14,8 @@ interface CachedTerminal {
 
 const cache = new Map<string, CachedTerminal>();
 
-const TERMINAL_THEME = {
-  background: "#000000",
-  foreground: "#e0e0e0",
-  cursor: "#ffffff",
-  cursorAccent: "#000000",
-  selectionBackground: "#333333",
-  black: "#333333",
-  red: "#f87171",
-  green: "#4ade80",
-  yellow: "#facc15",
-  blue: "#a0a0a0",
-  magenta: "#a78bfa",
-  cyan: "#67e8f9",
-  white: "#d4d4d4",
-  brightBlack: "#525252",
-  brightRed: "#fca5a5",
-  brightGreen: "#86efac",
-  brightYellow: "#fde68a",
-  brightBlue: "#d4d4d4",
-  brightMagenta: "#c4b5fd",
-  brightCyan: "#a5f3fc",
-  brightWhite: "#ffffff",
-};
+/** Current terminal theme — updated via updateAllTerminalThemes() */
+let _currentTheme: ITheme = getTerminalThemeById("default-dark").theme;
 
 /** Default scrollback for active (visible) terminals */
 const SCROLLBACK_ACTIVE = 5000;
@@ -49,7 +30,7 @@ export function getOrCreateTerminal(sessionId: string): CachedTerminal {
     fontFamily: "'JetBrains Mono', 'SF Mono', Monaco, Menlo, monospace",
     fontSize: 13,
     lineHeight: 1.4,
-    theme: TERMINAL_THEME,
+    theme: _currentTheme,
     cursorBlink: false,
     allowProposedApi: true,
     scrollback: SCROLLBACK_ACTIVE,
@@ -130,11 +111,22 @@ export function hasCachedTerminal(sessionId: string): boolean {
  * Re-fit all cached terminals that are currently mounted in the DOM.
  * Used after layout changes (fullscreen toggle, sidebar toggle, etc.)
  * Only fits terminals whose element is actually connected to the document.
+ * Deduplicated: multiple rapid calls collapse into a single refit.
  */
+let refitPending = false;
+let refitTimer: ReturnType<typeof setTimeout> | null = null;
+
 export function refitAllTerminals(): void {
-  // Delay to allow layout to settle
+  if (refitPending) return;
+  refitPending = true;
+
+  // Cancel any lingering timer from a previous cycle
+  if (refitTimer) clearTimeout(refitTimer);
+
   requestAnimationFrame(() => {
-    setTimeout(() => {
+    refitTimer = setTimeout(() => {
+      refitPending = false;
+      refitTimer = null;
       for (const [, entry] of cache) {
         try {
           if (entry.terminal.element?.isConnected) {
@@ -164,5 +156,17 @@ export function setActiveScrollback(sessionId: string): void {
   const entry = cache.get(sessionId);
   if (entry && entry.terminal.options.scrollback !== SCROLLBACK_ACTIVE) {
     entry.terminal.options.scrollback = SCROLLBACK_ACTIVE;
+  }
+}
+
+/**
+ * Update the theme for all cached terminals.
+ * Called when the user changes the terminal theme in settings.
+ */
+export function updateAllTerminalThemes(themeId: string, customTerminalThemes: TerminalThemeDefinition[] = []): void {
+  const def = getTerminalThemeById(themeId, customTerminalThemes);
+  _currentTheme = def.theme;
+  for (const [, entry] of cache) {
+    entry.terminal.options.theme = _currentTheme;
   }
 }

@@ -121,7 +121,7 @@ export default function PomodoroWidget({
           color: showSettings ? "var(--vp-text-primary)" : "var(--vp-text-subtle)",
           cursor: "pointer",
           padding: 4,
-          borderRadius: 4,
+          borderRadius: "var(--vp-radius-sm)",
           zIndex: 10,
         }}
       >
@@ -143,7 +143,7 @@ export default function PomodoroWidget({
               style={{
                 background: settings.soundEnabled ? "var(--vp-accent-blue-bg-hover)" : "var(--vp-bg-surface-hover)",
                 border: "none",
-                borderRadius: 4,
+                borderRadius: "var(--vp-radius-sm)",
                 padding: "4px 8px",
                 cursor: "pointer",
                 display: "flex",
@@ -187,7 +187,7 @@ export default function PomodoroWidget({
             <button
               onClick={() => isRunning ? pause() : start()}
               style={{
-                padding: "6px 16px", fontSize: 11, borderRadius: 6,
+                padding: "6px 16px", fontSize: 11, borderRadius: "var(--vp-radius-md)",
                 background: isRunning ? "var(--vp-accent-red-bg)" : "var(--vp-accent-blue-bg-hover)",
                 border: `1px solid ${isRunning ? "var(--vp-accent-red-border)" : "var(--vp-accent-blue-border)"}`,
                 color: isRunning ? "var(--vp-accent-red-text)" : "var(--vp-accent-blue)",
@@ -197,10 +197,10 @@ export default function PomodoroWidget({
               {isRunning ? <Pause size={12} /> : <Play size={12} />}
               {isRunning ? "Pause" : "Start"}
             </button>
-            <button onClick={reset} style={{ padding: "6px 12px", fontSize: 11, borderRadius: 6, background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", color: "var(--vp-text-muted)", cursor: "pointer" }}>
+            <button onClick={reset} style={{ padding: "6px 12px", fontSize: 11, borderRadius: "var(--vp-radius-md)", background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", color: "var(--vp-text-muted)", cursor: "pointer" }}>
               <RotateCcw size={12} />
             </button>
-            <button onClick={skipPhase} style={{ padding: "6px 12px", fontSize: 11, borderRadius: 6, background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", color: "var(--vp-text-muted)", cursor: "pointer" }} title="Skip to next phase">
+            <button onClick={skipPhase} style={{ padding: "6px 12px", fontSize: 11, borderRadius: "var(--vp-radius-md)", background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", color: "var(--vp-text-muted)", cursor: "pointer" }} title="Skip to next phase">
               <Clock size={12} />
             </button>
           </div>
@@ -230,13 +230,13 @@ function SettingRow({ label, value, unit, onMinus, onPlus }: { label: string; va
     <div className="flex items-center justify-between">
       <span style={{ fontSize: 11, color: "var(--vp-text-muted)" }}>{label}</span>
       <div className="flex items-center gap-2">
-        <button onClick={onMinus} style={{ width: 22, height: 22, borderRadius: 4, background: "var(--vp-bg-surface-hover)", border: "none", color: "var(--vp-text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <button onClick={onMinus} style={{ width: 22, height: 22, borderRadius: "var(--vp-radius-sm)", background: "var(--vp-bg-surface-hover)", border: "none", color: "var(--vp-text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Minus size={10} />
         </button>
         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--vp-text-primary)", minWidth: 40, textAlign: "center" }}>
           {value} {unit}
         </span>
-        <button onClick={onPlus} style={{ width: 22, height: 22, borderRadius: 4, background: "var(--vp-bg-surface-hover)", border: "none", color: "var(--vp-text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <button onClick={onPlus} style={{ width: 22, height: 22, borderRadius: "var(--vp-radius-sm)", background: "var(--vp-bg-surface-hover)", border: "none", color: "var(--vp-text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Plus size={10} />
         </button>
       </div>

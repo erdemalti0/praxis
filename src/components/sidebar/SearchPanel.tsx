@@ -53,7 +53,7 @@ export default function SearchPanel() {
         <div className="flex items-center gap-1" style={{
           background: "var(--vp-bg-surface)",
           border: "1px solid var(--vp-bg-surface-hover)",
-          borderRadius: 8, padding: "4px 8px",
+          borderRadius: "var(--vp-radius-lg)", padding: "4px 8px",
         }}>
           <Search size={12} style={{ color: "var(--vp-text-faint)", flexShrink: 0 }} />
           <input
@@ -83,7 +83,7 @@ export default function SearchPanel() {
             onClick={() => setIsRegex(!isRegex)}
             title="Use Regex"
             style={{
-              padding: "2px 6px", borderRadius: 4, fontSize: 9, fontWeight: 600,
+              padding: "2px 6px", borderRadius: "var(--vp-radius-sm)", fontSize: 9, fontWeight: 600,
               background: isRegex ? "var(--vp-accent-blue-bg-hover)" : "var(--vp-bg-surface)",
               border: `1px solid ${isRegex ? "var(--vp-accent-blue-border)" : "var(--vp-border-subtle)"}`,
               color: isRegex ? "var(--vp-accent-blue)" : "var(--vp-text-faint)", cursor: "pointer",
@@ -96,7 +96,7 @@ export default function SearchPanel() {
             onClick={() => setCaseSensitive(!caseSensitive)}
             title="Case Sensitive"
             style={{
-              padding: "2px 6px", borderRadius: 4, fontSize: 9, fontWeight: 600,
+              padding: "2px 6px", borderRadius: "var(--vp-radius-sm)", fontSize: 9, fontWeight: 600,
               background: caseSensitive ? "var(--vp-accent-blue-bg-hover)" : "var(--vp-bg-surface)",
               border: `1px solid ${caseSensitive ? "var(--vp-accent-blue-border)" : "var(--vp-border-subtle)"}`,
               color: caseSensitive ? "var(--vp-accent-blue)" : "var(--vp-text-faint)", cursor: "pointer",

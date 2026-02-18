@@ -3,7 +3,7 @@ import { X, Code, ChevronLeft, Search } from "lucide-react";
 import { useUIStore } from "../../stores/uiStore";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useSettingsStore } from "../../stores/settingsStore";
-import { splitPane, fillEmptyLeaf, hasEmptyLeaf } from "../../lib/layout/layoutUtils";
+import { splitPane, fillEmptyLeaf, hasEmptyLeaf, rebalanceLayout } from "../../lib/layout/layoutUtils";
 import type { LayoutNode } from "../../types/layout";
 import { invoke } from "../../lib/ipc";
 import { getOrCreateTerminal, cleanupTerminal } from "../../lib/terminal/terminalCache";
@@ -28,6 +28,7 @@ interface FlagOption {
 
 interface AgentPreset {
   label: string;
+  description: string;
   cmd: string;
   args: string[];
   type: string;
@@ -41,6 +42,7 @@ interface AgentPreset {
 const AGENT_PRESETS: AgentPreset[] = [
   {
     label: "Shell",
+    description: "Default system shell",
     cmd: "__default_shell__",
     args: [],
     type: "shell",
@@ -49,6 +51,7 @@ const AGENT_PRESETS: AgentPreset[] = [
   },
   {
     label: "Claude Code",
+    description: "Anthropic AI coding assistant",
     cmd: "claude",
     args: [],
     type: "claude-code",
@@ -69,6 +72,7 @@ const AGENT_PRESETS: AgentPreset[] = [
   },
   {
     label: "OpenCode",
+    description: "Terminal-based code editor",
     cmd: "opencode",
     args: [],
     type: "opencode",
@@ -85,6 +89,7 @@ const AGENT_PRESETS: AgentPreset[] = [
   },
   {
     label: "Aider",
+    description: "AI pair programming in terminal",
     cmd: "aider",
     args: [],
     type: "aider",
@@ -109,6 +114,7 @@ const AGENT_PRESETS: AgentPreset[] = [
   },
   {
     label: "Gemini CLI",
+    description: "Google AI coding assistant",
     cmd: "gemini",
     args: [],
     type: "gemini",
@@ -126,6 +132,7 @@ const AGENT_PRESETS: AgentPreset[] = [
   },
   {
     label: "AMP",
+    description: "Sourcegraph AI dev agent",
     cmd: "amp",
     args: [],
     type: "amp",
@@ -155,6 +162,7 @@ export default function SpawnDialog() {
   const allPresets = useMemo(() => {
     const userPresets: AgentPreset[] = userAgents.map((ua) => ({
       label: ua.label,
+      description: (ua as any).description || "Custom agent",
       cmd: ua.cmd,
       args: ua.args || [],
       type: ua.type,
@@ -172,6 +180,7 @@ export default function SpawnDialog() {
   const [flagValues, setFlagValues] = useState<Record<string, string>>({});
   const [extraArgs, setExtraArgs] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [agentSearchQuery, setAgentSearchQuery] = useState("");
 
   // Reset when dialog opens or preset changes
   useEffect(() => {
@@ -186,10 +195,22 @@ export default function SpawnDialog() {
     if (show) {
       setSelectedPreset(null);
       setCwd(selectedProject?.path ?? "~");
+      setAgentSearchQuery("");
     }
   }, [show, selectedProject?.path]);
 
   const preset = selectedPreset !== null ? allPresets[selectedPreset] : null;
+
+  const filteredPresets = useMemo(() => {
+    if (!agentSearchQuery.trim()) return allPresets;
+    const q = agentSearchQuery.toLowerCase();
+    return allPresets.filter(
+      (p) =>
+        p.label.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.type.toLowerCase().includes(q)
+    );
+  }, [allPresets, agentSearchQuery]);
 
   const filteredFlags = useMemo(() => {
     if (!preset) return [];
@@ -264,7 +285,9 @@ export default function SpawnDialog() {
       // Split: add new pane to the current layout
       const currentLayout: LayoutNode =
         state.workspaceLayouts[groupId] || { type: "leaf", sessionId: ctx.sessionId };
-      const newLayout = splitPane(currentLayout, ctx.sessionId, ctx.direction, newSessionId);
+      const newLayout = rebalanceLayout(
+        splitPane(currentLayout, ctx.sessionId, ctx.direction, newSessionId)
+      );
       state.setWorkspaceLayout(groupId, newLayout);
       state.setSplitSpawnContext(null);
       state.setFocusedPane(newSessionId);
@@ -314,7 +337,7 @@ export default function SpawnDialog() {
       setupPtyConnection({ sessionId: id, terminal, fallbackCwd: cwd });
 
       // Step 2: Now spawn the PTY - listeners are already active
-      const result = await invoke<{ id: string; cwd: string }>("spawn_pty", {
+      const result = await invoke<{ id: string; cwd: string; pid?: number }>("spawn_pty", {
         id,
         cmd: preset.cmd,
         args: finalArgs,
@@ -330,7 +353,9 @@ export default function SpawnDialog() {
         title: `${preset.label}@${resolvedCwd.split("/").pop() || resolvedCwd}`,
         workspaceId: activeWorkspaceId ?? "",
         agentType: preset.type,
+        originalAgentType: preset.type,
         projectPath: resolvedCwd,
+        pid: result?.pid,
         isActive: true,
       });
 
@@ -383,7 +408,7 @@ export default function SpawnDialog() {
         if (typeof value === "string") finalArgs.push(value);
       }
 
-      const result = await invoke<{ id: string; cwd: string }>("spawn_pty", {
+      const result = await invoke<{ id: string; cwd: string; pid?: number }>("spawn_pty", {
         id, cmd: matchedPreset.cmd, args: finalArgs, cwd: spawnCwd,
       });
       const resolvedCwd = result?.cwd || spawnCwd;
@@ -391,7 +416,8 @@ export default function SpawnDialog() {
       addSession({
         id, title: `${matchedPreset.label}@${resolvedCwd.split("/").pop() || resolvedCwd}`,
         workspaceId: activeWorkspaceId ?? "", agentType: matchedPreset.type,
-        projectPath: resolvedCwd, isActive: true,
+        originalAgentType: matchedPreset.type,
+        projectPath: resolvedCwd, pid: result?.pid, isActive: true,
       });
       addRecentSpawn(agentType, flags);
       handlePostSpawn(id);
@@ -423,86 +449,151 @@ export default function SpawnDialog() {
     return null;
   };
 
+  /* ───────── Agent list item ───────── */
+
+  const renderAgentRow = (
+    p: AgentPreset & { _emoji?: string },
+    index: number,
+    onClick: () => void,
+  ) => (
+    <button
+      key={`${p.type}-${index}`}
+      onClick={onClick}
+      className="flex items-center gap-3 w-full text-left group"
+      style={{
+        padding: "10px 12px",
+        border: "none",
+        background: "transparent",
+        borderRadius: "var(--vp-radius-xl)",
+        cursor: "pointer",
+        transition: "all 0.15s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "var(--vp-bg-tertiary, rgba(255,255,255,0.04))";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "transparent";
+      }}
+    >
+      <div
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: "var(--vp-radius-xl)",
+          background: "var(--vp-bg-tertiary, rgba(255,255,255,0.06))",
+          border: "1px solid var(--vp-border-subtle)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        {renderLogo(p, 20)}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, color: "var(--vp-text-primary)", fontWeight: 500 }}>
+          {p.label}
+        </div>
+        <div style={{ fontSize: 11, color: "var(--vp-text-dim)", marginTop: 1 }}>
+          {p.description}
+        </div>
+      </div>
+      <ChevronLeft
+        size={14}
+        className="spawn-row-chevron"
+        style={{
+          color: "var(--vp-text-faint)",
+          transform: "rotate(180deg)",
+        }}
+      />
+    </button>
+  );
+
   /* ───────── Stage 1: CLI Selection ───────── */
 
-  const renderCliSelection = () => (
-    <div className="p-5">
-      {/* Recent spawns section */}
-      {recentSpawns.length > 0 && (
-        <div style={{ marginBottom: 12 }}>
-          <span style={{ fontSize: 11, color: "var(--vp-text-dim)", fontWeight: 500 }}>
-            Recent
-          </span>
-          <div className="flex items-center gap-2 mt-2" style={{ flexWrap: "wrap" }}>
-            {recentSpawns.map((recent, i) => {
-              const matchedPreset = allPresets.find((p) => p.type === recent.agentType);
-              if (!matchedPreset) return null;
-              return (
-                <button
-                  key={`${recent.agentType}-${i}`}
-                  onClick={() => handleQuickSpawn(recent.agentType, recent.flags)}
-                  className="flex items-center gap-1.5"
-                  style={{
-                    padding: "5px 10px",
-                    border: "1px solid var(--vp-border-subtle)",
-                    background: "transparent",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                    fontSize: 11,
-                    color: "var(--vp-text-secondary)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "var(--vp-text-subtle)";
-                    e.currentTarget.style.background = "var(--vp-bg-secondary)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "var(--vp-border-subtle)";
-                    e.currentTarget.style.background = "transparent";
-                  }}
-                >
-                  {renderLogo(matchedPreset, 14)}
-                  <span style={{ fontWeight: 500 }}>{matchedPreset.label}</span>
-                </button>
-              );
+  const renderCliSelection = () => {
+    // Deduplicate recent spawns by agentType (keep first occurrence)
+    const uniqueRecents = recentSpawns.filter(
+      (r, i, arr) => arr.findIndex((x) => x.agentType === r.agentType) === i
+    );
+    const recentTypes = new Set(uniqueRecents.map((r) => r.agentType));
+    const hasSearch = agentSearchQuery.trim().length > 0;
+
+    return (
+      <div className="flex flex-col" style={{ maxHeight: "70vh" }}>
+        {/* Search */}
+        <div style={{ padding: "12px 16px 0" }}>
+          <div style={{ position: "relative" }}>
+            <Search
+              size={14}
+              style={{
+                position: "absolute",
+                left: 10,
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "var(--vp-text-faint)",
+                pointerEvents: "none",
+              }}
+            />
+            <input
+              type="text"
+              value={agentSearchQuery}
+              onChange={(e) => setAgentSearchQuery(e.target.value)}
+              placeholder="Search agents..."
+              autoFocus
+              className="w-full text-xs"
+              style={{
+                background: "var(--vp-input-bg)",
+                border: "1px solid var(--vp-input-border)",
+                borderRadius: "var(--vp-radius-lg)",
+                color: "var(--vp-text-primary)",
+                padding: "8px 10px 8px 30px",
+                outline: "none",
+                transition: "border-color 0.2s ease",
+              }}
+              onFocus={(e) => (e.target.style.borderColor = "var(--vp-input-border-focus)")}
+              onBlur={(e) => (e.target.style.borderColor = "var(--vp-input-border)")}
+            />
+          </div>
+        </div>
+
+        <div className="overflow-y-auto" style={{ padding: "8px 8px 12px", flex: 1 }}>
+          {/* Recent spawns - only show when not searching */}
+          {!hasSearch && uniqueRecents.length > 0 && (
+            <div style={{ marginBottom: 4 }}>
+              <div style={{ fontSize: 10, color: "var(--vp-text-faint)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", padding: "4px 12px 6px" }}>
+                Recent
+              </div>
+              {uniqueRecents.map((recent, i) => {
+                const matched = allPresets.find((p) => p.type === recent.agentType);
+                if (!matched) return null;
+                return renderAgentRow(matched, i, () => handleQuickSpawn(recent.agentType, recent.flags));
+              })}
+            </div>
+          )}
+
+          {/* All agents (or filtered) */}
+          <div>
+            {!hasSearch && uniqueRecents.length > 0 && (
+              <div style={{ fontSize: 10, color: "var(--vp-text-faint)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", padding: "4px 12px 6px" }}>
+                All Agents
+              </div>
+            )}
+            {filteredPresets.length === 0 && (
+              <div style={{ fontSize: 12, color: "var(--vp-text-faint)", padding: "20px 12px", textAlign: "center" }}>
+                No matching agents
+              </div>
+            )}
+            {filteredPresets.map((p, i) => {
+              // Skip agents already shown in Recent (unless searching)
+              if (!hasSearch && recentTypes.has(p.type)) return null;
+              return renderAgentRow(p, i, () => setSelectedPreset(allPresets.indexOf(p)));
             })}
           </div>
         </div>
-      )}
-
-      <div className="grid grid-cols-3 gap-3">
-        {allPresets.map((p, i) => (
-          <button
-            key={p.type}
-            onClick={() => setSelectedPreset(i)}
-            className="flex flex-col items-center justify-center gap-2 group"
-            style={{
-              width: "100%",
-              height: 90,
-              border: "1px solid var(--vp-input-border)",
-              background: "transparent",
-              borderRadius: 12,
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "var(--vp-text-subtle)";
-              e.currentTarget.style.background = "var(--vp-bg-secondary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "var(--vp-border-subtle)";
-              e.currentTarget.style.background = "transparent";
-            }}
-          >
-            {renderLogo(p, 32)}
-            <span style={{ fontSize: 12, color: "var(--vp-text-secondary)", fontWeight: 500 }}>
-              {p.label}
-            </span>
-          </button>
-        ))}
       </div>
-    </div>
-  );
+    );
+  };
 
   /* ───────── Stage 2: Configuration ───────── */
 
@@ -521,7 +612,7 @@ export default function SpawnDialog() {
             style={{
               color: "var(--vp-text-dim)",
               padding: 4,
-              borderRadius: 6,
+              borderRadius: "var(--vp-radius-md)",
               background: "transparent",
               border: "none",
               cursor: "pointer",
@@ -576,7 +667,7 @@ export default function SpawnDialog() {
                   style={{
                     background: "var(--vp-input-bg)",
                     border: "1px solid var(--vp-input-border)",
-                    borderRadius: 8,
+                    borderRadius: "var(--vp-radius-lg)",
                     color: "var(--vp-text-primary)",
                     padding: "7px 10px 7px 30px",
                     outline: "none",
@@ -607,7 +698,7 @@ export default function SpawnDialog() {
                         style={{
                           border: `1px solid ${isOn ? "var(--vp-accent-blue-glow)" : "var(--vp-border-subtle)"}`,
                           background: isOn ? "var(--vp-accent-blue-bg)" : "transparent",
-                          borderRadius: 8,
+                          borderRadius: "var(--vp-radius-lg)",
                           transition: "all 0.2s ease",
                           cursor: "pointer",
                         }}
@@ -617,7 +708,7 @@ export default function SpawnDialog() {
                           style={{
                             width: 16,
                             height: 16,
-                            borderRadius: 4,
+                            borderRadius: "var(--vp-radius-sm)",
                             border: `1.5px solid ${isOn ? "var(--vp-accent-blue)" : "var(--vp-text-subtle)"}`,
                             background: isOn ? "var(--vp-accent-blue)" : "transparent",
                             display: "flex",
@@ -664,7 +755,7 @@ export default function SpawnDialog() {
                             style={{
                               background: "var(--vp-input-bg)",
                               border: "1px solid var(--vp-input-border)",
-                              borderRadius: 6,
+                              borderRadius: "var(--vp-radius-md)",
                               color: "var(--vp-text-primary)",
                               padding: "5px 8px",
                               outline: "none",
@@ -700,7 +791,7 @@ export default function SpawnDialog() {
                   border: "1px solid var(--vp-input-border)",
                   color: "var(--vp-text-primary)",
                   outline: "none",
-                  borderRadius: 10,
+                  borderRadius: "var(--vp-radius-xl)",
                   transition: "border-color 0.2s ease",
                   fontFamily: "monospace",
                   fontSize: 12,
@@ -727,7 +818,7 @@ export default function SpawnDialog() {
                 border: "1px solid var(--vp-input-border)",
                 color: "var(--vp-text-primary)",
                 outline: "none",
-                borderRadius: 10,
+                borderRadius: "var(--vp-radius-xl)",
                 transition: "border-color 0.2s ease",
               }}
               onFocus={(e) => (e.target.style.borderColor = "var(--vp-input-border-focus)")}
@@ -743,7 +834,7 @@ export default function SpawnDialog() {
             style={{
               background: "var(--vp-button-primary-bg)",
               color: "var(--vp-button-primary-text)",
-              borderRadius: 10,
+              borderRadius: "var(--vp-radius-xl)",
               border: "none",
               cursor: "pointer",
               transition: "opacity 0.2s ease",
@@ -773,10 +864,10 @@ export default function SpawnDialog() {
       <div
         className="shadow-2xl"
         style={{
-          width: 520,
+          width: 420,
           background: "var(--vp-bg-secondary)",
           border: "1px solid var(--vp-border-panel)",
-          borderRadius: 16,
+          borderRadius: "var(--vp-radius-4xl)",
           animation: "scaleIn 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
           overflow: "hidden",
         }}
@@ -795,7 +886,7 @@ export default function SpawnDialog() {
             style={{
               color: "var(--vp-text-faint)",
               padding: 4,
-              borderRadius: 8,
+              borderRadius: "var(--vp-radius-lg)",
               background: "transparent",
               border: "none",
               cursor: "pointer",
@@ -826,6 +917,13 @@ export default function SpawnDialog() {
         @keyframes scaleIn {
           from { opacity: 0; transform: scale(0.96); }
           to { opacity: 1; transform: scale(1); }
+        }
+        .spawn-row-chevron {
+          opacity: 0;
+          transition: opacity 0.15s ease;
+        }
+        .group:hover .spawn-row-chevron {
+          opacity: 1;
         }
       `}</style>
     </div>

@@ -54,7 +54,7 @@ export default function ConfirmDialog() {
           maxWidth: 400,
           width: "90%",
           background: "var(--vp-bg-surface)",
-          borderRadius: 12,
+          borderRadius: "var(--vp-radius-2xl)",
           padding: 24,
           border: "1px solid var(--vp-border-panel)",
           outline: "none",
@@ -72,7 +72,7 @@ export default function ConfirmDialog() {
             style={{
               padding: "6px 14px",
               fontSize: 12,
-              borderRadius: 6,
+              borderRadius: "var(--vp-radius-md)",
               border: "1px solid var(--vp-border-medium)",
               background: "var(--vp-bg-surface-hover)",
               color: "var(--vp-text-primary)",
@@ -89,7 +89,7 @@ export default function ConfirmDialog() {
             style={{
               padding: "6px 14px",
               fontSize: 12,
-              borderRadius: 6,
+              borderRadius: "var(--vp-radius-md)",
               border: "none",
               background: danger ? "var(--vp-accent-red)" : "var(--vp-accent-blue)",
               color: "#fff",

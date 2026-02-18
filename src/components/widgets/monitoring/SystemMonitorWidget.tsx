@@ -75,13 +75,13 @@ function Gauge({
           {pct.toFixed(1)}%
         </span>
       </div>
-      <div style={{ height: 6, background: "var(--vp-bg-surface-hover)", borderRadius: 3, marginBottom: 4 }}>
+      <div style={{ height: 6, background: "var(--vp-bg-surface-hover)", borderRadius: "var(--vp-radius-xs)", marginBottom: 4 }}>
         <div
           style={{
             height: "100%",
             width: `${Math.min(pct, 100)}%`,
             background: isAlert ? "var(--vp-accent-red-text)" : color,
-            borderRadius: 3,
+            borderRadius: "var(--vp-radius-xs)",
             transition: "width 0.5s, background 0.3s",
           }}
         />
@@ -106,11 +106,11 @@ function NetworkGauge({ rx, tx }: { rx: number; tx: number }) {
     <div style={{ marginBottom: 12 }}>
       <div style={{ fontSize: 11, color: "var(--vp-text-muted)", marginBottom: 6 }}>Network I/O</div>
       <div className="flex justify-between" style={{ gap: 12 }}>
-        <div style={{ flex: 1, background: "var(--vp-bg-surface)", borderRadius: 6, padding: "6px 8px" }}>
+        <div style={{ flex: 1, background: "var(--vp-bg-surface)", borderRadius: "var(--vp-radius-md)", padding: "6px 8px" }}>
           <div style={{ fontSize: 9, color: "var(--vp-accent-green)", marginBottom: 2 }}>↓ RX</div>
           <div style={{ fontSize: 11, color: "var(--vp-text-secondary)", fontFamily: "monospace" }}>{formatBytes(rx)}</div>
         </div>
-        <div style={{ flex: 1, background: "var(--vp-bg-surface)", borderRadius: 6, padding: "6px 8px" }}>
+        <div style={{ flex: 1, background: "var(--vp-bg-surface)", borderRadius: "var(--vp-radius-md)", padding: "6px 8px" }}>
           <div style={{ fontSize: 9, color: "var(--vp-accent-blue)", marginBottom: 2 }}>↑ TX</div>
           <div style={{ fontSize: 11, color: "var(--vp-text-secondary)", fontFamily: "monospace" }}>{formatBytes(tx)}</div>
         </div>
@@ -136,7 +136,7 @@ function SettingsPanel({
         right: 8,
         background: "var(--vp-bg-secondary)",
         border: "1px solid var(--vp-border-light)",
-        borderRadius: 8,
+        borderRadius: "var(--vp-radius-lg)",
         padding: 12,
         width: 200,
         zIndex: 10,
@@ -186,7 +186,7 @@ function SettingsPanel({
                   width: "100%",
                   background: "var(--vp-bg-surface-hover)",
                   border: "1px solid var(--vp-border-light)",
-                  borderRadius: 4,
+                  borderRadius: "var(--vp-radius-sm)",
                   padding: "4px 6px",
                   fontSize: 11,
                   color: "var(--vp-text-primary)",
@@ -209,7 +209,7 @@ function SettingsPanel({
                   width: "100%",
                   background: "var(--vp-bg-surface-hover)",
                   border: "1px solid var(--vp-border-light)",
-                  borderRadius: 4,
+                  borderRadius: "var(--vp-radius-sm)",
                   padding: "4px 6px",
                   fontSize: 11,
                   color: "var(--vp-text-primary)",
@@ -304,7 +304,7 @@ export default function SystemMonitorWidget({
             color: showSettings ? "var(--vp-text-primary)" : "var(--vp-text-dim)",
             cursor: "pointer",
             padding: 4,
-            borderRadius: 4,
+            borderRadius: "var(--vp-radius-sm)",
           }}
           title="Settings"
         >

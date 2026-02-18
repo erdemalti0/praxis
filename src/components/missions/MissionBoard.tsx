@@ -88,7 +88,7 @@ export default function MissionBoard({ variant }: MissionBoardProps) {
         ) : (
           <div className="h-full flex flex-col items-center justify-center" style={{ color: "var(--vp-text-subtle)", gap: 12, background: "var(--vp-bg-secondary)" }}>
             <div style={{
-              width: 48, height: 48, borderRadius: 14,
+              width: 48, height: 48, borderRadius: "var(--vp-radius-3xl)",
               background: "var(--vp-accent-blue-bg)", border: "1px solid var(--vp-accent-blue-bg)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
@@ -175,7 +175,7 @@ function PanelVariant({
                 background: "none", border: "none", cursor: "pointer",
                 color: "var(--vp-text-faint)", padding: 2,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                borderRadius: 4, transition: "color 0.15s",
+                borderRadius: "var(--vp-radius-sm)", transition: "color 0.15s",
               }}
               onMouseEnter={(e) => { e.currentTarget.style.color = "var(--vp-text-secondary)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = "var(--vp-text-faint)"; }}
@@ -251,7 +251,7 @@ function PanelVariant({
                 {total > 0 && (
                   <span style={{
                     fontSize: 9, fontWeight: 600, flexShrink: 0,
-                    padding: "1px 6px", borderRadius: 8,
+                    padding: "1px 6px", borderRadius: "var(--vp-radius-lg)",
                     background: pct === 100 ? "rgba(74,222,128,0.12)" : "rgba(96,165,250,0.1)",
                     color: pct === 100 ? "var(--vp-accent-green)" : "var(--vp-accent-blue)",
                   }}>
@@ -262,13 +262,13 @@ function PanelVariant({
 
               {/* Progress bar — always visible */}
               {total > 0 && (
-                <div style={{ margin: "0 12px 4px 28px", height: 2, borderRadius: 1, background: "var(--vp-bg-surface)", overflow: "hidden" }}>
+                <div style={{ margin: "0 12px 4px 28px", height: 2, borderRadius: "var(--vp-radius-xs)", background: "var(--vp-bg-surface)", overflow: "hidden" }}>
                   <div style={{
                     width: `${pct}%`, height: "100%",
                     background: pct === 100
                       ? "linear-gradient(90deg, var(--vp-accent-green), #22c55e)"
                       : "linear-gradient(90deg, var(--vp-accent-blue), #3b82f6)",
-                    borderRadius: 1, transition: "width 0.3s ease",
+                    borderRadius: "var(--vp-radius-xs)", transition: "width 0.3s ease",
                   }} />
                 </div>
               )}
@@ -492,7 +492,7 @@ function StepRow({
               onClick={togglePicker}
               title="Run — send prompt to agent"
               style={{
-                width: 18, height: 18, borderRadius: 5,
+                width: 18, height: 18, borderRadius: "var(--vp-radius-sm)",
                 background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)",
                 color: "#a78bfa", cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",

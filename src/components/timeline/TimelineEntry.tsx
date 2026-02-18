@@ -32,7 +32,7 @@ export default function TimelineEntry({ entry }: { entry: HistoryEntry }) {
         alignItems: "flex-start",
         gap: 8,
         padding: "6px 10px",
-        borderRadius: 10,
+        borderRadius: "var(--vp-radius-xl)",
         fontSize: 12,
         transition: "background 0.2s ease",
         cursor: "default",

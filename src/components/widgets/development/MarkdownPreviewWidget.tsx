@@ -68,8 +68,8 @@ const previewStyles = `
   .markdown-preview p { margin: 8px 0; line-height: 1.6; color: var(--vp-text-secondary); }
   .markdown-preview ul, .markdown-preview ol { margin: 8px 0; padding-left: 20px; color: var(--vp-text-secondary); }
   .markdown-preview li { margin: 4px 0; }
-  .markdown-preview code { background: var(--vp-border-subtle); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--vp-accent-red-text); font-family: monospace; }
-  .markdown-preview pre { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; overflow-x: auto; margin: 12px 0; }
+  .markdown-preview code { background: var(--vp-border-subtle); padding: 2px 6px; border-radius: var(--vp-radius-sm); font-size: 12px; color: var(--vp-accent-red-text); font-family: monospace; }
+  .markdown-preview pre { background: rgba(0,0,0,0.3); padding: 12px; border-radius: var(--vp-radius-lg); overflow-x: auto; margin: 12px 0; }
   .markdown-preview pre code { background: transparent; padding: 0; color: var(--vp-text-secondary); }
   .markdown-preview blockquote { border-left: 3px solid var(--vp-accent-blue); padding-left: 12px; margin: 12px 0; color: var(--vp-text-muted); font-style: italic; }
   .markdown-preview table { width: 100%; border-collapse: collapse; margin: 12px 0; }
@@ -79,7 +79,7 @@ const previewStyles = `
   .markdown-preview hr { border: none; border-top: 1px solid var(--vp-border-light); margin: 16px 0; }
   .markdown-preview a { color: var(--vp-accent-blue); text-decoration: none; }
   .markdown-preview a:hover { text-decoration: underline; }
-  .markdown-preview img { max-width: 100%; border-radius: 6px; }
+  .markdown-preview img { max-width: 100%; border-radius: var(--vp-radius-md); }
   .markdown-preview .task-list-item { list-style: none; margin-left: -20px; }
   .markdown-preview input[type="checkbox"] { margin-right: 8px; accent-color: var(--vp-accent-blue); }
 `;
@@ -251,7 +251,7 @@ export default function MarkdownPreviewWidget({
               gap: 4,
               padding: "3px 8px",
               fontSize: 10,
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
               background: "var(--vp-bg-surface-hover)",
               border: "1px solid var(--vp-border-light)",
               color: "var(--vp-text-primary)",
@@ -276,7 +276,7 @@ export default function MarkdownPreviewWidget({
                 marginTop: 4,
                 background: "var(--vp-bg-tertiary)",
                 border: "1px solid var(--vp-border-medium)",
-                borderRadius: 8,
+                borderRadius: "var(--vp-radius-lg)",
                 padding: 4,
                 zIndex: 100,
                 minWidth: 220,
@@ -299,7 +299,7 @@ export default function MarkdownPreviewWidget({
                       width: "100%",
                       padding: "6px 10px",
                       fontSize: 11,
-                      borderRadius: 6,
+                      borderRadius: "var(--vp-radius-md)",
                       background: selectedFile === f ? "var(--vp-accent-blue-bg-hover)" : "transparent",
                       border: "none",
                       color: selectedFile === f ? "var(--vp-accent-blue)" : "var(--vp-text-secondary)",
@@ -331,7 +331,7 @@ export default function MarkdownPreviewWidget({
               style={{
                 fontSize: 10,
                 padding: "3px 8px",
-                borderRadius: 4,
+                borderRadius: "var(--vp-radius-sm)",
                 background: viewMode === mode ? "var(--vp-border-light)" : "transparent",
                 border: "none",
                 color: viewMode === mode ? "var(--vp-text-primary)" : "var(--vp-text-dim)",
@@ -357,7 +357,7 @@ export default function MarkdownPreviewWidget({
                 color: "var(--vp-accent-green)",
                 cursor: "pointer",
                 padding: 4,
-                borderRadius: 4,
+                borderRadius: "var(--vp-radius-sm)",
                 display: "flex",
                 alignItems: "center",
                 gap: 3,
@@ -383,7 +383,7 @@ export default function MarkdownPreviewWidget({
               color: showLineNumbers ? "var(--vp-text-primary)" : "var(--vp-text-faint)",
               cursor: "pointer",
               padding: 4,
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
             }}
             title="Line numbers"
           >
@@ -397,7 +397,7 @@ export default function MarkdownPreviewWidget({
               color: syncScroll ? "var(--vp-accent-blue)" : "var(--vp-text-faint)",
               cursor: "pointer",
               padding: 4,
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
             }}
             title="Sync scroll"
           >

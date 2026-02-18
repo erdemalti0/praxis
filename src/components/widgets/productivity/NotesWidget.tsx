@@ -23,8 +23,8 @@ const noteStyles = `
   .note-preview p { margin: 4px 0; line-height: 1.5; color: var(--vp-text-secondary); }
   .note-preview ul, .note-preview ol { margin: 4px 0; padding-left: 16px; color: var(--vp-text-secondary); }
   .note-preview li { margin: 2px 0; }
-  .note-preview code { background: var(--vp-border-subtle); padding: 1px 4px; border-radius: 3px; font-size: 11px; color: var(--vp-accent-red-text); }
-  .note-preview pre { background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; overflow-x: auto; margin: 8px 0; }
+  .note-preview code { background: var(--vp-border-subtle); padding: 1px 4px; border-radius: var(--vp-radius-xs); font-size: 11px; color: var(--vp-accent-red-text); }
+  .note-preview pre { background: rgba(0,0,0,0.2); padding: 8px; border-radius: var(--vp-radius-md); overflow-x: auto; margin: 8px 0; }
   .note-preview pre code { background: transparent; padding: 0; }
   .note-preview blockquote { border-left: 2px solid var(--vp-accent-blue); padding-left: 8px; margin: 6px 0; color: var(--vp-text-muted); }
   .note-preview a { color: var(--vp-accent-blue); }
@@ -192,7 +192,7 @@ export default function NotesWidget({
           style={{
             padding: "4px 8px",
             fontSize: 10,
-            borderRadius: 4,
+            borderRadius: "var(--vp-radius-sm)",
             background: "var(--vp-accent-blue-bg-hover)",
             border: "none",
             color: "var(--vp-accent-blue)",
@@ -210,7 +210,7 @@ export default function NotesWidget({
           style={{
             flex: 1,
             background: "var(--vp-bg-surface)",
-            borderRadius: 4,
+            borderRadius: "var(--vp-radius-sm)",
             padding: "2px 6px",
           }}
         >
@@ -237,7 +237,7 @@ export default function NotesWidget({
           style={{
             background: "var(--vp-bg-surface-hover)",
             border: "1px solid var(--vp-border-light)",
-            borderRadius: 4,
+            borderRadius: "var(--vp-radius-sm)",
             padding: "3px 6px",
             fontSize: 10,
             color: "var(--vp-text-muted)",
@@ -280,7 +280,7 @@ export default function NotesWidget({
               flex: 1,
               background: "var(--vp-bg-surface)",
               border: "1px solid var(--vp-border-light)",
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
               padding: "4px 8px",
               fontSize: 10,
               color: "var(--vp-text-primary)",
@@ -289,7 +289,7 @@ export default function NotesWidget({
           />
           <button
             onClick={addCategory}
-            style={{ padding: "4px 8px", fontSize: 10, background: "var(--vp-accent-blue-bg-hover)", border: "none", borderRadius: 4, color: "var(--vp-accent-blue)", cursor: "pointer" }}
+            style={{ padding: "4px 8px", fontSize: 10, background: "var(--vp-accent-blue-bg-hover)", border: "none", borderRadius: "var(--vp-radius-sm)", color: "var(--vp-accent-blue)", cursor: "pointer" }}
           >
             Add
           </button>
@@ -376,7 +376,7 @@ export default function NotesWidget({
                       color: viewMode === "edit" ? "var(--vp-text-primary)" : "var(--vp-text-faint)",
                       cursor: "pointer",
                       padding: 4,
-                      borderRadius: 4,
+                      borderRadius: "var(--vp-radius-sm)",
                     }}
                   >
                     <Edit2 size={10} />
@@ -389,7 +389,7 @@ export default function NotesWidget({
                       color: viewMode === "preview" ? "var(--vp-text-primary)" : "var(--vp-text-faint)",
                       cursor: "pointer",
                       padding: 4,
-                      borderRadius: 4,
+                      borderRadius: "var(--vp-radius-sm)",
                     }}
                   >
                     <Eye size={10} />
@@ -403,7 +403,7 @@ export default function NotesWidget({
                       color: saving ? "var(--vp-accent-green)" : "var(--vp-text-faint)",
                       cursor: "pointer",
                       padding: 4,
-                      borderRadius: 4,
+                      borderRadius: "var(--vp-radius-sm)",
                     }}
                     title="Save"
                   >

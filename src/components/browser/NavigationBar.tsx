@@ -142,7 +142,7 @@ export default function NavigationBar({ onNavigate, webviewRef, tabId }: Navigat
           flex: 1,
           background: "rgba(255,255,255,0.04)",
           border: isFocused ? "1px solid rgba(96,165,250,0.4)" : "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 9,
+          borderRadius: "var(--vp-radius-lg)",
           padding: "0 12px",
           height: 32,
           transition: "border-color 0.2s",
@@ -230,7 +230,7 @@ function NavButton({ onClick, disabled, active, title, icon }: NavButtonProps) {
         justifyContent: "center",
         width: 30,
         height: 30,
-        borderRadius: 8,
+        borderRadius: "var(--vp-radius-lg)",
         background: active
           ? "rgba(96,165,250,0.15)"
           : "transparent",

@@ -99,7 +99,7 @@ export default function WidgetStrip({ workspaceId, isMainView, onSwap }: WidgetS
             color: "var(--vp-text-dim)",
             width: 28,
             height: 28,
-            borderRadius: 8,
+            borderRadius: "var(--vp-radius-lg)",
             border: "none",
             background: "transparent",
             cursor: "pointer",

@@ -216,7 +216,7 @@ export default function BookmarksWidget({
           style={{
             flex: 1,
             background: "var(--vp-bg-surface)",
-            borderRadius: 6,
+            borderRadius: "var(--vp-radius-md)",
             padding: "4px 8px",
           }}
         >
@@ -244,7 +244,7 @@ export default function BookmarksWidget({
             color: adding ? "var(--vp-accent-blue)" : "var(--vp-text-faint)",
             cursor: "pointer",
             padding: 6,
-            borderRadius: 4,
+            borderRadius: "var(--vp-radius-sm)",
           }}
           title="Add bookmark"
         >
@@ -270,7 +270,7 @@ export default function BookmarksWidget({
         <div
           style={{
             background: "var(--vp-bg-surface)",
-            borderRadius: 6,
+            borderRadius: "var(--vp-radius-md)",
             padding: 8,
           }}
         >
@@ -281,7 +281,7 @@ export default function BookmarksWidget({
               style={{
                 background: "var(--vp-bg-surface-hover)",
                 border: "1px solid var(--vp-border-light)",
-                borderRadius: 4,
+                borderRadius: "var(--vp-radius-sm)",
                 padding: "3px 6px",
                 fontSize: 10,
                 color: "var(--vp-text-muted)",
@@ -320,7 +320,7 @@ export default function BookmarksWidget({
                   flex: 1,
                   background: "var(--vp-bg-surface-hover)",
                   border: "1px solid var(--vp-border-light)",
-                  borderRadius: 4,
+                  borderRadius: "var(--vp-radius-sm)",
                   padding: "3px 6px",
                   fontSize: 10,
                   color: "var(--vp-text-primary)",
@@ -328,7 +328,7 @@ export default function BookmarksWidget({
               />
               <button
                 onClick={addGroup}
-                style={{ padding: "3px 8px", fontSize: 9, background: "var(--vp-accent-blue-bg-hover)", border: "none", borderRadius: 4, color: "var(--vp-accent-blue)", cursor: "pointer" }}
+                style={{ padding: "3px 8px", fontSize: 9, background: "var(--vp-accent-blue-bg-hover)", border: "none", borderRadius: "var(--vp-radius-sm)", color: "var(--vp-accent-blue)", cursor: "pointer" }}
               >
                 Add
               </button>
@@ -344,7 +344,7 @@ export default function BookmarksWidget({
               style={{
                 background: "var(--vp-bg-surface-hover)",
                 border: "1px solid var(--vp-border-light)",
-                borderRadius: 4,
+                borderRadius: "var(--vp-radius-sm)",
                 padding: "4px 8px",
                 fontSize: 11,
                 color: "var(--vp-text-primary)",
@@ -359,7 +359,7 @@ export default function BookmarksWidget({
               style={{
                 background: "var(--vp-bg-surface-hover)",
                 border: "1px solid var(--vp-border-light)",
-                borderRadius: 4,
+                borderRadius: "var(--vp-radius-sm)",
                 padding: "4px 8px",
                 fontSize: 11,
                 color: "var(--vp-text-primary)",
@@ -373,7 +373,7 @@ export default function BookmarksWidget({
                   flex: 1,
                   padding: "4px 8px",
                   fontSize: 10,
-                  borderRadius: 4,
+                  borderRadius: "var(--vp-radius-sm)",
                   background: "var(--vp-accent-blue-bg-hover)",
                   border: "none",
                   color: "var(--vp-accent-blue)",
@@ -387,7 +387,7 @@ export default function BookmarksWidget({
                 style={{
                   padding: "4px 8px",
                   fontSize: 10,
-                  borderRadius: 4,
+                  borderRadius: "var(--vp-radius-sm)",
                   background: "var(--vp-bg-surface-hover)",
                   border: "none",
                   color: "var(--vp-text-dim)",
@@ -404,7 +404,7 @@ export default function BookmarksWidget({
       <div className="flex-1 min-h-0 overflow-auto" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {/* Browser Favorites */}
         {browserFavorites.length > 0 && !search && (
-          <div style={{ background: "var(--vp-bg-surface)", borderRadius: 6, overflow: "hidden" }}>
+          <div style={{ background: "var(--vp-bg-surface)", borderRadius: "var(--vp-radius-md)", overflow: "hidden" }}>
             <button
               onClick={() => setFavoritesCollapsed(!favoritesCollapsed)}
               className="flex items-center gap-2"
@@ -432,7 +432,7 @@ export default function BookmarksWidget({
                     style={{
                       padding: "5px 6px",
                       background: "var(--vp-bg-surface)",
-                      borderRadius: 4,
+                      borderRadius: "var(--vp-radius-sm)",
                       marginBottom: 2,
                       cursor: "pointer",
                     }}
@@ -442,7 +442,7 @@ export default function BookmarksWidget({
                     <img
                       src={getFaviconUrl(fav.url)}
                       alt=""
-                      style={{ width: 14, height: 14, borderRadius: 2, flexShrink: 0 }}
+                      style={{ width: 14, height: 14, borderRadius: "var(--vp-radius-xs)", flexShrink: 0 }}
                       onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -472,7 +472,7 @@ export default function BookmarksWidget({
               onDrop={(e) => handleDrop(e, group.id)}
               style={{
                 background: "var(--vp-bg-surface)",
-                borderRadius: 6,
+                borderRadius: "var(--vp-radius-md)",
                 overflow: "hidden",
               }}
             >
@@ -516,7 +516,7 @@ export default function BookmarksWidget({
                       style={{
                         padding: "5px 6px",
                         background: "var(--vp-bg-surface)",
-                        borderRadius: 4,
+                        borderRadius: "var(--vp-radius-sm)",
                         marginBottom: 2,
                         cursor: "grab",
                       }}
@@ -526,7 +526,7 @@ export default function BookmarksWidget({
                         <img
                           src={getFaviconUrl(b.url)}
                           alt=""
-                          style={{ width: 14, height: 14, borderRadius: 2, flexShrink: 0 }}
+                          style={{ width: 14, height: 14, borderRadius: "var(--vp-radius-xs)", flexShrink: 0 }}
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       )}
@@ -539,7 +539,7 @@ export default function BookmarksWidget({
                             style={{
                               background: "var(--vp-bg-surface-hover)",
                               border: "1px solid var(--vp-border-light)",
-                              borderRadius: 3,
+                              borderRadius: "var(--vp-radius-xs)",
                               padding: "2px 4px",
                               fontSize: 10,
                               color: "var(--vp-text-primary)",
@@ -552,7 +552,7 @@ export default function BookmarksWidget({
                             style={{
                               background: "var(--vp-bg-surface-hover)",
                               border: "1px solid var(--vp-border-light)",
-                              borderRadius: 3,
+                              borderRadius: "var(--vp-radius-xs)",
                               padding: "2px 4px",
                               fontSize: 10,
                               color: "var(--vp-text-primary)",

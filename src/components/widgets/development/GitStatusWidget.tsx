@@ -54,7 +54,7 @@ function FileItem({ file, type, color, onAction }: FileItemProps) {
               style={{
                 background: "var(--vp-accent-green-bg-hover)",
                 border: "none",
-                borderRadius: 3,
+                borderRadius: "var(--vp-radius-xs)",
                 padding: "1px 4px",
                 cursor: "pointer",
                 color: "var(--vp-accent-green)",
@@ -71,7 +71,7 @@ function FileItem({ file, type, color, onAction }: FileItemProps) {
               style={{
                 background: "var(--vp-accent-red-bg-hover)",
                 border: "none",
-                borderRadius: 3,
+                borderRadius: "var(--vp-radius-xs)",
                 padding: "1px 4px",
                 cursor: "pointer",
                 color: "var(--vp-accent-red-text)",
@@ -198,7 +198,7 @@ export default function GitStatusWidget({
         <AlertCircle size={20} style={{ color: "var(--vp-accent-amber)" }} />
         <span style={{ fontSize: 11, color: "var(--vp-text-muted)" }}>{storeError}</span>
         <button onClick={() => refresh(projectPath)} style={{
-          marginTop: 4, padding: "4px 12px", borderRadius: 6,
+          marginTop: 4, padding: "4px 12px", borderRadius: "var(--vp-radius-md)",
           background: "var(--vp-bg-surface)", border: "1px solid var(--vp-bg-surface-hover)",
           color: "var(--vp-text-muted)", fontSize: 10, cursor: "pointer",
         }}>Retry</button>
@@ -211,7 +211,7 @@ export default function GitStatusWidget({
       <div className="h-full flex flex-col items-center justify-center gap-3" style={{ padding: 16 }}>
         {[80, 60, 70].map((w, i) => (
           <div key={i} style={{
-            width: `${w}%`, height: 10, borderRadius: 6,
+            width: `${w}%`, height: 10, borderRadius: "var(--vp-radius-md)",
             background: "var(--vp-bg-surface-hover)",
             animation: "pulse 1.5s ease-in-out infinite",
             animationDelay: `${i * 0.2}s`,
@@ -235,7 +235,7 @@ export default function GitStatusWidget({
             style={{
               background: "rgba(167,139,250,0.1)",
               border: "1px solid rgba(167,139,250,0.2)",
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
               padding: "3px 8px",
               color: "#a78bfa",
               cursor: "pointer",
@@ -254,7 +254,7 @@ export default function GitStatusWidget({
                 left: 0,
                 background: "var(--vp-bg-secondary)",
                 border: "1px solid var(--vp-border-light)",
-                borderRadius: 6,
+                borderRadius: "var(--vp-radius-md)",
                 marginTop: 4,
                 minWidth: 150,
                 maxHeight: 200,
@@ -325,7 +325,7 @@ export default function GitStatusWidget({
           onClick={() => handleAction("pull")}
           disabled={actionLoading === "pull"}
           style={{
-            flex: 1, padding: "4px 6px", fontSize: 9, borderRadius: 4,
+            flex: 1, padding: "4px 6px", fontSize: 9, borderRadius: "var(--vp-radius-sm)",
             background: "var(--vp-accent-blue-bg)", border: "none",
             color: "var(--vp-accent-blue)", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
@@ -338,7 +338,7 @@ export default function GitStatusWidget({
           onClick={() => handleAction("push")}
           disabled={actionLoading === "push"}
           style={{
-            flex: 1, padding: "4px 6px", fontSize: 9, borderRadius: 4,
+            flex: 1, padding: "4px 6px", fontSize: 9, borderRadius: "var(--vp-radius-sm)",
             background: "var(--vp-accent-blue-bg)", border: "none",
             color: "var(--vp-accent-blue)", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
@@ -362,7 +362,7 @@ export default function GitStatusWidget({
                 flex: 1,
                 background: "var(--vp-bg-surface-hover)",
                 border: "1px solid var(--vp-border-light)",
-                borderRadius: 4,
+                borderRadius: "var(--vp-radius-sm)",
                 padding: "4px 8px",
                 fontSize: 11,
                 color: "var(--vp-text-primary)",
@@ -373,7 +373,7 @@ export default function GitStatusWidget({
               onClick={() => handleAction("commit")}
               disabled={!commitMsg.trim()}
               style={{
-                padding: "4px 10px", fontSize: 10, borderRadius: 4,
+                padding: "4px 10px", fontSize: 10, borderRadius: "var(--vp-radius-sm)",
                 background: "var(--vp-accent-green-bg-hover)", border: "none",
                 color: "var(--vp-accent-green)",
                 cursor: !commitMsg.trim() ? "not-allowed" : "pointer",
@@ -384,7 +384,7 @@ export default function GitStatusWidget({
             <button
               onClick={() => setShowCommit(false)}
               style={{
-                padding: "4px 6px", fontSize: 10, borderRadius: 4,
+                padding: "4px 6px", fontSize: 10, borderRadius: "var(--vp-radius-sm)",
                 background: "var(--vp-bg-surface-hover)", border: "none",
                 color: "var(--vp-text-dim)", cursor: "pointer",
               }}
@@ -406,7 +406,7 @@ export default function GitStatusWidget({
                 <button
                   onClick={() => setShowCommit(true)}
                   style={{
-                    fontSize: 9, padding: "2px 6px", borderRadius: 3,
+                    fontSize: 9, padding: "2px 6px", borderRadius: "var(--vp-radius-xs)",
                     background: "var(--vp-accent-green-bg-hover)", border: "none",
                     color: "var(--vp-accent-green)", cursor: "pointer",
                   }}
@@ -430,7 +430,7 @@ export default function GitStatusWidget({
               <button
                 onClick={() => stageAllFn(projectPath)}
                 style={{
-                  fontSize: 9, padding: "2px 6px", borderRadius: 3,
+                  fontSize: 9, padding: "2px 6px", borderRadius: "var(--vp-radius-xs)",
                   background: "var(--vp-accent-green-bg)", border: "none",
                   color: "var(--vp-accent-green)", cursor: "pointer",
                   display: "flex", alignItems: "center", gap: 2,

@@ -49,7 +49,7 @@ export default memo(function WidgetCard({ widgetId, widgetType, workspaceId, con
       style={{
         background: "var(--vp-bg-surface)",
         border: "1px solid var(--vp-border-subtle)",
-        borderRadius: 10,
+        borderRadius: "var(--vp-radius-xl)",
         overflow: "hidden",
         transition: "box-shadow 0.25s ease, border-color 0.25s ease",
         boxShadow: isFullscreen ? "0 8px 40px rgba(0,0,0,0.4)" : "none",
@@ -95,7 +95,7 @@ export default memo(function WidgetCard({ widgetId, widgetType, workspaceId, con
               color: "var(--vp-text-faint)",
               display: "flex",
               alignItems: "center",
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
               flexShrink: 0,
             }}
             onMouseEnter={(e) => {
@@ -127,7 +127,7 @@ export default memo(function WidgetCard({ widgetId, widgetType, workspaceId, con
               color: "var(--vp-text-subtle)",
               display: "flex",
               alignItems: "center",
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
               flexShrink: 0,
               transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
             }}

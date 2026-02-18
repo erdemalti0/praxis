@@ -1,6 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Download, Upload, Copy, Check, FileDown, FileUp, Sparkles } from "lucide-react";
 import { useMissionStore } from "../../stores/missionStore";
+import { useUIStore } from "../../stores/uiStore";
+import { useTerminalStore } from "../../stores/terminalStore";
+import { send } from "../../lib/ipc";
+import { getSessionIds } from "../../lib/layout/layoutUtils";
+import AgentPicker from "./AgentPicker";
+import { composeMissionPlannerPrompt } from "../../lib/mission/missionPlannerSkill";
 
 import type { MissionExportData } from "../../stores/missionStore";
 import type { Mission } from "../../types/mission";
@@ -523,7 +530,7 @@ export default function MissionExportImportDialog({ open, onClose, missions, pro
     cursor: "pointer" as const,
     background: active ? "var(--vp-accent-blue-bg)" : "transparent",
     border: active ? "1px solid var(--vp-accent-blue-border)" : "1px solid transparent",
-    borderRadius: 8,
+    borderRadius: "var(--vp-radius-lg)",
     color: active ? "var(--vp-accent-blue)" : "var(--vp-text-muted)",
     transition: "all 0.15s",
     display: "flex" as const,
@@ -542,7 +549,7 @@ export default function MissionExportImportDialog({ open, onClose, missions, pro
     >
       <div style={{
         width: 560, maxHeight: "80vh", background: "var(--vp-bg-secondary)",
-        border: "1px solid var(--vp-border-light)", borderRadius: 16,
+        border: "1px solid var(--vp-border-light)", borderRadius: "var(--vp-radius-4xl)",
         boxShadow: "0 20px 60px rgba(0,0,0,0.6)", overflow: "hidden",
         display: "flex", flexDirection: "column",
       }}>
@@ -563,7 +570,7 @@ export default function MissionExportImportDialog({ open, onClose, missions, pro
             onClick={onClose}
             style={{
               background: "none", border: "none", color: "var(--vp-text-faint)", cursor: "pointer",
-              width: 28, height: 28, borderRadius: 6,
+              width: 28, height: 28, borderRadius: "var(--vp-radius-md)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}
             onMouseEnter={(e) => { e.currentTarget.style.color = "var(--vp-text-primary)"; }}
@@ -596,6 +603,8 @@ export default function MissionExportImportDialog({ open, onClose, missions, pro
               preview={importPreview}
               mergeAsOne={mergeAsOne}
               setMergeAsOne={setMergeAsOne}
+              onClose={onClose}
+              projectPath={projectPath}
             />
           )}
         </div>
@@ -629,7 +638,7 @@ function ExportTab({
               key={m.id}
               className="flex items-center gap-2"
               style={{
-                padding: "8px 10px", borderRadius: 8, cursor: "pointer",
+                padding: "8px 10px", borderRadius: "var(--vp-radius-lg)", cursor: "pointer",
                 background: selectedIds.has(m.id) ? "var(--vp-accent-blue-bg)" : "var(--vp-bg-surface)",
                 border: selectedIds.has(m.id) ? "1px solid var(--vp-accent-blue-border)" : "1px solid var(--vp-border-light)",
                 transition: "all 0.15s",
@@ -673,7 +682,7 @@ function ExportTab({
             value={exportJson}
             style={{
               width: "100%", height: 180, background: "var(--vp-bg-surface)",
-              border: "1px solid var(--vp-border-light)", borderRadius: 10,
+              border: "1px solid var(--vp-border-light)", borderRadius: "var(--vp-radius-xl)",
               padding: "10px 14px", color: "var(--vp-text-secondary)", fontSize: 11,
               fontFamily: "JetBrains Mono, monospace", outline: "none", resize: "vertical",
               lineHeight: 1.5,
@@ -698,6 +707,7 @@ function ExportTab({
 function ImportTab({
   importText, setImportText, onLoadFile, onImport,
   importError, importSuccess, preview, mergeAsOne, setMergeAsOne,
+  onClose, projectPath: _projectPath /* reserved for future use */,
 }: {
   importText: string;
   setImportText: (v: string) => void;
@@ -708,13 +718,60 @@ function ImportTab({
   preview: { error: string | null; warnings: string[]; missions: { title: string; description: string; stepCount: number }[] } | null;
   mergeAsOne: boolean;
   setMergeAsOne: (v: boolean) => void;
+  onClose: () => void;
+  projectPath: string;
 }) {
-  const [copiedLink, setCopiedLink] = useState(false);
+  const [aiDescription, setAiDescription] = useState("");
+  const [showAgentPicker, setShowAgentPicker] = useState(false);
+  const generateBtnRef = useRef<HTMLButtonElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const [pickerPos, setPickerPos] = useState<{ top: number; left: number } | null>(null);
+
+  // Click-outside to close agent picker
+  useEffect(() => {
+    if (!showAgentPicker) return;
+    const handler = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowAgentPicker(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showAgentPicker]);
+
+  const handleSendToAgent = useCallback(
+    (sessionId: string, workspaceId: string) => {
+      const fullPrompt = composeMissionPlannerPrompt(aiDescription.trim());
+      send("write_pty", { id: sessionId, data: fullPrompt + "\n" });
+
+      // Navigate UI to terminal view
+      const ui = useUIStore.getState();
+      const ts = useTerminalStore.getState();
+      if (ui.activeWorkspaceId !== workspaceId) ui.setActiveWorkspaceId(workspaceId);
+      const vm = ui.viewMode;
+      if (vm !== "terminal" && vm !== "split") ui.setViewMode("terminal");
+      const groups = ui.terminalGroups[workspaceId] || [];
+      for (const gid of groups) {
+        const layout = ui.workspaceLayouts[gid];
+        if (layout && getSessionIds(layout).includes(sessionId)) {
+          ui.setActiveTerminalGroup(workspaceId, gid);
+          break;
+        }
+      }
+      ui.setFocusedPane(sessionId);
+      ts.setActiveSession(sessionId);
+
+      setShowAgentPicker(false);
+      onClose();
+    },
+    [aiDescription, onClose]
+  );
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* AI Prompt Section */}
+      {/* AI Generation Section */}
       <div style={{
-        background: "var(--vp-bg-surface)", borderRadius: 12,
+        background: "var(--vp-bg-surface)", borderRadius: "var(--vp-radius-2xl)",
         border: "1px solid var(--vp-border-light)", padding: 14,
       }}>
         <div className="flex items-center gap-2" style={{ marginBottom: 10 }}>
@@ -724,54 +781,86 @@ function ImportTab({
           </span>
         </div>
         <p style={{ fontSize: 11, color: "var(--vp-text-muted)", lineHeight: 1.6, marginBottom: 10 }}>
-          Use our custom GPT to generate structured mission plans.
-          Then paste the JSON response into the import area below.
+          Describe what you want to build. Your AI agent will generate a structured mission plan
+          using its knowledge of this project.
         </p>
 
-        {/* GPT Link — copy to clipboard */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            navigator.clipboard.writeText("https://chatgpt.com/g/g-699095e80e20819191ca0811a54908c4-praxis-mission-planner").then(() => {
-              setCopiedLink(true);
-              setTimeout(() => setCopiedLink(false), 2000);
-            });
-          }}
+        <textarea
+          value={aiDescription}
+          onChange={(e) => setAiDescription(e.target.value)}
+          placeholder="e.g., Add JWT authentication with login, registration, and protected routes"
           style={{
-            width: "100%", padding: "10px 14px", borderRadius: 10,
-            background: copiedLink
-              ? "linear-gradient(135deg, rgba(74,222,128,0.08), rgba(74,222,128,0.15))"
-              : "linear-gradient(135deg, rgba(16,163,127,0.08), rgba(16,163,127,0.15))",
-            border: copiedLink
-              ? "1px solid rgba(74,222,128,0.3)"
-              : "1px solid rgba(16,163,127,0.25)",
-            color: copiedLink ? "var(--vp-accent-green)" : "#10a37f",
-            fontSize: 12, fontWeight: 600,
-            cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
-            marginBottom: 10, transition: "all 0.15s",
+            width: "100%", height: 72, background: "var(--vp-bg-deep)",
+            border: "1px solid var(--vp-border-light)", borderRadius: "var(--vp-radius-lg)",
+            padding: "8px 12px", color: "var(--vp-text-secondary)",
+            fontSize: 11, fontFamily: "inherit", outline: "none",
+            resize: "vertical", lineHeight: 1.5, marginBottom: 10,
+            transition: "border-color 0.15s",
           }}
-          onMouseEnter={(e) => { if (!copiedLink) e.currentTarget.style.background = "linear-gradient(135deg, rgba(16,163,127,0.12), rgba(16,163,127,0.22))"; }}
-          onMouseLeave={(e) => { if (!copiedLink) e.currentTarget.style.background = "linear-gradient(135deg, rgba(16,163,127,0.08), rgba(16,163,127,0.15))"; }}
-        >
-          {copiedLink ? <Check size={16} /> : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/>
-            </svg>
-          )}
-          {copiedLink ? "Copied!" : "Copy Praxis Mission Planner GPT Link"}
-          <span style={{
-            marginLeft: 4, padding: "2px 6px", borderRadius: 4,
-            background: copiedLink ? "rgba(74,222,128,0.2)" : "rgba(16,163,127,0.2)",
-            fontSize: 9, fontWeight: 700, letterSpacing: "0.04em",
-          }}>
-            BETA
-          </span>
-          {copiedLink
-            ? null
-            : <Copy size={12} style={{ marginLeft: "auto", opacity: 0.6 }} />
-          }
-        </button>
+          onFocus={(e) => { e.currentTarget.style.borderColor = "var(--vp-accent-blue-border)"; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = "var(--vp-border-light)"; }}
+        />
 
+        <div style={{ position: "relative" }}>
+          <button
+            ref={generateBtnRef}
+            disabled={!aiDescription.trim()}
+            onClick={() => {
+              const rect = generateBtnRef.current?.getBoundingClientRect();
+              if (rect) setPickerPos({ top: rect.bottom + 4, left: Math.min(rect.left, window.innerWidth - 270) });
+              setShowAgentPicker((v) => !v);
+            }}
+            style={{
+              width: "100%", padding: "10px 14px", borderRadius: "var(--vp-radius-xl)",
+              background: aiDescription.trim()
+                ? "linear-gradient(135deg, rgba(167,139,250,0.08), rgba(167,139,250,0.18))"
+                : "var(--vp-bg-surface-hover)",
+              border: aiDescription.trim()
+                ? "1px solid rgba(167,139,250,0.3)"
+                : "1px solid var(--vp-border-light)",
+              color: aiDescription.trim() ? "#a78bfa" : "var(--vp-text-faint)",
+              fontSize: 12, fontWeight: 600,
+              cursor: aiDescription.trim() ? "pointer" : "not-allowed",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              transition: "all 0.15s",
+              opacity: aiDescription.trim() ? 1 : 0.5,
+            }}
+            onMouseEnter={(e) => {
+              if (aiDescription.trim()) e.currentTarget.style.background = "linear-gradient(135deg, rgba(167,139,250,0.12), rgba(167,139,250,0.25))";
+            }}
+            onMouseLeave={(e) => {
+              if (aiDescription.trim()) e.currentTarget.style.background = "linear-gradient(135deg, rgba(167,139,250,0.08), rgba(167,139,250,0.18))";
+            }}
+          >
+            <Sparkles size={14} />
+            Generate Mission Plan
+          </button>
+
+          {showAgentPicker && pickerPos && createPortal(
+            <div
+              ref={pickerRef}
+              style={{ position: "fixed", top: pickerPos.top, left: pickerPos.left, zIndex: 9999 }}
+            >
+              <AgentPicker onSelect={handleSendToAgent} />
+            </div>,
+            document.body
+          )}
+        </div>
+
+        <p style={{ fontSize: 10, color: "var(--vp-text-faint)", lineHeight: 1.5, marginTop: 8 }}>
+          The agent will output JSON in the terminal. Copy the JSON and paste it below to import.
+        </p>
+
+        <div style={{
+          marginTop: 8, padding: "8px 10px", borderRadius: "var(--vp-radius-lg)",
+          background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.4)",
+          display: "flex", alignItems: "flex-start", gap: 6,
+        }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", flexShrink: 0, marginTop: 1 }}>BETA</span>
+          <span style={{ fontSize: 10, color: "#f87171", lineHeight: 1.5 }}>
+            AI-generated plans may contain errors. Review the task sequence and prompts carefully before running any steps.
+          </span>
+        </div>
       </div>
 
       {/* Import JSON Section */}
@@ -791,7 +880,7 @@ function ImportTab({
           style={{
             width: "100%", height: 150, background: "var(--vp-bg-surface)",
             border: `1px solid ${(importError || (preview && preview.error)) ? "rgba(239,68,68,0.4)" : "var(--vp-border-light)"}`,
-            borderRadius: 10, padding: "10px 14px", color: "var(--vp-text-secondary)",
+            borderRadius: "var(--vp-radius-xl)", padding: "10px 14px", color: "var(--vp-text-secondary)",
             fontSize: 11, fontFamily: "JetBrains Mono, monospace", outline: "none",
             resize: "vertical", lineHeight: 1.5, transition: "border-color 0.15s",
           }}
@@ -802,7 +891,7 @@ function ImportTab({
         {/* Error — show real-time validation errors OR import-time errors */}
         {(importError || (preview && preview.error)) && (
           <div style={{
-            marginTop: 8, padding: "10px 12px", borderRadius: 8,
+            marginTop: 8, padding: "10px 12px", borderRadius: "var(--vp-radius-lg)",
             background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)",
             fontSize: 11, color: "#ef4444", whiteSpace: "pre-wrap", lineHeight: 1.6,
           }}>
@@ -813,7 +902,7 @@ function ImportTab({
         {/* Warnings */}
         {preview && !preview.error && preview.warnings.length > 0 && (
           <div style={{
-            marginTop: 8, padding: "8px 12px", borderRadius: 8,
+            marginTop: 8, padding: "8px 12px", borderRadius: "var(--vp-radius-lg)",
             background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.15)",
             fontSize: 11, color: "#f59e0b", whiteSpace: "pre-wrap", lineHeight: 1.5,
           }}>
@@ -824,7 +913,7 @@ function ImportTab({
         {/* Preview */}
         {preview && !preview.error && preview.missions.length > 0 && (
           <div style={{
-            marginTop: 8, padding: "10px 12px", borderRadius: 8,
+            marginTop: 8, padding: "10px 12px", borderRadius: "var(--vp-radius-lg)",
             background: "var(--vp-accent-blue-bg)", border: "1px solid var(--vp-accent-blue-border)",
           }}>
             <div className="flex items-center justify-between" style={{ marginBottom: 6 }}>
@@ -869,7 +958,7 @@ function ImportTab({
         {/* Success */}
         {importSuccess && (
           <div style={{
-            marginTop: 8, padding: "8px 12px", borderRadius: 8,
+            marginTop: 8, padding: "8px 12px", borderRadius: "var(--vp-radius-lg)",
             background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)",
             fontSize: 11, color: "#4ade80", fontWeight: 600,
           }}>
@@ -884,7 +973,7 @@ function ImportTab({
               onClick={onImport}
               disabled={!!importError || !preview || !!preview.error}
               style={{
-                padding: "8px 20px", borderRadius: 9,
+                padding: "8px 20px", borderRadius: "var(--vp-radius-lg)",
                 background: (!importError && preview && !preview.error)
                   ? "var(--vp-accent-blue-bg)" : "var(--vp-bg-surface)",
                 border: `1px solid ${(!importError && preview && !preview.error)
@@ -908,7 +997,7 @@ function ImportTab({
 
 function actionBtnStyle() {
   return {
-    padding: "6px 12px", borderRadius: 7,
+    padding: "6px 12px", borderRadius: "var(--vp-radius-md)",
     background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-light)",
     color: "var(--vp-text-muted)", fontSize: 11, cursor: "pointer" as const,
     display: "flex" as const, alignItems: "center" as const, gap: 5,

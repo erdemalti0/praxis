@@ -45,14 +45,138 @@ function getAgentKeywords(): string[] {
   return cachedKeywords!;
 }
 
+// Cache agent detection results to avoid spawning ps/tasklist on every poll
+let cachedAgents: AgentProcess[] = [];
+let agentsCacheTime = 0;
+const AGENTS_CACHE_TTL = 3000; // 3 seconds
+
+/**
+ * Detect agent processes running as children of specific PTY sessions.
+ * Used to detect when a user types `claude`, `aider`, etc. inside a shell terminal.
+ *
+ * Input:  { pids: Record<sessionId, ptyPid> }
+ * Output: Record<sessionId, detectedAgentType | null>
+ */
+async function detectChildAgents(
+  pids: Record<string, number>
+): Promise<Record<string, string | null>> {
+  const result: Record<string, string | null> = {};
+  const keywords = getAgentKeywords();
+
+  if (isWin) {
+    // Windows: use wmic to find child processes
+    for (const [sessionId, parentPid] of Object.entries(pids)) {
+      try {
+        const { stdout } = await execAsync(
+          `wmic process where (ParentProcessId=${parentPid}) get Name /format:csv`,
+          { encoding: "utf-8", timeout: 3000 }
+        );
+        const names = stdout.split("\n").map((l) => l.trim().split(",").pop()?.toLowerCase() || "");
+        const matched = keywords.find((kw) => names.some((n) => n.includes(kw)));
+        result[sessionId] = matched || null;
+      } catch {
+        result[sessionId] = null;
+      }
+    }
+  } else {
+    // Unix/macOS: use pgrep + ps to find child process command names
+    // Batch all session PIDs into a single pass for efficiency
+    const entries = Object.entries(pids);
+    await Promise.allSettled(
+      entries.map(async ([sessionId, parentPid]) => {
+        try {
+          // Get all descendant PIDs (recursive children)
+          const { stdout: pgrepOut } = await execAsync(
+            `pgrep -P ${parentPid}`,
+            { encoding: "utf-8", timeout: 2000 }
+          );
+          const childPids = pgrepOut.trim().split("\n").filter(Boolean).map((p) => p.trim());
+          if (childPids.length === 0) {
+            result[sessionId] = null;
+            return;
+          }
+
+          // Get command names for all child PIDs
+          const { stdout: psOut } = await execAsync(
+            `ps -o comm= -p ${childPids.join(",")}`,
+            { encoding: "utf-8", timeout: 2000 }
+          );
+          const cmds = psOut.trim().split("\n").map((c) => {
+            // ps -o comm= gives full path on some systems, extract basename
+            const trimmed = c.trim();
+            return (trimmed.split("/").pop() || trimmed).toLowerCase();
+          });
+
+          // Match against known agent keywords
+          const matched = keywords.find((kw) =>
+            cmds.some((cmd) => cmd.includes(kw))
+          );
+          result[sessionId] = matched || null;
+        } catch {
+          result[sessionId] = null;
+        }
+      })
+    );
+  }
+
+  return result;
+}
+
+// Map raw keyword match to canonical agent type
+function keywordToAgentType(keyword: string | null): string | null {
+  if (!keyword) return null;
+  const kw = keyword.toLowerCase();
+  if (kw.includes("claude")) return "claude-code";
+  if (kw.includes("opencode")) return "opencode";
+  if (kw.includes("aider")) return "aider";
+  if (kw.includes("gemini")) return "gemini";
+  if (kw.includes("amp")) return "amp";
+  // Check custom agents
+  try {
+    const settingsPath = path.join(os.homedir(), ".praxis", "settings.json");
+    if (fs.existsSync(settingsPath)) {
+      const settings = JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
+      const matched = (settings.userAgents || []).find(
+        (a: any) => a.cmd?.toLowerCase().trim() === kw
+      );
+      if (matched) return matched.type;
+    }
+  } catch {}
+  return "unknown";
+}
+
 export function registerAgentsHandlers() {
+  // Detect agents running as children of PTY sessions (shell → agent detection)
+  ipcMain.handle(
+    "detect_pty_children",
+    async (_event, args: { pids: Record<string, number> }): Promise<Record<string, string | null>> => {
+      try {
+        const raw = await detectChildAgents(args.pids);
+        // Convert keyword matches to canonical agent types
+        const typed: Record<string, string | null> = {};
+        for (const [sessionId, keyword] of Object.entries(raw)) {
+          typed[sessionId] = keywordToAgentType(keyword);
+        }
+        return typed;
+      } catch {
+        return {};
+      }
+    }
+  );
+
   ipcMain.handle("detect_running_agents", async (): Promise<AgentProcess[]> => {
     try {
-      const keywords = getAgentKeywords();
-      if (isWin) {
-        return await detectAgentsWindows(keywords);
+      const now = Date.now();
+      if (cachedAgents.length > 0 && now - agentsCacheTime < AGENTS_CACHE_TTL) {
+        return cachedAgents;
       }
-      return await detectAgentsUnix(keywords);
+      const keywords = getAgentKeywords();
+      const result = isWin
+        ? await detectAgentsWindows(keywords)
+        : await detectAgentsUnix(keywords);
+      cachedAgents = result;
+      agentsCacheTime = now;
+      return result;
     } catch {
       return [];
     }

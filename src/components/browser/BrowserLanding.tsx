@@ -91,7 +91,7 @@ export default function BrowserLanding({ onNavigate }: BrowserLandingProps) {
             gap: 10,
             background: "var(--vp-bg-surface)",
             border: "1px solid var(--vp-border-light)",
-            borderRadius: 14,
+            borderRadius: "var(--vp-radius-3xl)",
             padding: "12px 16px",
             transition: "border-color 0.2s",
           }}
@@ -153,7 +153,7 @@ export default function BrowserLanding({ onNavigate }: BrowserLandingProps) {
               height: 96,
               background: "transparent",
               border: "1.5px dashed var(--vp-border-light)",
-              borderRadius: 14,
+              borderRadius: "var(--vp-radius-3xl)",
               cursor: "pointer",
               transition: "all 0.2s",
             }}
@@ -187,7 +187,7 @@ export default function BrowserLanding({ onNavigate }: BrowserLandingProps) {
               width: 360,
               background: "var(--vp-bg-secondary)",
               border: "1px solid var(--vp-border-panel)",
-              borderRadius: 16,
+              borderRadius: "var(--vp-radius-4xl)",
               overflow: "hidden",
             }}
             onClick={(e) => e.stopPropagation()}
@@ -206,7 +206,7 @@ export default function BrowserLanding({ onNavigate }: BrowserLandingProps) {
                 style={{
                   color: "var(--vp-text-faint)",
                   padding: 4,
-                  borderRadius: 8,
+                  borderRadius: "var(--vp-radius-lg)",
                   background: "transparent",
                   border: "none",
                   cursor: "pointer",
@@ -256,7 +256,7 @@ export default function BrowserLanding({ onNavigate }: BrowserLandingProps) {
                   padding: "10px 0",
                   background: "var(--vp-button-primary-bg)",
                   color: "var(--vp-button-primary-text)",
-                  borderRadius: 10,
+                  borderRadius: "var(--vp-radius-xl)",
                   border: "none",
                   fontSize: 13,
                   fontWeight: 500,
@@ -313,7 +313,7 @@ function FavoriteCard({
           ? "var(--vp-bg-surface-hover)"
           : "var(--vp-bg-surface)",
         border: "1px solid var(--vp-border-subtle)",
-        borderRadius: 14,
+        borderRadius: "var(--vp-radius-3xl)",
         cursor: "pointer",
         transition: "all 0.2s",
       }}
@@ -327,7 +327,7 @@ function FavoriteCard({
         style={{
           width: 32,
           height: 32,
-          borderRadius: 8,
+          borderRadius: "var(--vp-radius-lg)",
           objectFit: "contain",
         }}
         draggable={false}
@@ -354,7 +354,7 @@ function FavoriteCard({
             right: 4,
             width: 18,
             height: 18,
-            borderRadius: 5,
+            borderRadius: "var(--vp-radius-sm)",
             background: "var(--vp-accent-red-bg)",
             display: "flex",
             alignItems: "center",
@@ -379,7 +379,7 @@ const inputStyle: React.CSSProperties = {
   border: "1px solid var(--vp-input-border)",
   color: "var(--vp-text-primary)",
   outline: "none",
-  borderRadius: 10,
+  borderRadius: "var(--vp-radius-xl)",
   padding: "8px 12px",
   fontSize: 13,
   transition: "border-color 0.2s",

@@ -88,7 +88,7 @@ export function UsagePanel({ onClose }: UsagePanelProps) {
         maxHeight: 520,
         background: "var(--vp-bg-secondary)",
         border: "1px solid var(--vp-border-light)",
-        borderRadius: 12,
+        borderRadius: "var(--vp-radius-2xl)",
         overflow: "hidden",
         boxShadow: "0 8px 32px var(--vp-bg-overlay)",
         zIndex: 1000,
@@ -118,7 +118,7 @@ export function UsagePanel({ onClose }: UsagePanelProps) {
           style={{
             background: "transparent",
             border: "1px solid var(--vp-border-light)",
-            borderRadius: 6,
+            borderRadius: "var(--vp-radius-md)",
             padding: 6,
             cursor: loading ? "default" : "pointer",
             display: "flex",
@@ -170,7 +170,7 @@ export function UsagePanel({ onClose }: UsagePanelProps) {
                 border: `1px solid ${
                   isActive ? "var(--vp-accent-blue-border)" : "var(--vp-bg-surface-hover)"
                 }`,
-                borderRadius: 8,
+                borderRadius: "var(--vp-radius-lg)",
                 cursor: "pointer",
                 transition: "all 0.2s",
                 position: "relative",
@@ -277,7 +277,7 @@ function ProviderCard({ provider }: { provider: ProviderUsage }) {
           padding: 12,
           background: "var(--vp-accent-red-bg)",
           border: "1px solid var(--vp-accent-red-border)",
-          borderRadius: 8,
+          borderRadius: "var(--vp-radius-lg)",
         }}
       >
         <div style={{ fontSize: 12, fontWeight: 500, color: "var(--vp-accent-red)" }}>
@@ -297,7 +297,7 @@ function ProviderCard({ provider }: { provider: ProviderUsage }) {
         padding: 12,
         background: "var(--vp-bg-surface)",
         border: "1px solid var(--vp-bg-surface-hover)",
-        borderRadius: 8,
+        borderRadius: "var(--vp-radius-lg)",
       }}
     >
       <div style={{ fontSize: 12, fontWeight: 500, color: "var(--vp-text-primary)", marginBottom: 8 }}>
@@ -328,7 +328,7 @@ function ProviderCard({ provider }: { provider: ProviderUsage }) {
               style={{
                 height: 6,
                 background: colors.bg,
-                borderRadius: 3,
+                borderRadius: "var(--vp-radius-xs)",
                 overflow: "hidden",
               }}
             >
@@ -424,7 +424,7 @@ function ProviderCard({ provider }: { provider: ProviderUsage }) {
             style={{
               height: 6,
               background: "var(--vp-accent-blue-bg-hover)",
-              borderRadius: 3,
+              borderRadius: "var(--vp-radius-xs)",
               overflow: "hidden",
             }}
           >

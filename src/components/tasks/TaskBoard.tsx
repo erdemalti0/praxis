@@ -108,7 +108,7 @@ export default memo(function TaskBoard({ variant }: Props) {
                 color: "var(--vp-text-faint)",
                 fontSize: 10,
                 background: "var(--vp-bg-surface-hover)",
-                borderRadius: 10,
+                borderRadius: "var(--vp-radius-xl)",
                 padding: "1px 8px",
                 fontFamily: "monospace",
               }}
@@ -122,7 +122,7 @@ export default memo(function TaskBoard({ variant }: Props) {
             style={{
               background: "var(--vp-bg-surface-hover)",
               border: "1px solid var(--vp-border-medium)",
-              borderRadius: 8,
+              borderRadius: "var(--vp-radius-lg)",
               color: "var(--vp-text-primary)",
               fontSize: 12,
               cursor: "pointer",
@@ -155,7 +155,7 @@ export default memo(function TaskBoard({ variant }: Props) {
                   flex: "1 1 0",
                   minWidth: 260,
                   background: isOver ? "var(--vp-bg-surface)" : "transparent",
-                  borderRadius: 12,
+                  borderRadius: "var(--vp-radius-2xl)",
                   transition: "background 0.15s",
                 }}
                 onDragOver={(e) => handleColumnDragOver(e, section.key)}
@@ -167,7 +167,7 @@ export default memo(function TaskBoard({ variant }: Props) {
                   className="flex items-center gap-2 px-3 py-2.5 mb-2"
                   style={{
                     background: "var(--vp-bg-surface)",
-                    borderRadius: 10,
+                    borderRadius: "var(--vp-radius-xl)",
                     border: isOver
                       ? `1px solid ${section.color}40`
                       : "1px solid var(--vp-bg-surface)",
@@ -200,7 +200,7 @@ export default memo(function TaskBoard({ variant }: Props) {
                       fontSize: 10,
                       color: "var(--vp-text-faint)",
                       background: "var(--vp-bg-surface-hover)",
-                      borderRadius: 8,
+                      borderRadius: "var(--vp-radius-lg)",
                       padding: "0 6px",
                       fontFamily: "monospace",
                       lineHeight: "18px",
@@ -224,7 +224,7 @@ export default memo(function TaskBoard({ variant }: Props) {
                         border: isOver
                           ? `2px dashed ${section.color}60`
                           : "1px dashed var(--vp-bg-surface-hover)",
-                        borderRadius: 10,
+                        borderRadius: "var(--vp-radius-xl)",
                         transition: "all 0.15s",
                         background: isOver ? `${section.color}08` : "transparent",
                       }}
@@ -271,7 +271,7 @@ export default memo(function TaskBoard({ variant }: Props) {
               fontSize: 10,
               color: "var(--vp-text-faint)",
               background: "var(--vp-bg-surface-hover)",
-              borderRadius: 8,
+              borderRadius: "var(--vp-radius-lg)",
               padding: "0 6px",
               fontFamily: "monospace",
             }}
@@ -289,7 +289,7 @@ export default memo(function TaskBoard({ variant }: Props) {
               cursor: "pointer",
               color: "var(--vp-text-faint)",
               padding: 4,
-              borderRadius: 6,
+              borderRadius: "var(--vp-radius-md)",
               transition: "all 0.2s",
               display: "flex",
               alignItems: "center",
@@ -314,7 +314,7 @@ export default memo(function TaskBoard({ variant }: Props) {
               cursor: "pointer",
               color: "var(--vp-text-faint)",
               padding: 4,
-              borderRadius: 6,
+              borderRadius: "var(--vp-radius-md)",
               transition: "all 0.2s",
               display: "flex",
               alignItems: "center",
@@ -349,7 +349,7 @@ export default memo(function TaskBoard({ variant }: Props) {
               onDrop={(e) => handleColumnDrop(e, section.key)}
               style={{
                 background: isOver ? "var(--vp-bg-surface)" : "transparent",
-                borderRadius: 8,
+                borderRadius: "var(--vp-radius-lg)",
                 transition: "background 0.15s",
                 padding: isOver ? 4 : 0,
               }}
@@ -385,7 +385,7 @@ export default memo(function TaskBoard({ variant }: Props) {
                     fontSize: 10,
                     color: "var(--vp-text-faint)",
                     background: "var(--vp-bg-surface-hover)",
-                    borderRadius: 8,
+                    borderRadius: "var(--vp-radius-lg)",
                     padding: "0 6px",
                     fontFamily: "monospace",
                   }}
@@ -419,7 +419,7 @@ export default memo(function TaskBoard({ variant }: Props) {
                         border: isOver
                           ? `2px dashed ${section.color}60`
                           : "1px dashed var(--vp-bg-surface-hover)",
-                        borderRadius: 8,
+                        borderRadius: "var(--vp-radius-lg)",
                         background: isOver ? `${section.color}08` : "transparent",
                         transition: "all 0.15s",
                       }}

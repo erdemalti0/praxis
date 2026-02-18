@@ -27,7 +27,7 @@ export function spawnPty(
   rows: number,
   onData: (id: string, data: string) => void,
   onExit?: (id: string, exitCode: number, signal?: number) => void
-): { id: string; cwd: string } {
+): { id: string; cwd: string; pid: number } {
   // Dynamic require for node-pty (native module)
   const pty = require("node-pty");
 
@@ -77,7 +77,12 @@ export function spawnPty(
     onExit?.(id, exitCode, signal);
   });
 
-  return { id, cwd: safeCwd };
+  return { id, cwd: safeCwd, pid: shell.pid };
+}
+
+/** Get the PID of a running PTY session */
+export function getPtyPid(id: string): number | undefined {
+  return sessions.get(id)?.pty.pid;
 }
 
 export function writePty(id: string, data: string): void {

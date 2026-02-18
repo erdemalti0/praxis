@@ -204,7 +204,7 @@ export default function DiffViewerWidget({
             style={{
               background: "var(--vp-bg-surface-hover)",
               border: "1px solid var(--vp-border-light)",
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
               padding: "3px 8px",
               color: "var(--vp-text-secondary)",
               cursor: "pointer",
@@ -226,7 +226,7 @@ export default function DiffViewerWidget({
                 left: 0,
                 background: "var(--vp-bg-secondary)",
                 border: "1px solid var(--vp-border-light)",
-                borderRadius: 6,
+                borderRadius: "var(--vp-radius-md)",
                 marginTop: 4,
                 minWidth: 180,
                 maxHeight: 200,
@@ -265,7 +265,7 @@ export default function DiffViewerWidget({
             style={{
               fontSize: 10,
               padding: "3px 8px",
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
               background: !staged ? "var(--vp-border-light)" : "transparent",
               border: "1px solid var(--vp-border-light)",
               color: !staged ? "var(--vp-text-primary)" : "var(--vp-text-dim)",
@@ -279,7 +279,7 @@ export default function DiffViewerWidget({
             style={{
               fontSize: 10,
               padding: "3px 8px",
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
               background: staged ? "var(--vp-border-light)" : "transparent",
               border: "1px solid var(--vp-border-light)",
               color: staged ? "var(--vp-text-primary)" : "var(--vp-text-dim)",
@@ -306,7 +306,7 @@ export default function DiffViewerWidget({
               color: viewMode === "unified" ? "var(--vp-text-primary)" : "var(--vp-text-faint)",
               cursor: "pointer",
               padding: 4,
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
             }}
             title="Unified view"
           >
@@ -320,7 +320,7 @@ export default function DiffViewerWidget({
               color: viewMode === "split" ? "var(--vp-text-primary)" : "var(--vp-text-faint)",
               cursor: "pointer",
               padding: 4,
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
             }}
             title="Split view"
           >
@@ -334,7 +334,7 @@ export default function DiffViewerWidget({
               color: showLineNumbers ? "var(--vp-text-primary)" : "var(--vp-text-faint)",
               cursor: "pointer",
               padding: 4,
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
             }}
             title="Toggle line numbers"
           >

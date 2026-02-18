@@ -37,7 +37,7 @@ export default function TaskCreateDialog({ projectPath, onClose }: Props) {
           width: 460,
           background: "var(--vp-bg-secondary)",
           border: "1px solid var(--vp-border-medium)",
-          borderRadius: 14,
+          borderRadius: "var(--vp-radius-3xl)",
           padding: "24px",
         }}
       >
@@ -83,7 +83,7 @@ export default function TaskCreateDialog({ projectPath, onClose }: Props) {
               width: "100%",
               background: "var(--vp-bg-surface)",
               border: "1px solid var(--vp-border-medium)",
-              borderRadius: 8,
+              borderRadius: "var(--vp-radius-lg)",
               padding: "8px 12px",
               color: "var(--vp-text-primary)",
               fontSize: 13,
@@ -115,7 +115,7 @@ export default function TaskCreateDialog({ projectPath, onClose }: Props) {
               width: "100%",
               background: "var(--vp-bg-surface)",
               border: "1px solid var(--vp-border-medium)",
-              borderRadius: 8,
+              borderRadius: "var(--vp-radius-lg)",
               padding: "8px 12px",
               color: "var(--vp-text-primary)",
               fontSize: 12,
@@ -148,7 +148,7 @@ export default function TaskCreateDialog({ projectPath, onClose }: Props) {
               width: "100%",
               background: "var(--vp-bg-surface)",
               border: "1px solid var(--vp-border-medium)",
-              borderRadius: 8,
+              borderRadius: "var(--vp-radius-lg)",
               padding: "8px 12px",
               color: "var(--vp-text-primary)",
               fontSize: 12,
@@ -180,7 +180,7 @@ export default function TaskCreateDialog({ projectPath, onClose }: Props) {
               width: "100%",
               background: "var(--vp-bg-surface)",
               border: "1px solid var(--vp-border-medium)",
-              borderRadius: 8,
+              borderRadius: "var(--vp-radius-lg)",
               padding: "8px 12px",
               color: "var(--vp-text-primary)",
               fontSize: 12,
@@ -195,7 +195,7 @@ export default function TaskCreateDialog({ projectPath, onClose }: Props) {
             onClick={onClose}
             style={{
               padding: "8px 16px",
-              borderRadius: 8,
+              borderRadius: "var(--vp-radius-lg)",
               fontSize: 12,
               cursor: "pointer",
               background: "transparent",
@@ -213,7 +213,7 @@ export default function TaskCreateDialog({ projectPath, onClose }: Props) {
             disabled={!title.trim()}
             style={{
               padding: "8px 20px",
-              borderRadius: 8,
+              borderRadius: "var(--vp-radius-lg)",
               fontSize: 12,
               fontWeight: 500,
               cursor: title.trim() ? "pointer" : "not-allowed",

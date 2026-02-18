@@ -1,13 +1,76 @@
-import { useState, useEffect, useRef, useMemo, memo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { createPortal } from "react-dom";
-import { Plus, X, Columns2, Maximize2, Minimize2, ArrowUpDown, Pencil, Copy } from "lucide-react";
+import { Plus, X, Columns2, Maximize2, Minimize2, ArrowUpDown, Pencil, Copy, Terminal } from "lucide-react";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useUIStore } from "../../stores/uiStore";
-import { closePane, getSessionIds } from "../../lib/layout/layoutUtils";
+import { closePane, getSessionIds, rebalanceLayout } from "../../lib/layout/layoutUtils";
+import { PANE_DRAG_MIME, type PaneDragData } from "../../types/layout";
+import { LAYOUT_PRESETS, type LayoutPreset } from "../../lib/layout/layoutPresets";
 import { cleanupTerminal, refitAllTerminals } from "../../lib/terminal/terminalCache";
 import { invoke } from "../../lib/ipc";
 import { useConfirmStore } from "../../stores/confirmStore";
 import { useWidgetStore } from "../../stores/widgetStore";
+
+/** Miniature grid icon showing the layout pattern */
+function PresetIcon({ grid }: { grid: string[][] }) {
+  const rows = grid.length;
+  const cols = Math.max(...grid.map((r) => r.length));
+  // Collect unique cell IDs to assign distinct colors
+  const ids = [...new Set(grid.flat())];
+  const palette = [
+    "var(--vp-accent-blue)",
+    "var(--vp-accent-green)",
+    "var(--vp-accent-purple, #a78bfa)",
+    "var(--vp-accent-orange, #fb923c)",
+  ];
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateRows: `repeat(${rows}, 1fr)`,
+        gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        width: 18,
+        height: 14,
+        gap: 1,
+        flexShrink: 0,
+      }}
+    >
+      {grid.flatMap((row, ri) =>
+        row.map((cell, ci) => {
+          // Calculate grid span for merged cells
+          const rowSpan =
+            ri === 0
+              ? grid.filter((r, rr) => rr > ri && r[ci] === cell).length + 1
+              : grid[ri - 1]?.[ci] === cell
+                ? 0
+                : 1;
+          const colSpan =
+            ci === 0
+              ? row.filter((c, cc) => cc > ci && c === cell).length + 1
+              : row[ci - 1] === cell
+                ? 0
+                : 1;
+
+          if (rowSpan === 0 || colSpan === 0) return null;
+
+          return (
+            <div
+              key={`${ri}-${ci}`}
+              style={{
+                gridRow: `${ri + 1} / span ${rowSpan}`,
+                gridColumn: `${ci + 1} / span ${colSpan}`,
+                background: palette[ids.indexOf(cell) % palette.length],
+                borderRadius: "var(--vp-radius-xs)",
+                opacity: 0.7,
+              }}
+            />
+          );
+        })
+      )}
+    </div>
+  );
+}
 
 export default memo(function TerminalTabs() {
   const allSessions = useTerminalStore((s) => s.sessions);
@@ -36,12 +99,24 @@ export default memo(function TerminalTabs() {
   const addTerminalGroup = useUIStore((s) => s.addTerminalGroup);
   const removeTerminalGroup = useUIStore((s) => s.removeTerminalGroup);
   const setActiveTerminalGroup = useUIStore((s) => s.setActiveTerminalGroup);
+  const moveSessionToGroup = useUIStore((s) => s.moveSessionToGroup);
+  const setDraggingPaneSessionId = useUIStore((s) => s.setDraggingPaneSessionId);
+
+  // Drag-over state for group tabs and "+" button
+  const [tabDragOver, setTabDragOver] = useState<string | null>(null);
+  const [plusDragOver, setPlusDragOver] = useState(false);
+  const tabSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const groupIds = useMemo(
     () => activeWorkspaceId ? (terminalGroups[activeWorkspaceId] || []) : [],
     [activeWorkspaceId, terminalGroups]
   );
   const activeGroupId = activeWorkspaceId ? activeTerminalGroup[activeWorkspaceId] : undefined;
+
+  // Layout preset dropdown
+  const [showLayoutMenu, setShowLayoutMenu] = useState(false);
+  const layoutMenuRef = useRef<HTMLDivElement>(null);
+  const layoutBtnRef = useRef<HTMLButtonElement>(null);
 
   // Context menu for the bar background (split screen toggle)
   const [barCtxMenu, setBarCtxMenu] = useState<{ x: number; y: number } | null>(null);
@@ -86,6 +161,40 @@ export default memo(function TerminalTabs() {
     return () => document.removeEventListener("keydown", handler);
   }, [sessionCtxMenu]);
 
+  // Close layout menu on outside click
+  useEffect(() => {
+    if (!showLayoutMenu) return;
+    const close = (e: MouseEvent) => {
+      if (
+        layoutMenuRef.current && !layoutMenuRef.current.contains(e.target as Node) &&
+        layoutBtnRef.current && !layoutBtnRef.current.contains(e.target as Node)
+      ) {
+        setShowLayoutMenu(false);
+      }
+    };
+    const id = setTimeout(() => document.addEventListener("mousedown", close), 0);
+    return () => {
+      clearTimeout(id);
+      document.removeEventListener("mousedown", close);
+    };
+  }, [showLayoutMenu]);
+
+  // Create a preset layout with empty panes (user fills each via "+ New Terminal" button)
+  const handlePresetSelect = useCallback((preset: LayoutPreset) => {
+    setShowLayoutMenu(false);
+    if (!activeWorkspaceId) return;
+
+    const groupId = addTerminalGroup(activeWorkspaceId);
+    const layout = preset.createLayout();
+    useUIStore.getState().setWorkspaceLayout(groupId, layout);
+
+    // Switch to terminal view if needed
+    const state = useUIStore.getState();
+    if (state.viewMode === "missions") {
+      state.setViewMode(state.splitEnabled ? "split" : "terminal");
+    }
+  }, [activeWorkspaceId, addTerminalGroup]);
+
   const handleBarContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -104,7 +213,7 @@ export default memo(function TerminalTabs() {
       if (layout) {
         const newLayout = closePane(layout, sessionId);
         if (newLayout) {
-          setWorkspaceLayout(groupId, newLayout);
+          setWorkspaceLayout(groupId, rebalanceLayout(newLayout));
         } else {
           setWorkspaceLayout(groupId, { type: "leaf", sessionId: null });
         }
@@ -193,11 +302,48 @@ export default memo(function TerminalTabs() {
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs whitespace-nowrap group"
             style={{
-              background: isActive ? "var(--vp-bg-surface-hover)" : "transparent",
-              color: isActive ? "var(--vp-text-primary)" : "var(--vp-text-muted)",
-              borderRadius: 10,
+              background: tabDragOver === gid ? "var(--vp-accent-blue-bg)" : isActive ? "var(--vp-bg-surface-hover)" : "transparent",
+              color: tabDragOver === gid ? "var(--vp-accent-blue-glow)" : isActive ? "var(--vp-text-primary)" : "var(--vp-text-muted)",
+              border: tabDragOver === gid ? "1px solid var(--vp-accent-blue-glow)" : "1px solid transparent",
+              borderRadius: "var(--vp-radius-xl)",
               transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
               fontWeight: isActive ? 500 : 400,
+            }}
+            onDragOver={(e) => {
+              if (e.dataTransfer.types.includes(PANE_DRAG_MIME)) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                setTabDragOver(gid);
+                // Auto-switch to this tab after 500ms hover during drag
+                if (!tabSwitchTimerRef.current && gid !== activeGroupId && activeWorkspaceId) {
+                  tabSwitchTimerRef.current = setTimeout(() => {
+                    setActiveTerminalGroup(activeWorkspaceId!, gid);
+                    tabSwitchTimerRef.current = null;
+                  }, 500);
+                }
+              }
+            }}
+            onDragLeave={() => {
+              if (tabDragOver === gid) setTabDragOver(null);
+              if (tabSwitchTimerRef.current) {
+                clearTimeout(tabSwitchTimerRef.current);
+                tabSwitchTimerRef.current = null;
+              }
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setTabDragOver(null);
+              if (tabSwitchTimerRef.current) {
+                clearTimeout(tabSwitchTimerRef.current);
+                tabSwitchTimerRef.current = null;
+              }
+              const raw = e.dataTransfer.getData(PANE_DRAG_MIME);
+              if (!raw) return;
+              let data: PaneDragData;
+              try { data = JSON.parse(raw); } catch { return; }
+              if (data.sourceGroupId === gid) return;
+              moveSessionToGroup(data.sessionId, data.sourceGroupId, gid);
+              setDraggingPaneSessionId(null);
             }}
             onMouseEnter={(e) => {
               if (!isActive) e.currentTarget.style.background = "var(--vp-bg-surface-hover)";
@@ -232,33 +378,59 @@ export default memo(function TerminalTabs() {
         );
       })}
 
-      {/* Add new terminal button */}
-      <button
-        onClick={handleAddTerminal}
-        className="flex items-center justify-center"
-        title="New Terminal"
-        style={{
-          color: "var(--vp-text-muted)",
-          width: 28,
-          height: 28,
-          borderRadius: 8,
-          border: "1px solid var(--vp-border-light)",
-          background: "var(--vp-bg-surface)",
-          transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+      {/* Add new terminal button (dropdown trigger) */}
+      <div
+        style={{ position: "relative" }}
+        onDragOver={(e) => {
+          if (e.dataTransfer.types.includes(PANE_DRAG_MIME)) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            setPlusDragOver(true);
+          }
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = "var(--vp-text-primary)";
-          e.currentTarget.style.background = "var(--vp-border-light)";
-          e.currentTarget.style.borderColor = "var(--vp-border-strong)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = "var(--vp-text-muted)";
-          e.currentTarget.style.background = "var(--vp-bg-surface)";
-          e.currentTarget.style.borderColor = "var(--vp-border-light)";
+        onDragLeave={() => setPlusDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setPlusDragOver(false);
+          const raw = e.dataTransfer.getData(PANE_DRAG_MIME);
+          if (!raw || !activeWorkspaceId) return;
+          let data: PaneDragData;
+          try { data = JSON.parse(raw); } catch { return; }
+          const newGroupId = addTerminalGroup(activeWorkspaceId);
+          moveSessionToGroup(data.sessionId, data.sourceGroupId, newGroupId);
+          setDraggingPaneSessionId(null);
         }}
       >
-        <Plus size={14} />
-      </button>
+        <button
+          ref={layoutBtnRef}
+          onClick={() => setShowLayoutMenu((v) => !v)}
+          className="flex items-center justify-center"
+          title="New Terminal"
+          style={{
+            color: plusDragOver ? "var(--vp-accent-blue-glow)" : showLayoutMenu ? "var(--vp-text-primary)" : "var(--vp-text-muted)",
+            width: 28,
+            height: 28,
+            borderRadius: "var(--vp-radius-lg)",
+            border: `1px solid ${plusDragOver ? "var(--vp-accent-blue-glow)" : showLayoutMenu ? "var(--vp-border-strong)" : "var(--vp-border-light)"}`,
+            background: plusDragOver ? "var(--vp-accent-blue-bg)" : showLayoutMenu ? "var(--vp-border-light)" : "var(--vp-bg-surface)",
+            transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "var(--vp-text-primary)";
+            e.currentTarget.style.background = "var(--vp-border-light)";
+            e.currentTarget.style.borderColor = "var(--vp-border-strong)";
+          }}
+          onMouseLeave={(e) => {
+            if (!showLayoutMenu) {
+              e.currentTarget.style.color = "var(--vp-text-muted)";
+              e.currentTarget.style.background = "var(--vp-bg-surface)";
+              e.currentTarget.style.borderColor = "var(--vp-border-light)";
+            }
+          }}
+        >
+          <Plus size={14} />
+        </button>
+      </div>
 
       {/* Spacer */}
       <div className="flex-1" />
@@ -273,7 +445,7 @@ export default memo(function TerminalTabs() {
             color: "var(--vp-text-dim)",
             width: 28,
             height: 28,
-            borderRadius: 8,
+            borderRadius: "var(--vp-radius-lg)",
             transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
           onMouseEnter={(e) => {
@@ -296,7 +468,7 @@ export default memo(function TerminalTabs() {
             color: "var(--vp-text-dim)",
             width: 28,
             height: 28,
-            borderRadius: 8,
+            borderRadius: "var(--vp-radius-lg)",
             transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
           onMouseEnter={(e) => {
@@ -312,6 +484,105 @@ export default memo(function TerminalTabs() {
         </button>
       )}
 
+      {/* Layout preset dropdown */}
+      {showLayoutMenu &&
+        createPortal(
+          <div
+            ref={layoutMenuRef}
+            style={{
+              position: "fixed",
+              left: layoutBtnRef.current
+                ? layoutBtnRef.current.getBoundingClientRect().left
+                : 0,
+              top: layoutBtnRef.current
+                ? layoutBtnRef.current.getBoundingClientRect().bottom + 6
+                : 0,
+              background: "var(--vp-bg-tertiary)",
+              border: "1px solid var(--vp-border-medium)",
+              borderRadius: "var(--vp-radius-xl)",
+              padding: 4,
+              zIndex: 9999,
+              minWidth: 220,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+            }}
+          >
+            {/* New Terminal (single) */}
+            <button
+              onClick={() => {
+                setShowLayoutMenu(false);
+                handleAddTerminal();
+              }}
+              className="flex items-center gap-2.5 w-full px-3 py-2"
+              style={{
+                background: "transparent",
+                border: "none",
+                borderRadius: "var(--vp-radius-md)",
+                cursor: "pointer",
+                color: "var(--vp-text-primary)",
+                fontSize: 12,
+                textAlign: "left",
+                transition: "background 0.15s",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "var(--vp-bg-surface-hover)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "transparent")
+              }
+            >
+              <Terminal size={13} style={{ color: "var(--vp-text-muted)", flexShrink: 0 }} />
+              <span>New Terminal</span>
+            </button>
+
+            {/* Separator */}
+            <div
+              style={{
+                height: 1,
+                background: "var(--vp-border-light)",
+                margin: "4px 8px",
+              }}
+            />
+
+            {/* Layout presets */}
+            {LAYOUT_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                onClick={() => handlePresetSelect(preset)}
+                className="flex items-center gap-2.5 w-full px-3 py-2"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  borderRadius: "var(--vp-radius-md)",
+                  cursor: "pointer",
+                  color: "var(--vp-text-primary)",
+                  fontSize: 12,
+                  textAlign: "left",
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "var(--vp-bg-surface-hover)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
+              >
+                <PresetIcon grid={preset.iconGrid} />
+                <span>{preset.name}</span>
+                <span
+                  style={{
+                    marginLeft: "auto",
+                    color: "var(--vp-text-dim)",
+                    fontSize: 10,
+                  }}
+                >
+                  {preset.paneCount}
+                </span>
+              </button>
+            ))}
+          </div>,
+          document.body
+        )}
+
       {/* Bar context menu (split screen toggle) */}
       {barCtxMenu &&
         createPortal(
@@ -323,7 +594,7 @@ export default memo(function TerminalTabs() {
               top: barCtxMenu.y,
               background: "var(--vp-bg-tertiary)",
               border: "1px solid var(--vp-border-medium)",
-              borderRadius: 10,
+              borderRadius: "var(--vp-radius-xl)",
               padding: 4,
               zIndex: 9999,
               minWidth: 180,
@@ -344,7 +615,7 @@ export default memo(function TerminalTabs() {
               style={{
                 background: "transparent",
                 border: "none",
-                borderRadius: 7,
+                borderRadius: "var(--vp-radius-md)",
                 cursor: "pointer",
                 color: "var(--vp-text-primary)",
                 fontSize: 12,
@@ -378,7 +649,7 @@ export default memo(function TerminalTabs() {
               top: tabCtxMenu.y,
               background: "var(--vp-bg-tertiary)",
               border: "1px solid var(--vp-border-medium)",
-              borderRadius: 10,
+              borderRadius: "var(--vp-radius-xl)",
               padding: 4,
               zIndex: 9999,
               minWidth: 220,
@@ -390,7 +661,7 @@ export default memo(function TerminalTabs() {
                 key={s!.id}
                 className="flex items-center justify-between w-full px-3 py-2"
                 style={{
-                  borderRadius: 7,
+                  borderRadius: "var(--vp-radius-md)",
                   cursor: "default",
                   color: focusedPaneSessionId === s!.id ? "var(--vp-text-primary)" : "var(--vp-text-secondary)",
                   fontSize: 12,
@@ -428,7 +699,7 @@ export default memo(function TerminalTabs() {
                     cursor: "pointer",
                     color: "var(--vp-text-dim)",
                     padding: 2,
-                    borderRadius: 4,
+                    borderRadius: "var(--vp-radius-sm)",
                     display: "flex",
                     alignItems: "center",
                     transition: "color 0.15s",
@@ -456,7 +727,7 @@ export default memo(function TerminalTabs() {
                   style={{
                     background: "transparent",
                     border: "none",
-                    borderRadius: 7,
+                    borderRadius: "var(--vp-radius-md)",
                     cursor: "pointer",
                     color: "var(--vp-accent-red-text)",
                     fontSize: 12,
@@ -490,7 +761,7 @@ export default memo(function TerminalTabs() {
               top: sessionCtxMenu.y + 8,
               background: "var(--vp-bg-surface)",
               border: "1px solid var(--vp-border-light)",
-              borderRadius: 8,
+              borderRadius: "var(--vp-radius-lg)",
               padding: 4,
               zIndex: 10000,
               minWidth: 160,
@@ -511,7 +782,7 @@ export default memo(function TerminalTabs() {
               style={{
                 background: "transparent",
                 border: "none",
-                borderRadius: 6,
+                borderRadius: "var(--vp-radius-md)",
                 cursor: "pointer",
                 color: "var(--vp-text-primary)",
                 fontSize: 12,
@@ -537,7 +808,7 @@ export default memo(function TerminalTabs() {
               style={{
                 background: "transparent",
                 border: "none",
-                borderRadius: 6,
+                borderRadius: "var(--vp-radius-md)",
                 cursor: "pointer",
                 color: "var(--vp-accent-red-text)",
                 fontSize: 12,
@@ -564,7 +835,7 @@ export default memo(function TerminalTabs() {
               style={{
                 background: "transparent",
                 border: "none",
-                borderRadius: 6,
+                borderRadius: "var(--vp-radius-md)",
                 cursor: "pointer",
                 color: "var(--vp-text-primary)",
                 fontSize: 12,

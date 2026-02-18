@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Columns2, Rows2, Plus, Hand } from "lucide-react";
+import { Columns2, Rows2, Plus, Hand, Terminal } from "lucide-react";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useUIStore } from "../../stores/uiStore";
 import { invoke, send } from "../../lib/ipc";
 import { getOrCreateTerminal, activateWebGL } from "../../lib/terminal/terminalCache";
 import { setupPtyConnection } from "../../lib/terminal/ptyConnection";
-import { swapPanes } from "../../lib/layout/layoutUtils";
+import { swapPanes, replaceSession } from "../../lib/layout/layoutUtils";
+import { LAYOUT_PRESETS } from "../../lib/layout/layoutPresets";
+import { PANE_DRAG_MIME, type PaneDragData } from "../../types/layout";
 import "@xterm/xterm/css/xterm.css";
 
 /** Bracket paste escape sequences — wraps pasted text so TUI apps treat it as paste */
@@ -35,6 +37,63 @@ function pasteToTerminal(sessionId: string, text: string) {
   try { send("write_pty", { id: sessionId, data }); } catch { invoke("write_pty", { id: sessionId, data }).catch(() => {}); }
 }
 
+/** Miniature grid icon for layout presets */
+function PresetIconSmall({ grid }: { grid: string[][] }) {
+  const rows = grid.length;
+  const cols = Math.max(...grid.map((r) => r.length));
+  const ids = [...new Set(grid.flat())];
+  const palette = [
+    "var(--vp-accent-blue)",
+    "var(--vp-accent-green)",
+    "var(--vp-accent-purple, #a78bfa)",
+    "var(--vp-accent-orange, #fb923c)",
+  ];
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateRows: `repeat(${rows}, 1fr)`,
+        gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        width: 16,
+        height: 12,
+        gap: 1,
+        flexShrink: 0,
+      }}
+    >
+      {grid.flatMap((row, ri) =>
+        row.map((cell, ci) => {
+          const rowSpan =
+            ri === 0
+              ? grid.filter((r, rr) => rr > ri && r[ci] === cell).length + 1
+              : grid[ri - 1]?.[ci] === cell
+                ? 0
+                : 1;
+          const colSpan =
+            ci === 0
+              ? row.filter((c, cc) => cc > ci && c === cell).length + 1
+              : row[ci - 1] === cell
+                ? 0
+                : 1;
+          if (rowSpan === 0 || colSpan === 0) return null;
+          return (
+            <div
+              key={`${ri}-${ci}`}
+              style={{
+                gridRow: `${ri + 1} / span ${rowSpan}`,
+                gridColumn: `${ci + 1} / span ${colSpan}`,
+                background: palette[ids.indexOf(cell) % palette.length],
+                borderRadius: "var(--vp-radius-xs)",
+                opacity: 0.6,
+              }}
+            />
+          );
+        })
+      )}
+    </div>
+  );
+}
+
 interface TerminalPaneProps {
   sessionId: string | null;
   isFocused: boolean;
@@ -54,6 +113,9 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
   const setShowSpawnDialog = useUIStore((s) => s.setShowSpawnDialog);
   const draggingPaneSessionId = useUIStore((s) => s.draggingPaneSessionId);
   const setDraggingPaneSessionId = useUIStore((s) => s.setDraggingPaneSessionId);
+  const activeWorkspaceId = useUIStore((s) => s.activeWorkspaceId);
+  const activeTerminalGroup = useUIStore((s) => s.activeTerminalGroup);
+  const workspaceLayouts = useUIStore((s) => s.workspaceLayouts);
 
   const someoneIsDragging = draggingPaneSessionId !== null;
   const isDragging = draggingPaneSessionId === sessionId;
@@ -75,8 +137,30 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
   const handleDragStart = useCallback(
     (e: React.DragEvent) => {
       if (!sessionId) return;
-      e.dataTransfer.setData("text/plain", sessionId);
+      const ui = useUIStore.getState();
+      const wsId = ui.activeWorkspaceId;
+      if (!wsId) return;
+      const groups = ui.terminalGroups[wsId] || [];
+      const groupId = ui.activeTerminalGroup[wsId] || groups[0];
+
+      const data: PaneDragData = {
+        sessionId,
+        sourceGroupId: groupId || "",
+        sourceWorkspaceId: wsId,
+      };
+      e.dataTransfer.setData(PANE_DRAG_MIME, JSON.stringify(data));
       e.dataTransfer.effectAllowed = "move";
+
+      // Register global dragend cleanup BEFORE the drag handle is unmounted.
+      // The toolbar is hidden when someoneIsDragging becomes true (via setTimeout below),
+      // which removes the drag handle from DOM — so the element-level onDragEnd never fires.
+      // This document-level listener ensures state is always cleaned up.
+      const cleanupDragEnd = () => {
+        useUIStore.getState().setDraggingPaneSessionId(null);
+        document.removeEventListener("dragend", cleanupDragEnd);
+      };
+      document.addEventListener("dragend", cleanupDragEnd);
+
       setTimeout(() => setDraggingPaneSessionId(sessionId), 0);
     },
     [sessionId, setDraggingPaneSessionId]
@@ -111,9 +195,12 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
       e.stopPropagation();
       setDragOver(false);
 
-      // Internal pane swap only — file drops are handled by DropOverlay
-      const draggedId = e.dataTransfer.getData("text/plain");
-      if (!draggedId || !sessionId || draggedId === sessionId) return;
+      const raw = e.dataTransfer.getData(PANE_DRAG_MIME);
+      if (!raw || !sessionId) return;
+
+      let data: PaneDragData;
+      try { data = JSON.parse(raw); } catch { return; }
+      if (data.sessionId === sessionId) return;
 
       const ui = useUIStore.getState();
       const wsId = ui.activeWorkspaceId;
@@ -122,11 +209,23 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
       const activeGroupId = ui.activeTerminalGroup[wsId] || groups[0];
       if (!activeGroupId) return;
 
-      const layout = ui.workspaceLayouts[activeGroupId];
-      if (!layout) return;
-
-      const newLayout = swapPanes(layout, draggedId, sessionId);
-      ui.setWorkspaceLayout(activeGroupId, newLayout);
+      if (data.sourceGroupId === activeGroupId) {
+        // Same group: simple swap
+        const layout = ui.workspaceLayouts[activeGroupId];
+        if (layout) {
+          ui.setWorkspaceLayout(activeGroupId, swapPanes(layout, data.sessionId, sessionId));
+        }
+      } else {
+        // Cross-group: swap session IDs between the two layout trees
+        const sourceLayout = ui.workspaceLayouts[data.sourceGroupId];
+        const targetLayout = ui.workspaceLayouts[activeGroupId];
+        if (sourceLayout && targetLayout) {
+          const newSource = replaceSession(sourceLayout, data.sessionId, sessionId);
+          const newTarget = replaceSession(targetLayout, sessionId, data.sessionId);
+          ui.setWorkspaceLayout(data.sourceGroupId, newSource);
+          ui.setWorkspaceLayout(activeGroupId, newTarget);
+        }
+      }
       setDraggingPaneSessionId(null);
     },
     [sessionId, setDraggingPaneSessionId]
@@ -282,45 +381,216 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
     };
   }, [sessionId]);
 
+  const handleDropOnEmpty = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragOver(false);
+
+      const raw = e.dataTransfer.getData(PANE_DRAG_MIME);
+      if (!raw) return;
+
+      let data: PaneDragData;
+      try { data = JSON.parse(raw); } catch { return; }
+
+      const ui = useUIStore.getState();
+      const wsId = ui.activeWorkspaceId;
+      if (!wsId) return;
+      const groups = ui.terminalGroups[wsId] || [];
+      const activeGroupId = ui.activeTerminalGroup[wsId] || groups[0];
+      if (!activeGroupId) return;
+
+      if (data.sourceGroupId === activeGroupId) {
+        // Same group: swap the dragged session with null (move to empty slot)
+        const layout = ui.workspaceLayouts[activeGroupId];
+        if (layout) {
+          // Use replaceSession to put the dragged session into the null slot
+          // and null out the source — effectively swapPanes but with null support
+          const temp = `__temp_${Date.now()}`;
+          let newLayout = replaceSession(layout, data.sessionId, temp);
+          // Find first null leaf and fill it with the dragged session
+          if (newLayout.type === "leaf" && !newLayout.sessionId) {
+            newLayout = { type: "leaf", sessionId: data.sessionId };
+          } else {
+            // Walk the tree: replace first null with data.sessionId, then replace temp with null
+            const fillNull = (node: typeof newLayout): typeof newLayout => {
+              if (node.type === "leaf") {
+                if (!node.sessionId) return { type: "leaf", sessionId: data.sessionId };
+                return node;
+              }
+              const left = fillNull(node.children[0]);
+              if (left !== node.children[0]) return { ...node, children: [left, node.children[1]] };
+              const right = fillNull(node.children[1]);
+              if (right !== node.children[1]) return { ...node, children: [node.children[0], right] };
+              return node;
+            };
+            newLayout = fillNull(newLayout);
+          }
+          newLayout = replaceSession(newLayout, temp, null);
+          ui.setWorkspaceLayout(activeGroupId, newLayout);
+        }
+      } else {
+        // Cross-group: move session from source group to this empty slot
+        ui.moveSessionToGroup(data.sessionId, data.sourceGroupId, activeGroupId);
+      }
+      ui.setDraggingPaneSessionId(null);
+    },
+    []
+  );
+
   if (!sessionId) {
+    // Check if this is the initial empty state (single empty leaf, no splits)
+    const groupId = activeWorkspaceId ? activeTerminalGroup[activeWorkspaceId] : undefined;
+    const layout = groupId ? workspaceLayouts[groupId] : undefined;
+    const isInitialEmpty = layout?.type === "leaf" && !layout.sessionId;
+
+    const handlePresetSelect = (preset: typeof LAYOUT_PRESETS[number]) => {
+      if (!activeWorkspaceId) return;
+      const gid = activeTerminalGroup[activeWorkspaceId];
+      if (!gid) return;
+      useUIStore.getState().setWorkspaceLayout(gid, preset.createLayout());
+    };
+
     return (
       <div
         className="w-full h-full flex items-center justify-center"
         style={{
+          position: "relative",
           background: "var(--vp-bg-primary)",
           border: dragOver ? "2px solid var(--vp-accent-blue-glow)" : "1px solid var(--vp-border-subtle)",
         }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
+        onDrop={handleDropOnEmpty}
       >
-        <div style={{
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          height: "100%", gap: 16, color: "var(--vp-text-faint)"
-        }}>
-          <button
-            onClick={() => setShowSpawnDialog(true)}
-            className="flex items-center gap-2 px-4 py-2 text-xs"
+        {/* Drop overlay for empty pane */}
+        {dragOver && (
+          <div
+            className="absolute inset-0 z-10"
             style={{
-              color: "var(--vp-text-muted)",
-              border: "1px solid var(--vp-border-light)",
-              borderRadius: 8,
-              background: "var(--vp-bg-surface)",
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--vp-text-primary)";
-              e.currentTarget.style.borderColor = "var(--vp-border-strong)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--vp-text-muted)";
-              e.currentTarget.style.borderColor = "var(--vp-border-light)";
+              background: "var(--vp-accent-blue-bg)",
+              border: "2px dashed var(--vp-accent-blue-glow)",
+              pointerEvents: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <Plus size={14} />
-            New Terminal
-          </button>
-        </div>
+            <span style={{ color: "var(--vp-accent-blue-glow)", fontSize: 12, fontWeight: 500 }}>
+              Drop here
+            </span>
+          </div>
+        )}
+        {isInitialEmpty ? (
+          <div style={{
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+            color: "var(--vp-text-faint)",
+          }}>
+            {/* New Terminal (single) */}
+            <button
+              onClick={() => setShowSpawnDialog(true)}
+              className="flex items-center gap-2 px-4 py-2.5 text-xs"
+              style={{
+                color: "var(--vp-text-muted)",
+                border: "1px solid var(--vp-border-light)",
+                borderRadius: "var(--vp-radius-lg)",
+                background: "var(--vp-bg-surface)",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                width: "100%",
+                justifyContent: "center",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--vp-text-primary)";
+                e.currentTarget.style.borderColor = "var(--vp-border-strong)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--vp-text-muted)";
+                e.currentTarget.style.borderColor = "var(--vp-border-light)";
+              }}
+            >
+              <Terminal size={14} />
+              New Terminal
+            </button>
+
+            {/* Separator */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8, width: "100%",
+              color: "var(--vp-text-dim)", fontSize: 10,
+            }}>
+              <div style={{ flex: 1, height: 1, background: "var(--vp-border-light)" }} />
+              <span>or choose a layout</span>
+              <div style={{ flex: 1, height: 1, background: "var(--vp-border-light)" }} />
+            </div>
+
+            {/* Layout presets grid */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 6,
+              width: "100%",
+            }}>
+              {LAYOUT_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  onClick={() => handlePresetSelect(preset)}
+                  className="flex items-center gap-2 px-3 py-2 text-xs"
+                  style={{
+                    color: "var(--vp-text-dim)",
+                    border: "1px solid var(--vp-border-light)",
+                    borderRadius: "var(--vp-radius-lg)",
+                    background: "var(--vp-bg-surface)",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    textAlign: "left",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--vp-text-primary)";
+                    e.currentTarget.style.borderColor = "var(--vp-border-strong)";
+                    e.currentTarget.style.background = "var(--vp-bg-surface-hover)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--vp-text-dim)";
+                    e.currentTarget.style.borderColor = "var(--vp-border-light)";
+                    e.currentTarget.style.background = "var(--vp-bg-surface)";
+                  }}
+                >
+                  <PresetIconSmall grid={preset.iconGrid} />
+                  <span>{preset.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            height: "100%", gap: 16, color: "var(--vp-text-faint)"
+          }}>
+            <button
+              onClick={() => setShowSpawnDialog(true)}
+              className="flex items-center gap-2 px-4 py-2 text-xs"
+              style={{
+                color: "var(--vp-text-muted)",
+                border: "1px solid var(--vp-border-light)",
+                borderRadius: "var(--vp-radius-lg)",
+                background: "var(--vp-bg-surface)",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--vp-text-primary)";
+                e.currentTarget.style.borderColor = "var(--vp-border-strong)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--vp-text-muted)";
+                e.currentTarget.style.borderColor = "var(--vp-border-light)";
+              }}
+            >
+              <Plus size={14} />
+              New Terminal
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -347,7 +617,7 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { if (!someoneIsDragging) setHovered(false); }}
+      onMouseLeave={() => setHovered(false)}
     >
       {/* Internal pane swap overlay */}
       {dragOver && (
@@ -356,7 +626,7 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
           style={{
             background: "var(--vp-accent-blue-bg)",
             border: "2px dashed var(--vp-accent-blue-glow)",
-            borderRadius: 2,
+            borderRadius: "var(--vp-radius-xs)",
             pointerEvents: "none",
             display: "flex",
             alignItems: "center",
@@ -377,10 +647,16 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
         />
       )}
 
-      {hovered && !someoneIsDragging && (
+      {/* Toolbar: keep in DOM during drag (isDragging) so onDragEnd fires.
+          Visible when hovered and nobody is dragging, OR hidden-but-present when this pane is dragging. */}
+      {(hovered || isDragging) && (
         <div
           className="absolute top-1 right-1 flex gap-1 z-10"
-          style={{ animation: "fadeIn 0.15s ease" }}
+          style={{
+            animation: !isDragging ? "fadeIn 0.15s ease" : undefined,
+            opacity: isDragging ? 0 : someoneIsDragging ? 0 : 1,
+            pointerEvents: isDragging || someoneIsDragging ? "none" : "auto",
+          }}
         >
           <div
             draggable
@@ -391,7 +667,7 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
             style={{
               width: 24,
               height: 24,
-              borderRadius: 6,
+              borderRadius: "var(--vp-radius-md)",
               background: "var(--vp-bg-overlay)",
               border: "1px solid var(--vp-border-medium)",
               color: "var(--vp-text-secondary)",
@@ -416,7 +692,7 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
             style={{
               width: 24,
               height: 24,
-              borderRadius: 6,
+              borderRadius: "var(--vp-radius-md)",
               background: "var(--vp-bg-overlay)",
               border: "1px solid var(--vp-border-medium)",
               color: "var(--vp-text-secondary)",
@@ -441,7 +717,7 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
             style={{
               width: 24,
               height: 24,
-              borderRadius: 6,
+              borderRadius: "var(--vp-radius-md)",
               background: "var(--vp-bg-overlay)",
               border: "1px solid var(--vp-border-medium)",
               color: "var(--vp-text-secondary)",
@@ -563,7 +839,7 @@ function DropOverlay({ sessionId, onDone }: { sessionId: string | null; onDone: 
         zIndex: 20,
         background: "rgba(74, 222, 128, 0.08)",
         border: "2px dashed var(--vp-accent-green)",
-        borderRadius: 2,
+        borderRadius: "var(--vp-radius-xs)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

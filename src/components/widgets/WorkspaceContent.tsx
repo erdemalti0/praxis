@@ -135,7 +135,7 @@ export default function WorkspaceContent({ workspaceId, isCustomizeMode = false 
           gap: 24,
           border: dragOver ? "2px dashed var(--vp-accent-blue-glow)" : "2px dashed transparent",
           background: dragOver ? "var(--vp-accent-blue-bg)" : "transparent",
-          borderRadius: 10,
+          borderRadius: "var(--vp-radius-xl)",
           transition: "all 0.2s",
         }}
       >
@@ -164,7 +164,7 @@ export default function WorkspaceContent({ workspaceId, isCustomizeMode = false 
                   onClick={() => addWidget(workspaceId, pw.type)}
                   style={{
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-                    padding: "16px 20px", borderRadius: 12, minWidth: 100,
+                    padding: "16px 20px", borderRadius: "var(--vp-radius-2xl)", minWidth: 100,
                     background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-light)",
                     color: pw.color, cursor: "pointer", transition: "all 0.2s",
                   }}
@@ -193,7 +193,7 @@ export default function WorkspaceContent({ workspaceId, isCustomizeMode = false 
                 }
               }}
               style={{
-                padding: "8px 20px", borderRadius: 8, fontSize: 12, fontWeight: 500,
+                padding: "8px 20px", borderRadius: "var(--vp-radius-lg)", fontSize: 12, fontWeight: 500,
                 background: "var(--vp-accent-blue-bg)", border: "1px solid var(--vp-accent-blue-border)",
                 color: "var(--vp-accent-blue)", cursor: "pointer", transition: "all 0.2s",
               }}
@@ -225,7 +225,7 @@ export default function WorkspaceContent({ workspaceId, isCustomizeMode = false 
             inset: 4,
             border: "2px dashed var(--vp-accent-blue-glow)",
             background: "var(--vp-accent-blue-bg)",
-            borderRadius: 10,
+            borderRadius: "var(--vp-radius-xl)",
             zIndex: 50,
             pointerEvents: "none",
             display: "flex",
@@ -240,7 +240,7 @@ export default function WorkspaceContent({ workspaceId, isCustomizeMode = false 
               fontWeight: 500,
               background: "var(--vp-bg-overlay)",
               padding: "8px 16px",
-              borderRadius: 10,
+              borderRadius: "var(--vp-radius-xl)",
             }}
           >
             Drop to add widget
@@ -285,7 +285,7 @@ export default function WorkspaceContent({ workspaceId, isCustomizeMode = false 
           transform: "translateX(-50%)",
           background: "var(--vp-bg-overlay)", backdropFilter: "blur(8px)",
           border: "1px solid var(--vp-border-panel)",
-          borderRadius: 8, padding: "6px 14px",
+          borderRadius: "var(--vp-radius-lg)", padding: "6px 14px",
           zIndex: 100,
           fontSize: 13, fontWeight: 600, color: "var(--vp-text-primary)",
           fontFamily: "monospace",

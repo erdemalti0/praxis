@@ -21,7 +21,7 @@ export default function AgentList() {
   const groups: WorkspaceGroup[] = useMemo(() => {
     const result: WorkspaceGroup[] = [];
     for (const ws of workspaces) {
-      const wsSessions = sessions.filter((s) => s.workspaceId === ws.id);
+      const wsSessions = sessions.filter((s) => s.workspaceId === ws.id && s.agentType !== "runner" && !s.id.startsWith("runner-"));
       if (wsSessions.length === 0) continue;
 
       const agents: Agent[] = wsSessions.map((session) => ({
@@ -80,7 +80,7 @@ export default function AgentList() {
             padding: "6px 14px", fontSize: 11,
             background: "var(--vp-accent-blue-bg)",
             border: "1px solid var(--vp-accent-blue-border)",
-            borderRadius: 8, color: "var(--vp-accent-blue)",
+            borderRadius: "var(--vp-radius-lg)", color: "var(--vp-accent-blue)",
             cursor: "pointer", transition: "all 0.2s",
           }}
           onMouseEnter={(e) => { e.currentTarget.style.background = "var(--vp-accent-blue-bg-hover)"; }}
@@ -104,7 +104,7 @@ export default function AgentList() {
             padding: "3px 8px", fontSize: 10,
             background: "var(--vp-bg-surface)",
             border: "1px solid var(--vp-border-light)",
-            borderRadius: 6, color: "var(--vp-text-muted)",
+            borderRadius: "var(--vp-radius-md)", color: "var(--vp-text-muted)",
             cursor: "pointer", transition: "all 0.2s",
           }}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--vp-accent-blue-border)"; e.currentTarget.style.color = "var(--vp-accent-blue)"; }}

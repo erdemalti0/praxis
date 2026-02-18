@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useTaskStore } from "../../stores/taskStore";
-import { useTerminalStore, isSessionWorking } from "../../stores/terminalStore";
+import { useTerminalStore, isSessionWorking, getOutputActivity } from "../../stores/terminalStore";
 import { useUIStore } from "../../stores/uiStore";
 import { send } from "../../lib/ipc";
 import { getSessionIds } from "../../lib/layout/layoutUtils";
@@ -146,7 +146,7 @@ export default function TaskCard({ task, projectPath }: Props) {
         style={{
           background: "var(--vp-bg-surface)",
           border: "1px solid var(--vp-accent-blue-border)",
-          borderRadius: 10,
+          borderRadius: "var(--vp-radius-xl)",
           padding: 12,
         }}
       >
@@ -160,7 +160,7 @@ export default function TaskCard({ task, projectPath }: Props) {
             width: "100%",
             background: "var(--vp-bg-surface)",
             border: "1px solid var(--vp-border-light)",
-            borderRadius: 6,
+            borderRadius: "var(--vp-radius-md)",
             padding: "6px 10px",
             color: "var(--vp-text-primary)",
             fontSize: 12,
@@ -179,7 +179,7 @@ export default function TaskCard({ task, projectPath }: Props) {
             width: "100%",
             background: "var(--vp-bg-surface)",
             border: "1px solid var(--vp-border-light)",
-            borderRadius: 6,
+            borderRadius: "var(--vp-radius-md)",
             padding: "6px 10px",
             color: "var(--vp-text-secondary)",
             fontSize: 11,
@@ -198,7 +198,7 @@ export default function TaskCard({ task, projectPath }: Props) {
             width: "100%",
             background: "var(--vp-bg-surface)",
             border: "1px solid var(--vp-border-subtle)",
-            borderRadius: 6,
+            borderRadius: "var(--vp-radius-md)",
             padding: "6px 10px",
             color: "var(--vp-text-secondary)",
             fontSize: 11,
@@ -216,7 +216,7 @@ export default function TaskCard({ task, projectPath }: Props) {
             width: "100%",
             background: "var(--vp-bg-surface)",
             border: "1px solid var(--vp-border-light)",
-            borderRadius: 6,
+            borderRadius: "var(--vp-radius-md)",
             padding: "6px 10px",
             color: "var(--vp-text-secondary)",
             fontSize: 11,
@@ -232,7 +232,7 @@ export default function TaskCard({ task, projectPath }: Props) {
             style={{
               background: "transparent",
               border: "1px solid var(--vp-border-light)",
-              borderRadius: 6,
+              borderRadius: "var(--vp-radius-md)",
               color: "var(--vp-text-muted)",
               fontSize: 11,
               cursor: "pointer",
@@ -246,7 +246,7 @@ export default function TaskCard({ task, projectPath }: Props) {
             style={{
               background: "var(--vp-accent-blue-bg-hover)",
               border: "1px solid var(--vp-accent-blue-border)",
-              borderRadius: 6,
+              borderRadius: "var(--vp-radius-md)",
               color: "var(--vp-accent-blue)",
               fontSize: 11,
               fontWeight: 500,
@@ -275,7 +275,7 @@ export default function TaskCard({ task, projectPath }: Props) {
       style={{
         background: "var(--vp-bg-surface)",
         border: "1px solid var(--vp-border-subtle)",
-        borderRadius: 10,
+        borderRadius: "var(--vp-radius-xl)",
         padding: "10px 12px",
         transition: "all 0.2s",
         cursor: "grab",
@@ -338,7 +338,7 @@ export default function TaskCard({ task, projectPath }: Props) {
                 style={{
                   width: 22,
                   height: 22,
-                  borderRadius: 5,
+                  borderRadius: "var(--vp-radius-sm)",
                   background: sentTo
                     ? "rgba(74,222,128,0.15)"
                     : task.prompt
@@ -376,7 +376,7 @@ export default function TaskCard({ task, projectPath }: Props) {
             style={{
               width: 22,
               height: 22,
-              borderRadius: 5,
+              borderRadius: "var(--vp-radius-sm)",
               background: "transparent",
               border: "1px solid transparent",
               color: "var(--vp-text-subtle)",
@@ -403,7 +403,7 @@ export default function TaskCard({ task, projectPath }: Props) {
             style={{
               width: 22,
               height: 22,
-              borderRadius: 5,
+              borderRadius: "var(--vp-radius-sm)",
               background: "transparent",
               border: "1px solid transparent",
               color: "var(--vp-text-subtle)",
@@ -437,7 +437,7 @@ export default function TaskCard({ task, projectPath }: Props) {
                   color: c.text,
                   background: c.bg,
                   border: `1px solid ${c.border}`,
-                  borderRadius: 4,
+                  borderRadius: "var(--vp-radius-sm)",
                   padding: "1px 6px",
                   letterSpacing: "0.02em",
                   fontWeight: 500,
@@ -461,7 +461,6 @@ function AgentPicker({
   onSelect: (sessionId: string, workspaceId: string) => void;
 }) {
   const sessions = useTerminalStore((s) => s.sessions);
-  const outputActivity = useTerminalStore((s) => s.outputActivity);
   const workspaces = useUIStore((s) => s.workspaces);
   const terminalGroups = useUIStore((s) => s.terminalGroups);
   const workspaceLayouts = useUIStore((s) => s.workspaceLayouts);
@@ -499,7 +498,7 @@ function AgentPicker({
         style={{
           position: "absolute", top: "100%", right: 0, marginTop: 4,
           width: 240, background: "var(--vp-bg-tertiary)", border: "1px solid var(--vp-border-medium)",
-          borderRadius: 10, padding: "10px 0", zIndex: 100,
+          borderRadius: "var(--vp-radius-xl)", padding: "10px 0", zIndex: 100,
           boxShadow: "0 8px 32px var(--vp-bg-overlay)",
         }}
       >
@@ -522,7 +521,7 @@ function AgentPicker({
       style={{
         position: "absolute", top: "100%", right: 0, marginTop: 4,
         width: 260, background: "var(--vp-bg-tertiary)", border: "1px solid var(--vp-border-medium)",
-        borderRadius: 10, padding: "6px 0", zIndex: 100,
+        borderRadius: "var(--vp-radius-xl)", padding: "6px 0", zIndex: 100,
         boxShadow: "0 8px 32px var(--vp-bg-overlay)",
         animation: "pickerFadeIn 0.15s ease",
       }}
@@ -538,7 +537,7 @@ function AgentPicker({
           </div>
           {group.sessions.map((session) => {
             const config = getAgentConfig(session.agentType);
-            const isWorking = isSessionWorking(outputActivity[session.id]);
+            const isWorking = isSessionWorking(getOutputActivity(session.id));
             const groupLabel = sessionGroupLabel[session.id] || "";
             const t = session.agentType || "unknown";
             if (!typeIndex[t]) typeIndex[t] = 0;
@@ -566,7 +565,7 @@ function AgentPicker({
                   animation: isWorking ? "agentPulse 1.5s ease-in-out infinite" : "none",
                 }} />
                 <div style={{
-                  width: 22, height: 22, borderRadius: 5,
+                  width: 22, height: 22, borderRadius: "var(--vp-radius-sm)",
                   background: "var(--vp-bg-surface-hover)",
                   display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                 }}>

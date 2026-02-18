@@ -192,7 +192,7 @@ export function useBrowserShortcuts(webviewRef: React.RefObject<Electron.Webview
               window.__praxis_find.show();
             } else {
               const input = document.createElement('input');
-              input.style.cssText = 'position:fixed;top:10px;right:10px;padding:8px 12px;border-radius:6px;border:1px solid #ccc;font-size:14px;z-index:2147483647;';
+              input.style.cssText = 'position:fixed;top:10px;right:10px;padding:8px 12px;border-radius: var(--vp-radius-md);border:1px solid #ccc;font-size:14px;z-index:2147483647;';
               input.placeholder = 'Find...';
               input.oninput = () => window.find(input.value);
               input.onkeydown = (e) => { if(e.key==='Escape') input.remove(); };

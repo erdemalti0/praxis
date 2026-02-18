@@ -118,7 +118,7 @@ export default function MissionStepNode({ step, projectPath, onAddChild, onEdit,
         height: NODE_HEIGHT,
         background: hovered ? "var(--vp-bg-surface)" : config.bg,
         border: `1px solid ${hovered ? "var(--vp-border-medium)" : config.border}`,
-        borderRadius: 14,
+        borderRadius: "var(--vp-radius-3xl)",
         padding: "10px 14px",
         cursor: "default",
         transition: "all 0.2s ease",
@@ -172,7 +172,7 @@ export default function MissionStepNode({ step, projectPath, onAddChild, onEdit,
         </div>
         {step.prompt && (
           <div title="Has AI prompt" style={{
-            width: 16, height: 16, borderRadius: 4,
+            width: 16, height: 16, borderRadius: "var(--vp-radius-sm)",
             background: "rgba(167,139,250,0.1)",
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
@@ -216,7 +216,7 @@ export default function MissionStepNode({ step, projectPath, onAddChild, onEdit,
           onClick={(e) => { e.stopPropagation(); onAddChild(step.id); }}
           title="Add branch"
           style={{
-            width: 22, height: 22, borderRadius: 6,
+            width: 22, height: 22, borderRadius: "var(--vp-radius-md)",
             background: "var(--vp-accent-blue-bg)", border: "1px solid var(--vp-accent-blue-border)",
             color: "var(--vp-accent-blue)", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -236,7 +236,7 @@ export default function MissionStepNode({ step, projectPath, onAddChild, onEdit,
               onClick={togglePicker}
               title={step.prompt ? "Send prompt to agent" : "Send title to agent"}
               style={{
-                width: 22, height: 22, borderRadius: 6,
+                width: 22, height: 22, borderRadius: "var(--vp-radius-md)",
                 background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)",
                 color: "#a78bfa", cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
@@ -272,7 +272,7 @@ export default function MissionStepNode({ step, projectPath, onAddChild, onEdit,
           onClick={(e) => { e.stopPropagation(); onEdit(step); }}
           title="Edit step"
           style={{
-            width: 22, height: 22, borderRadius: 6,
+            width: 22, height: 22, borderRadius: "var(--vp-radius-md)",
             background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-subtle)",
             color: "var(--vp-text-muted)", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -289,7 +289,7 @@ export default function MissionStepNode({ step, projectPath, onAddChild, onEdit,
           onClick={(e) => { e.stopPropagation(); onDelete(step.id); }}
           title="Delete step"
           style={{
-            width: 22, height: 22, borderRadius: 6,
+            width: 22, height: 22, borderRadius: "var(--vp-radius-md)",
             background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)",
             color: "var(--vp-accent-red)", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",

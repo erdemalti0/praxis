@@ -131,7 +131,7 @@ export default function WidgetCatalog({ workspaceId, onClose }: WidgetCatalogPro
     ghost.style.cssText = `
       position: fixed; top: -100px; left: -100px;
       background: var(--vp-bg-tertiary, #1a1a1a); color: var(--vp-text-primary, #e0e0e0); padding: 8px 16px;
-      border-radius: 10px; font-size: 12px; font-weight: 500;
+      border-radius: var(--vp-radius-xl); font-size: 12px; font-weight: 500;
       border: 1px solid var(--vp-border-medium, rgba(255,255,255,0.2));
       box-shadow: 0 8px 24px rgba(0,0,0,0.5);
       font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
@@ -163,7 +163,7 @@ export default function WidgetCatalog({ workspaceId, onClose }: WidgetCatalogPro
         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--vp-text-primary)" }}>Widgets</span>
         <button
           onClick={onClose}
-          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--vp-text-faint)", padding: 2, borderRadius: 4 }}
+          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--vp-text-faint)", padding: 2, borderRadius: "var(--vp-radius-sm)" }}
           onMouseEnter={(e) => { e.currentTarget.style.color = "var(--vp-text-primary)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = "var(--vp-text-faint)"; }}
         >
@@ -177,7 +177,7 @@ export default function WidgetCatalog({ workspaceId, onClose }: WidgetCatalogPro
           className="flex items-center gap-1.5"
           style={{
             background: "var(--vp-bg-surface-hover)",
-            borderRadius: 7,
+            borderRadius: "var(--vp-radius-md)",
             padding: "5px 8px",
             border: "1px solid var(--vp-border-subtle)",
           }}
@@ -212,7 +212,7 @@ export default function WidgetCatalog({ workspaceId, onClose }: WidgetCatalogPro
             style={{
               fontSize: 10,
               padding: "3px 8px",
-              borderRadius: 5,
+              borderRadius: "var(--vp-radius-sm)",
               background: category === cat.key ? "var(--vp-border-light)" : "transparent",
               border: "1px solid " + (category === cat.key ? "var(--vp-border-medium)" : "transparent"),
               color: category === cat.key ? "var(--vp-text-primary)" : "var(--vp-text-faint)",
@@ -237,7 +237,7 @@ export default function WidgetCatalog({ workspaceId, onClose }: WidgetCatalogPro
               style={{
                 background: "none", border: "none", cursor: "pointer",
                 color: savingTemplate ? "var(--vp-accent-blue)" : "var(--vp-text-faint)",
-                padding: 2, borderRadius: 4, display: "flex", alignItems: "center", gap: 3,
+                padding: 2, borderRadius: "var(--vp-radius-sm)", display: "flex", alignItems: "center", gap: 3,
                 fontSize: 9,
               }}
               onMouseEnter={(e) => { e.currentTarget.style.color = "var(--vp-accent-blue)"; }}
@@ -258,7 +258,7 @@ export default function WidgetCatalog({ workspaceId, onClose }: WidgetCatalogPro
                 autoFocus
                 onKeyDown={(e) => { if (e.key === "Enter") handleSaveTemplate(); if (e.key === "Escape") setSavingTemplate(false); }}
                 style={{
-                  flex: 1, fontSize: 10, padding: "4px 8px", borderRadius: 5,
+                  flex: 1, fontSize: 10, padding: "4px 8px", borderRadius: "var(--vp-radius-sm)",
                   background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-subtle)",
                   color: "var(--vp-text-primary)", outline: "none",
                 }}
@@ -266,7 +266,7 @@ export default function WidgetCatalog({ workspaceId, onClose }: WidgetCatalogPro
               <button
                 onClick={handleSaveTemplate}
                 style={{
-                  fontSize: 10, padding: "4px 8px", borderRadius: 5,
+                  fontSize: 10, padding: "4px 8px", borderRadius: "var(--vp-radius-sm)",
                   background: "var(--vp-accent-blue-bg)", border: "1px solid var(--vp-accent-blue-border)",
                   color: "var(--vp-accent-blue)", cursor: "pointer",
                 }}
@@ -288,7 +288,7 @@ export default function WidgetCatalog({ workspaceId, onClose }: WidgetCatalogPro
                 key={tpl.id}
                 className="flex items-center gap-1.5"
                 style={{
-                  padding: "4px 6px", borderRadius: 5,
+                  padding: "4px 6px", borderRadius: "var(--vp-radius-sm)",
                   background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-subtle)",
                   cursor: "pointer",
                 }}
@@ -308,7 +308,7 @@ export default function WidgetCatalog({ workspaceId, onClose }: WidgetCatalogPro
                     onBlur={() => { renameTemplate(tpl.id, renameValue.trim() || tpl.name); setRenamingId(null); }}
                     onClick={(e) => e.stopPropagation()}
                     style={{
-                      flex: 1, fontSize: 10, padding: "1px 4px", borderRadius: 3,
+                      flex: 1, fontSize: 10, padding: "1px 4px", borderRadius: "var(--vp-radius-xs)",
                       background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-medium)",
                       color: "var(--vp-text-primary)", outline: "none", minWidth: 0,
                     }}
@@ -354,7 +354,7 @@ export default function WidgetCatalog({ workspaceId, onClose }: WidgetCatalogPro
               marginTop: 6,
               fontSize: 10,
               padding: "3px 8px",
-              borderRadius: 5,
+              borderRadius: "var(--vp-radius-sm)",
               background: "var(--vp-accent-red-bg)",
               border: "1px solid var(--vp-accent-red-border)",
               color: "var(--vp-accent-red-text)",
@@ -392,7 +392,7 @@ export default function WidgetCatalog({ workspaceId, onClose }: WidgetCatalogPro
                 padding: "7px 8px",
                 background: isPanelActive ? "var(--vp-accent-blue-bg)" : "var(--vp-bg-surface)",
                 border: `1px solid ${isPanelActive ? "var(--vp-accent-blue-border)" : "var(--vp-bg-surface-hover)"}`,
-                borderRadius: 8,
+                borderRadius: "var(--vp-radius-lg)",
                 cursor: def.panelWidget ? "pointer" : "grab",
                 userSelect: "none",
               }}
@@ -416,7 +416,7 @@ export default function WidgetCatalog({ workspaceId, onClose }: WidgetCatalogPro
                 style={{
                   width: 26,
                   height: 26,
-                  borderRadius: 6,
+                  borderRadius: "var(--vp-radius-md)",
                   background: `${catColor}15`,
                   display: "flex",
                   alignItems: "center",

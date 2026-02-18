@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import { invoke } from "../lib/ipc";
 import type { ThemeDefinition, ThemeColors } from "../lib/themes";
-import { applyTheme, getThemeById } from "../lib/themes";
+import { applyTheme, applyBorderStyle, getThemeById, type BorderStyle } from "../lib/themes";
+import { updateAllTerminalThemes } from "../lib/terminal/terminalCache";
+import type { TerminalThemeDefinition } from "../lib/terminal/terminalThemes";
 import type { ProjectInfo } from "../types/session";
 import { registerUserAgentGetter } from "../lib/agentTypes";
 import { registerCustomAgentCmds } from "../lib/agents/detector";
@@ -43,7 +45,9 @@ export interface WorkspaceTemplate {
 
 interface PersistedSettings {
   activeThemeId: string;
+  terminalThemeId: string;
   customThemes: ThemeDefinition[];
+  customTerminalThemes: TerminalThemeDefinition[];
   userAgents: UserAgent[];
   savedWorkspaces: PersistedWorkspace[];
   recentProjects: ProjectInfo[];
@@ -52,6 +56,7 @@ interface PersistedSettings {
   cliEnabled: boolean;
   workspaceTemplates: WorkspaceTemplate[];
   customShortcuts: Record<string, string>;
+  borderStyle: BorderStyle;
 }
 
 interface SettingsState extends PersistedSettings {
@@ -86,6 +91,13 @@ interface SettingsState extends PersistedSettings {
   deleteTemplate: (id: string) => void;
   renameTemplate: (id: string, name: string) => void;
 
+  setTerminalTheme: (id: string) => void;
+  addCustomTerminalTheme: (theme: TerminalThemeDefinition) => void;
+  removeCustomTerminalTheme: (id: string) => void;
+  updateCustomTerminalTheme: (id: string, colors: Record<string, string>) => void;
+
+  setBorderStyle: (style: BorderStyle) => void;
+
   setCustomShortcut: (id: string, key: string) => void;
   resetShortcut: (id: string) => void;
   resetAllShortcuts: () => void;
@@ -93,7 +105,9 @@ interface SettingsState extends PersistedSettings {
 
 const DEFAULT_SETTINGS: PersistedSettings = {
   activeThemeId: "dark",
+  terminalThemeId: "default-dark",
   customThemes: [],
+  customTerminalThemes: [],
   userAgents: [],
   savedWorkspaces: [],
   recentProjects: [],
@@ -102,6 +116,7 @@ const DEFAULT_SETTINGS: PersistedSettings = {
   cliEnabled: false,
   workspaceTemplates: [],
   customShortcuts: {},
+  borderStyle: "rounded" as BorderStyle,
 };
 
 function getSettingsPath(homeDir: string): string {
@@ -153,6 +168,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       set({ ...settings, homeDir, loaded: true });
       const theme = getThemeById(settings.activeThemeId, settings.customThemes);
       applyTheme(theme);
+      // Apply border style
+      applyBorderStyle(settings.borderStyle || "rounded");
+      // Apply terminal theme
+      updateAllTerminalThemes(settings.terminalThemeId || "default-dark", settings.customTerminalThemes || []);
       // Apply custom shortcuts to menu
       if (settings.customShortcuts && Object.keys(settings.customShortcuts).length > 0) {
         invoke("rebuild_menu", { customShortcuts: settings.customShortcuts }).catch(() => {});
@@ -174,7 +193,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
     writeSettingsFile(homeDir, {
       activeThemeId: s.activeThemeId,
+      terminalThemeId: s.terminalThemeId,
       customThemes: s.customThemes,
+      customTerminalThemes: s.customTerminalThemes,
       userAgents: s.userAgents,
       savedWorkspaces: s.savedWorkspaces,
       recentProjects: s.recentProjects,
@@ -183,6 +204,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       cliEnabled: s.cliEnabled,
       workspaceTemplates: s.workspaceTemplates,
       customShortcuts: s.customShortcuts,
+      borderStyle: s.borderStyle,
     });
   },
 
@@ -292,6 +314,46 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     set((s) => ({
       workspaceTemplates: s.workspaceTemplates.map((t) => (t.id === id ? { ...t, name } : t)),
     }));
+    debouncedSave(get);
+  },
+
+  setTerminalTheme: (id: string) => {
+    const s = get();
+    updateAllTerminalThemes(id, s.customTerminalThemes);
+    set({ terminalThemeId: id });
+    debouncedSave(get);
+  },
+
+  addCustomTerminalTheme: (theme: TerminalThemeDefinition) => {
+    set((s) => ({ customTerminalThemes: [...s.customTerminalThemes, theme] }));
+    debouncedSave(get);
+  },
+
+  removeCustomTerminalTheme: (id: string) => {
+    const s = get();
+    set({ customTerminalThemes: s.customTerminalThemes.filter((t) => t.id !== id) });
+    if (s.terminalThemeId === id) {
+      get().setTerminalTheme("default-dark");
+    }
+    debouncedSave(get);
+  },
+
+  updateCustomTerminalTheme: (id: string, colors: Record<string, string>) => {
+    set((s) => ({
+      customTerminalThemes: s.customTerminalThemes.map((t) =>
+        t.id === id ? { ...t, theme: { ...t.theme, ...colors } } : t
+      ),
+    }));
+    const s = get();
+    if (s.terminalThemeId === id) {
+      updateAllTerminalThemes(id, s.customTerminalThemes);
+    }
+    debouncedSave(get);
+  },
+
+  setBorderStyle: (style: BorderStyle) => {
+    applyBorderStyle(style);
+    set({ borderStyle: style });
     debouncedSave(get);
   },
 

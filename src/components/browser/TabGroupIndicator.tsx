@@ -18,7 +18,7 @@ export function TabGroupIndicator({ group, tabCount }: TabGroupIndicatorProps) {
       style={{
         padding: "0 6px",
         height: 26,
-        borderRadius: 6,
+        borderRadius: "var(--vp-radius-md)",
         background: `${group.color}15`,
         borderLeft: `3px solid ${group.color}`,
         gap: 4,
@@ -58,7 +58,7 @@ export function TabGroupIndicator({ group, tabCount }: TabGroupIndicatorProps) {
             justifyContent: "center",
             width: 14,
             height: 14,
-            borderRadius: 4,
+            borderRadius: "var(--vp-radius-sm)",
             background: "var(--vp-accent-red-bg)",
           }}
           onClick={(e) => {
@@ -108,7 +108,7 @@ export function CreateGroupDialog({ onClose, onCreate, tabId: _tabId }: CreateGr
           width: 320,
           background: "var(--vp-bg-secondary)",
           border: "1px solid var(--vp-border-light)",
-          borderRadius: 14,
+          borderRadius: "var(--vp-radius-3xl)",
           overflow: "hidden",
         }}
         onClick={(e) => e.stopPropagation()}
@@ -125,7 +125,7 @@ export function CreateGroupDialog({ onClose, onCreate, tabId: _tabId }: CreateGr
             style={{
               color: "var(--vp-text-faint)",
               padding: 4,
-              borderRadius: 6,
+              borderRadius: "var(--vp-radius-md)",
               background: "transparent",
               border: "none",
               cursor: "pointer",
@@ -155,7 +155,7 @@ export function CreateGroupDialog({ onClose, onCreate, tabId: _tabId }: CreateGr
                 border: "1px solid var(--vp-border-light)",
                 color: "var(--vp-text-primary)",
                 outline: "none",
-                borderRadius: 8,
+                borderRadius: "var(--vp-radius-lg)",
                 padding: "8px 12px",
                 fontSize: 13,
               }}
@@ -183,7 +183,7 @@ export function CreateGroupDialog({ onClose, onCreate, tabId: _tabId }: CreateGr
                   style={{
                     width: 28,
                     height: 28,
-                    borderRadius: 6,
+                    borderRadius: "var(--vp-radius-md)",
                     background: c,
                     border: color === c ? "2px solid #fff" : "2px solid transparent",
                     cursor: "pointer",
@@ -207,7 +207,7 @@ export function CreateGroupDialog({ onClose, onCreate, tabId: _tabId }: CreateGr
               padding: "10px 0",
               background: "var(--vp-button-primary-bg)",
               color: "var(--vp-button-primary-text)",
-              borderRadius: 8,
+              borderRadius: "var(--vp-radius-lg)",
               border: "none",
               fontSize: 13,
               fontWeight: 500,
@@ -241,7 +241,7 @@ export function AddToGroupButton({ tabId }: { tabId: string }) {
           justifyContent: "center",
           width: 22,
           height: 22,
-          borderRadius: 5,
+          borderRadius: "var(--vp-radius-sm)",
           border: "none",
           background: "transparent",
           cursor: "pointer",
@@ -265,7 +265,7 @@ export function AddToGroupButton({ tabId }: { tabId: string }) {
               marginTop: 4,
               background: "var(--vp-bg-secondary)",
               border: "1px solid var(--vp-border-light)",
-              borderRadius: 8,
+              borderRadius: "var(--vp-radius-lg)",
               padding: "4px 0",
               minWidth: 140,
               boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
@@ -303,7 +303,7 @@ export function AddToGroupButton({ tabId }: { tabId: string }) {
                   style={{
                     width: 10,
                     height: 10,
-                    borderRadius: 3,
+                    borderRadius: "var(--vp-radius-xs)",
                     background: group.color,
                   }}
                 />

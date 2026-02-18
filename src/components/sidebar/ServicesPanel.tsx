@@ -45,7 +45,7 @@ export default function ServicesPanel() {
               onClick={() => services.forEach((svc) => openInBrowser(svc.port))}
               title="Open all in browser"
               style={{
-                height: 20, borderRadius: 4, padding: "0 6px",
+                height: 20, borderRadius: "var(--vp-radius-sm)", padding: "0 6px",
                 background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-subtle)",
                 color: "var(--vp-text-muted)", cursor: "pointer", fontSize: 9,
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 3,
@@ -59,7 +59,7 @@ export default function ServicesPanel() {
             onClick={refresh}
             title="Refresh"
             style={{
-              width: 20, height: 20, borderRadius: 4,
+              width: 20, height: 20, borderRadius: "var(--vp-radius-sm)",
               background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-subtle)",
               color: "var(--vp-text-muted)", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -95,7 +95,7 @@ export default function ServicesPanel() {
               fontSize: 10, fontWeight: 600, color: "var(--vp-accent-blue)",
               background: "var(--vp-accent-blue-bg)",
               border: "1px solid var(--vp-accent-blue-border)",
-              borderRadius: 4, padding: "1px 6px",
+              borderRadius: "var(--vp-radius-sm)", padding: "1px 6px",
               fontFamily: "monospace", flexShrink: 0,
             }}>
               :{svc.port}
@@ -117,7 +117,7 @@ export default function ServicesPanel() {
                 onClick={() => openInBrowser(svc.port)}
                 title="Open in Browser"
                 style={{
-                  width: 20, height: 20, borderRadius: 4,
+                  width: 20, height: 20, borderRadius: "var(--vp-radius-sm)",
                   background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-subtle)",
                   color: "var(--vp-text-muted)", cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
@@ -129,7 +129,7 @@ export default function ServicesPanel() {
                 onClick={() => stopService(svc.pid)}
                 title="Stop service"
                 style={{
-                  width: 20, height: 20, borderRadius: 4,
+                  width: 20, height: 20, borderRadius: "var(--vp-radius-sm)",
                   background: "var(--vp-accent-red-bg)", border: "1px solid var(--vp-accent-red-border)",
                   color: "var(--vp-accent-red)", cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",

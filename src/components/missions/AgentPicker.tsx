@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useTerminalStore, isSessionWorking } from "../../stores/terminalStore";
+import { useTerminalStore, isSessionWorking, getOutputActivity } from "../../stores/terminalStore";
 import { useUIStore } from "../../stores/uiStore";
 import { getSessionIds } from "../../lib/layout/layoutUtils";
 import { getAgentConfig } from "../../lib/agentTypes";
@@ -11,7 +11,6 @@ interface AgentPickerProps {
 
 export default function AgentPicker({ onSelect }: AgentPickerProps) {
   const sessions = useTerminalStore((s) => s.sessions);
-  const outputActivity = useTerminalStore((s) => s.outputActivity);
   const workspaces = useUIStore((s) => s.workspaces);
   const terminalGroups = useUIStore((s) => s.terminalGroups);
   const workspaceLayouts = useUIStore((s) => s.workspaceLayouts);
@@ -48,7 +47,7 @@ export default function AgentPicker({ onSelect }: AgentPickerProps) {
       <div
         style={{
           width: 260, background: "var(--vp-bg-tertiary)", border: "1px solid var(--vp-border-medium)",
-          borderRadius: 10, padding: "10px 0",
+          borderRadius: "var(--vp-radius-xl)", padding: "10px 0",
           boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
         }}
       >
@@ -70,7 +69,7 @@ export default function AgentPicker({ onSelect }: AgentPickerProps) {
     <div
       style={{
         width: 260, background: "var(--vp-bg-tertiary)", border: "1px solid var(--vp-border-medium)",
-        borderRadius: 10, padding: "6px 0",
+        borderRadius: "var(--vp-radius-xl)", padding: "6px 0",
         boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
         animation: "pickerFadeIn 0.15s ease",
       }}
@@ -86,7 +85,7 @@ export default function AgentPicker({ onSelect }: AgentPickerProps) {
           </div>
           {group.sessions.map((session) => {
             const config = getAgentConfig(session.agentType);
-            const isWorking = isSessionWorking(outputActivity[session.id]);
+            const isWorking = isSessionWorking(getOutputActivity(session.id));
             const groupLabel = sessionGroupLabel[session.id] || "";
             const t = session.agentType || "unknown";
             if (!typeIndex[t]) typeIndex[t] = 0;
@@ -114,7 +113,7 @@ export default function AgentPicker({ onSelect }: AgentPickerProps) {
                   animation: isWorking ? "agentPulse 1.5s ease-in-out infinite" : "none",
                 }} />
                 <div style={{
-                  width: 22, height: 22, borderRadius: 5,
+                  width: 22, height: 22, borderRadius: "var(--vp-radius-sm)",
                   background: "var(--vp-bg-surface-hover)",
                   display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                 }}>

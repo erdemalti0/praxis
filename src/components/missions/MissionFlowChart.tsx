@@ -275,18 +275,18 @@ export default function MissionFlowChart({ mission, projectPath }: MissionFlowCh
         {total > 0 && (
           <div style={{
             display: "flex", alignItems: "center", gap: 6,
-            padding: "4px 10px", borderRadius: 8,
+            padding: "4px 10px", borderRadius: "var(--vp-radius-lg)",
             background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-subtle)",
             fontSize: 10, color: "var(--vp-text-muted)",
           }}>
             <div style={{
-              width: 50, height: 3, borderRadius: 2,
+              width: 50, height: 3, borderRadius: "var(--vp-radius-xs)",
               background: "var(--vp-bg-surface-hover)",
               overflow: "hidden",
             }}>
               <div style={{
                 width: `${(done / total) * 100}%`,
-                height: "100%", borderRadius: 2,
+                height: "100%", borderRadius: "var(--vp-radius-xs)",
                 background: "linear-gradient(90deg, var(--vp-accent-green), var(--vp-accent-green-bright))",
                 transition: "width 0.3s ease",
               }} />
@@ -305,7 +305,7 @@ export default function MissionFlowChart({ mission, projectPath }: MissionFlowCh
             title="Add root step"
             style={{
               display: "flex", alignItems: "center", gap: 5,
-              padding: "5px 12px", borderRadius: 8,
+              padding: "5px 12px", borderRadius: "var(--vp-radius-lg)",
               background: "var(--vp-accent-blue-bg)", border: "1px solid var(--vp-accent-blue-border)",
               color: "var(--vp-accent-blue)", fontSize: 11, fontWeight: 500, cursor: "pointer",
               transition: "all 0.15s",
@@ -320,7 +320,7 @@ export default function MissionFlowChart({ mission, projectPath }: MissionFlowCh
             onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z + 0.15))}
             title="Zoom in"
             style={{
-              width: 28, height: 28, borderRadius: 7,
+              width: 28, height: 28, borderRadius: "var(--vp-radius-md)",
               background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-subtle)",
               color: "var(--vp-text-dim)", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -333,7 +333,7 @@ export default function MissionFlowChart({ mission, projectPath }: MissionFlowCh
             onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z - 0.15))}
             title="Zoom out"
             style={{
-              width: 28, height: 28, borderRadius: 7,
+              width: 28, height: 28, borderRadius: "var(--vp-radius-md)",
               background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-subtle)",
               color: "var(--vp-text-dim)", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -346,7 +346,7 @@ export default function MissionFlowChart({ mission, projectPath }: MissionFlowCh
             onClick={handleReset}
             title="Reset view"
             style={{
-              width: 28, height: 28, borderRadius: 7,
+              width: 28, height: 28, borderRadius: "var(--vp-radius-md)",
               background: "var(--vp-bg-surface)", border: "1px solid var(--vp-border-subtle)",
               color: "var(--vp-text-dim)", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -368,7 +368,7 @@ export default function MissionFlowChart({ mission, projectPath }: MissionFlowCh
       {connecting && (
         <div style={{
           position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)",
-          zIndex: 10, padding: "6px 16px", borderRadius: 8,
+          zIndex: 10, padding: "6px 16px", borderRadius: "var(--vp-radius-lg)",
           background: "var(--vp-accent-blue-bg)", border: "1px solid var(--vp-accent-blue-border)",
           color: "var(--vp-accent-blue)", fontSize: 11, fontWeight: 500,
           display: "flex", alignItems: "center", gap: 6,
@@ -386,7 +386,7 @@ export default function MissionFlowChart({ mission, projectPath }: MissionFlowCh
           style={{ color: "var(--vp-text-subtle)", gap: 12, position: "relative", zIndex: 5 }}
         >
           <div style={{
-            width: 56, height: 56, borderRadius: 16,
+            width: 56, height: 56, borderRadius: "var(--vp-radius-4xl)",
             background: "var(--vp-accent-blue-bg)", border: "1px solid var(--vp-accent-blue-bg)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>

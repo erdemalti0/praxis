@@ -39,7 +39,7 @@ function ToastItem({ id, message, type }: { id: string; message: string; type: s
         maxWidth: 350,
         background: "var(--vp-bg-surface)",
         borderLeft: `3px solid ${color}`,
-        borderRadius: 8,
+        borderRadius: "var(--vp-radius-lg)",
         padding: "10px 12px",
         display: "flex",
         alignItems: "center",

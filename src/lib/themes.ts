@@ -216,6 +216,26 @@ export function applyTheme(theme: ThemeDefinition): void {
   });
 }
 
+export type BorderStyle = "rounded" | "sharp";
+
+const ROUNDED_RADII: Record<string, string> = {
+  "--vp-radius-xs": "3px",
+  "--vp-radius-sm": "4px",
+  "--vp-radius-md": "6px",
+  "--vp-radius-lg": "8px",
+  "--vp-radius-xl": "10px",
+  "--vp-radius-2xl": "12px",
+  "--vp-radius-3xl": "14px",
+  "--vp-radius-4xl": "16px",
+};
+
+export function applyBorderStyle(style: BorderStyle): void {
+  const root = document.documentElement;
+  for (const [varName, roundedValue] of Object.entries(ROUNDED_RADII)) {
+    root.style.setProperty(varName, style === "sharp" ? "0" : roundedValue);
+  }
+}
+
 export function getThemeById(id: string, customThemes: ThemeDefinition[] = []): ThemeDefinition {
   const all = [...BUILTIN_THEMES, ...customThemes];
   return all.find((t) => t.id === id) || darkTheme;

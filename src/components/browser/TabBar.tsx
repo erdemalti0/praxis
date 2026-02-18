@@ -69,7 +69,7 @@ export default function TabBar({ onContextMenu }: TabBarProps) {
           height: 28,
           padding: tab.isPinned ? "0 8px" : "0 10px",
           background: isActive ? "var(--vp-border-light)" : "transparent",
-          borderRadius: 7,
+          borderRadius: "var(--vp-radius-md)",
           cursor: "pointer",
           transition: "all 0.15s",
           maxWidth: tab.isPinned ? 40 : 180,
@@ -104,7 +104,7 @@ export default function TabBar({ onContextMenu }: TabBarProps) {
                 style={{
                   width: 12,
                   height: 12,
-                  borderRadius: 3,
+                  borderRadius: "var(--vp-radius-xs)",
                   background: "rgba(255,255,255,0.1)",
                   flexShrink: 0,
                 }}
@@ -134,7 +134,7 @@ export default function TabBar({ onContextMenu }: TabBarProps) {
                   justifyContent: "center",
                   width: 16,
                   height: 16,
-                  borderRadius: 4,
+                  borderRadius: "var(--vp-radius-sm)",
                   flexShrink: 0,
                   cursor: "pointer",
                   transition: "background 0.15s",
@@ -213,7 +213,7 @@ export default function TabBar({ onContextMenu }: TabBarProps) {
               justifyContent: "center",
               width: 14,
               height: 14,
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
               marginLeft: "auto",
             }}
             onClick={(e) => {
@@ -291,7 +291,7 @@ export default function TabBar({ onContextMenu }: TabBarProps) {
             justifyContent: "center",
             width: 26,
             height: 26,
-            borderRadius: 7,
+            borderRadius: "var(--vp-radius-md)",
             border: "none",
             background: "transparent",
             cursor: "pointer",

@@ -113,6 +113,51 @@ export function swapPanes(
   };
 }
 
+/** Replace a specific sessionId with a new value (including null) throughout the tree */
+export function replaceSession(
+  layout: LayoutNode,
+  targetSessionId: string,
+  newSessionId: string | null
+): LayoutNode {
+  if (layout.type === "leaf") {
+    if (layout.sessionId === targetSessionId) {
+      return { type: "leaf", sessionId: newSessionId };
+    }
+    return layout;
+  }
+  return {
+    ...layout,
+    children: [
+      replaceSession(layout.children[0], targetSessionId, newSessionId),
+      replaceSession(layout.children[1], targetSessionId, newSessionId),
+    ],
+  };
+}
+
+/** Remove a pane and collapse the tree; returns empty leaf if last pane removed */
+export function removePaneAndCollapse(layout: LayoutNode, sessionId: string): LayoutNode {
+  const result = closePane(layout, sessionId);
+  return result ?? { type: "leaf", sessionId: null };
+}
+
+/** Add a session to a layout: fills first empty leaf, or splits the first occupied leaf */
+export function addSessionToLayout(layout: LayoutNode, sessionId: string): LayoutNode {
+  const { layout: filled, filled: didFill } = fillEmptyLeaf(layout, sessionId);
+  if (didFill) return filled;
+
+  const firstSession = getFirstSessionId(layout);
+  if (firstSession) {
+    return splitPane(layout, firstSession, "horizontal", sessionId);
+  }
+
+  return { type: "leaf", sessionId };
+}
+
+function getFirstSessionId(layout: LayoutNode): string | null {
+  if (layout.type === "leaf") return layout.sessionId;
+  return getFirstSessionId(layout.children[0]) ?? getFirstSessionId(layout.children[1]);
+}
+
 export function getSessionIds(layout: LayoutNode): string[] {
   if (layout.type === "leaf") {
     return layout.sessionId ? [layout.sessionId] : [];
@@ -157,4 +202,53 @@ export function fillEmptyLeaf(layout: LayoutNode, newSessionId: string): { layou
 export function hasEmptyLeaf(layout: LayoutNode): boolean {
   if (layout.type === "leaf") return !layout.sessionId;
   return hasEmptyLeaf(layout.children[0]) || hasEmptyLeaf(layout.children[1]);
+}
+
+/**
+ * Rebalance a layout tree so that same-direction split chains
+ * distribute space equally among all their segments.
+ *
+ * Example: H-split(0.5)[A, H-split(0.5)[B, C]] → H-split(1/3)[A, H-split(0.5)[B, C]]
+ * Result: A=33%, B=33%, C=33%
+ */
+export function rebalanceLayout(layout: LayoutNode): LayoutNode {
+  if (layout.type === "leaf") return layout;
+
+  const dir = layout.direction;
+  // Flatten all segments along the same direction
+  const segments = flattenSameDirection(layout, dir);
+  // Rebuild as a right-leaning tree with equal ratios
+  return buildBalanced(segments, dir);
+}
+
+/** Collect all child segments by flattening same-direction splits */
+function flattenSameDirection(
+  node: LayoutNode,
+  dir: "horizontal" | "vertical"
+): LayoutNode[] {
+  if (node.type === "leaf") return [node];
+  if (node.direction === dir) {
+    return [
+      ...flattenSameDirection(node.children[0], dir),
+      ...flattenSameDirection(node.children[1], dir),
+    ];
+  }
+  // Different direction — rebalance internally, treat as single segment
+  return [rebalanceLayout(node)];
+}
+
+/** Build a right-leaning binary tree with equal ratios for N segments */
+function buildBalanced(
+  segments: LayoutNode[],
+  dir: "horizontal" | "vertical"
+): LayoutNode {
+  if (segments.length === 1) return segments[0];
+  // First segment gets 1/N of the space
+  const ratio = 1 / segments.length;
+  return {
+    type: "split",
+    direction: dir,
+    ratio,
+    children: [segments[0], buildBalanced(segments.slice(1), dir)],
+  };
 }

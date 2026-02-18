@@ -124,7 +124,7 @@ export default function EditorPanel() {
                   style={{
                     width: 16,
                     height: 16,
-                    borderRadius: 4,
+                    borderRadius: "var(--vp-radius-sm)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",

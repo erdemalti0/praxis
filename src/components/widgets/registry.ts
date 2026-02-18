@@ -25,6 +25,16 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
 
   // New widgets
   { type: "prompt-library", name: "Prompt Library", description: "AI prompt collection with categories", icon: "BookOpen", category: "productivity", defaultSize: { w: 4, h: 8 }, minSize: { w: 3, h: 4 } },
+
+  // Development
+  { type: "env-manager", name: "Env Manager", description: "View and edit environment variables", icon: "KeyRound", category: "development", defaultSize: { w: 4, h: 6 }, minSize: { w: 3, h: 4 } },
+  { type: "dependency-dashboard", name: "Dependencies", description: "Package dependency status and audit", icon: "Package", category: "development", defaultSize: { w: 4, h: 6 }, minSize: { w: 3, h: 4 } },
+
+  // Productivity
+  { type: "http-client", name: "HTTP Client", description: "Send HTTP requests and inspect responses", icon: "Send", category: "productivity", defaultSize: { w: 5, h: 8 }, minSize: { w: 3, h: 5 } },
+  { type: "clipboard-history", name: "Clipboard", description: "Snippet clipboard with terminal integration", icon: "ClipboardList", category: "productivity", defaultSize: { w: 3, h: 6 }, minSize: { w: 2, h: 4 } },
+
+  // Monitoring
 ];
 
 // Lazy-loaded component map
@@ -43,6 +53,10 @@ const WIDGET_COMPONENTS: Record<string, () => Promise<{ default: ComponentType<{
   "pomodoro": () => import("./productivity/PomodoroWidget"),
   "bookmarks": () => import("./productivity/BookmarksWidget"),
   "prompt-library": () => import("./productivity/PromptLibraryWidget"),
+  "env-manager": () => import("./development/EnvManagerWidget"),
+  "dependency-dashboard": () => import("./development/DependencyDashboardWidget"),
+  "http-client": () => import("./productivity/HttpClientWidget"),
+  "clipboard-history": () => import("./productivity/ClipboardHistoryWidget"),
 };
 
 const lazyCache: Record<string, ComponentType<any>> = {};

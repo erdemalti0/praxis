@@ -6,7 +6,7 @@ import { parentPort } from "worker_threads";
 import fs from "fs";
 import path from "path";
 
-const SKIP_DIRS = new Set(["node_modules", ".git", ".next", "dist", "build", ".cache", "__pycache__", "venv", ".venv"]);
+const SKIP_DIRS = new Set(["node_modules", ".git", ".next", "dist", "dist-electron", "build", ".cache", "__pycache__", "venv", ".venv"]);
 const BINARY_EXTS = new Set([".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".woff", ".woff2", ".ttf", ".eot", ".mp3", ".mp4", ".zip", ".tar", ".gz", ".pdf", ".exe", ".dll", ".so", ".dylib"]);
 const MAX_RESULTS = 500;
 const MAX_DEPTH = 8;

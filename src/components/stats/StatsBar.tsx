@@ -3,7 +3,8 @@ import { useUIStore } from "../../stores/uiStore";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useBrowserStore } from "../../stores/browserStore";
 import { useEditorStore } from "../../stores/editorStore";
-import { Map, Plus, X, Globe, LayoutGrid, Activity, FileCode2, Settings } from "lucide-react";
+import { Map, Plus, X, Globe, LayoutGrid, Activity, FileCode2, Settings, Play } from "lucide-react";
+import { PANE_DRAG_MIME, type PaneDragData } from "../../types/layout";
 import { invoke } from "../../lib/ipc";
 import { cleanupTerminal } from "../../lib/terminal/terminalCache";
 import { UsagePanel } from "./UsagePanel";
@@ -49,6 +50,7 @@ export default function StatsBar() {
 
   const [draggedWsId, setDraggedWsId] = useState<string | null>(null);
   const [dragOverWsId, setDragOverWsId] = useState<string | null>(null);
+  const dragSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [emojiPickerWsId, setEmojiPickerWsId] = useState<string | null>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
 
@@ -79,7 +81,7 @@ export default function StatsBar() {
   /* ── Workspace tab click ── */
   const handleWorkspaceClick = (wsId: string) => {
     setActiveWorkspaceId(wsId);
-    if (viewMode === "missions" || viewMode === "browser" || viewMode === "editor") {
+    if (viewMode === "missions" || viewMode === "browser" || viewMode === "editor" || viewMode === "runner") {
       if (splitEnabled) {
         setViewMode("split");
       } else {
@@ -93,7 +95,7 @@ export default function StatsBar() {
     const nextNum = workspaces.length + 1;
     const id = `ws-${Date.now()}`;
     addWorkspace({ id, name: `Workspace ${nextNum}` });
-    if (viewMode === "missions" || viewMode === "editor") {
+    if (viewMode === "missions" || viewMode === "editor" || viewMode === "runner") {
       if (splitEnabled) {
         setViewMode("split");
       } else {
@@ -109,7 +111,7 @@ export default function StatsBar() {
     el.style.cssText = `
       position: fixed; z-index: 99999; pointer-events: none;
       background: var(--vp-bg-tertiary); color: var(--vp-text-primary); padding: 6px 14px;
-      border-radius: 8px; font-size: 12px; font-weight: 500;
+      border-radius: var(--vp-radius-lg); font-size: 12px; font-weight: 500;
       border: 1px solid var(--vp-border-medium);
       box-shadow: 0 4px 12px var(--vp-bg-overlay);
       transform: translate(-50%, -50%);
@@ -217,7 +219,7 @@ export default function StatsBar() {
         className="flex items-center"
         style={{
           background: "var(--vp-bg-surface)",
-          borderRadius: 12,
+          borderRadius: "var(--vp-radius-2xl)",
           padding: 4,
           gap: 3,
           flex: 1,
@@ -236,7 +238,7 @@ export default function StatsBar() {
             border: isMissionsActive
               ? "1px solid var(--vp-border-medium)"
               : "1px solid var(--vp-bg-surface-hover)",
-            borderRadius: 9,
+            borderRadius: "var(--vp-radius-lg)",
             cursor: "grab",
             transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
             opacity: draggingTab === "missions" ? 0.4 : 1,
@@ -287,7 +289,7 @@ export default function StatsBar() {
             border: viewMode === "browser"
               ? "1px solid var(--vp-accent-blue-border)"
               : "1px solid var(--vp-bg-surface-hover)",
-            borderRadius: 9,
+            borderRadius: "var(--vp-radius-lg)",
             cursor: "pointer",
             transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
             userSelect: "none",
@@ -327,6 +329,64 @@ export default function StatsBar() {
           </span>
         </button>
 
+        {/* Runner tab */}
+        <div
+          style={{
+            width: 1,
+            height: 20,
+            background: "var(--vp-border-subtle)",
+            margin: "0 2px",
+            flexShrink: 0,
+          }}
+        />
+        <button
+          onClick={() => setViewMode("runner")}
+          className="flex items-center gap-2 px-4 py-2"
+          style={{
+            background: viewMode === "runner" ? "rgba(251,146,60,0.12)" : "transparent",
+            border: viewMode === "runner"
+              ? "1px solid rgba(251,146,60,0.35)"
+              : "1px solid var(--vp-bg-surface-hover)",
+            borderRadius: "var(--vp-radius-lg)",
+            cursor: "pointer",
+            transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+            userSelect: "none",
+            minWidth: 80,
+          }}
+          onMouseEnter={(e) => {
+            if (viewMode !== "runner") {
+              e.currentTarget.style.background = "var(--vp-bg-surface-hover)";
+              e.currentTarget.style.borderColor = "var(--vp-border-medium)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (viewMode !== "runner") {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.borderColor = "var(--vp-bg-surface-hover)";
+            }
+          }}
+        >
+          <Play
+            size={13}
+            style={{
+              color: viewMode === "runner" ? "#fb923c" : "var(--vp-text-dim)",
+              transition: "color 0.2s",
+              pointerEvents: "none",
+            }}
+          />
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: viewMode === "runner" ? 500 : 400,
+              color: viewMode === "runner" ? "#fb923c" : "var(--vp-text-dim)",
+              transition: "color 0.2s",
+              pointerEvents: "none",
+            }}
+          >
+            Runner
+          </span>
+        </button>
+
         {/* Editor tab — visible when files are open */}
         {hasEditorTabs && (
           <>
@@ -347,7 +407,7 @@ export default function StatsBar() {
                 border: viewMode === "editor"
                   ? "1px solid rgba(74,222,128,0.35)"
                   : "1px solid var(--vp-bg-surface-hover)",
-                borderRadius: 9,
+                borderRadius: "var(--vp-radius-lg)",
                 cursor: "pointer",
                 transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
                 userSelect: "none",
@@ -401,7 +461,7 @@ export default function StatsBar() {
                   justifyContent: "center",
                   width: 18,
                   height: 18,
-                  borderRadius: 5,
+                  borderRadius: "var(--vp-radius-sm)",
                   cursor: "pointer",
                   flexShrink: 0,
                   pointerEvents: "auto",
@@ -473,12 +533,48 @@ export default function StatsBar() {
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragOverWsId(ws.id);
+                // Auto-switch workspace after 500ms hover during drag
+                if (!dragSwitchTimerRef.current && ws.id !== activeWorkspaceId) {
+                  dragSwitchTimerRef.current = setTimeout(() => {
+                    setActiveWorkspaceId(ws.id);
+                    dragSwitchTimerRef.current = null;
+                  }, 500);
+                }
               }}
               onDragLeave={() => {
                 if (dragOverWsId === ws.id) setDragOverWsId(null);
+                if (dragSwitchTimerRef.current) {
+                  clearTimeout(dragSwitchTimerRef.current);
+                  dragSwitchTimerRef.current = null;
+                }
               }}
               onDrop={(e) => {
                 e.preventDefault();
+                if (dragSwitchTimerRef.current) {
+                  clearTimeout(dragSwitchTimerRef.current);
+                  dragSwitchTimerRef.current = null;
+                }
+
+                // Check for pane drag (cross-workspace terminal move)
+                const paneRaw = e.dataTransfer.getData(PANE_DRAG_MIME);
+                if (paneRaw) {
+                  try {
+                    const data: PaneDragData = JSON.parse(paneRaw);
+                    const ui = useUIStore.getState();
+                    const targetGroups = ui.terminalGroups[ws.id] || [];
+                    const targetGroupId = ui.activeTerminalGroup[ws.id] || targetGroups[0];
+                    if (targetGroupId && data.sourceWorkspaceId !== ws.id) {
+                      ui.moveSessionToGroup(data.sessionId, data.sourceGroupId, targetGroupId);
+                      useTerminalStore.getState().updateSession(data.sessionId, { workspaceId: ws.id });
+                    }
+                    ui.setDraggingPaneSessionId(null);
+                  } catch {}
+                  setDraggedWsId(null);
+                  setDragOverWsId(null);
+                  return;
+                }
+
+                // Existing workspace reorder
                 if (draggedWsId && draggedWsId !== ws.id) {
                   reorderWorkspaces(draggedWsId, ws.id);
                 }
@@ -488,6 +584,10 @@ export default function StatsBar() {
               onDragEnd={() => {
                 setDraggedWsId(null);
                 setDragOverWsId(null);
+                if (dragSwitchTimerRef.current) {
+                  clearTimeout(dragSwitchTimerRef.current);
+                  dragSwitchTimerRef.current = null;
+                }
               }}
               onClick={() => handleWorkspaceClick(ws.id)}
               onDoubleClick={() => startRename(ws.id, ws.name)}
@@ -496,7 +596,7 @@ export default function StatsBar() {
                 background: isActive ? `${color}20` : "transparent",
                 border: `1px solid ${isActive ? `${color}50` : "var(--vp-bg-surface-hover)"}`,
                 borderLeft: isDraggedOver ? `3px solid ${color}` : undefined,
-                borderRadius: 9,
+                borderRadius: "var(--vp-radius-lg)",
                 cursor: "grab",
                 transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
                 userSelect: "none",
@@ -553,7 +653,7 @@ export default function StatsBar() {
                     color: "var(--vp-text-primary)",
                     background: "var(--vp-border-subtle)",
                     border: "1px solid var(--vp-border-medium)",
-                    borderRadius: 5,
+                    borderRadius: "var(--vp-radius-sm)",
                     outline: "none",
                     padding: "1px 6px",
                     width: 110,
@@ -587,7 +687,7 @@ export default function StatsBar() {
                     justifyContent: "center",
                     width: 18,
                     height: 18,
-                    borderRadius: 5,
+                    borderRadius: "var(--vp-radius-sm)",
                     cursor: "pointer",
                     flexShrink: 0,
                     pointerEvents: "auto",
@@ -630,7 +730,7 @@ export default function StatsBar() {
                   marginTop: 4,
                   background: "var(--vp-bg-tertiary)",
                   border: "1px solid var(--vp-border-medium)",
-                  borderRadius: 8,
+                  borderRadius: "var(--vp-radius-lg)",
                   padding: 6,
                   display: "grid",
                   gridTemplateColumns: "repeat(4, 1fr)",
@@ -656,7 +756,7 @@ export default function StatsBar() {
                       fontSize: 14,
                       background: "transparent",
                       border: "none",
-                      borderRadius: 6,
+                      borderRadius: "var(--vp-radius-md)",
                       cursor: "pointer",
                       transition: "background 0.15s",
                     }}
@@ -681,7 +781,7 @@ export default function StatsBar() {
             color: "var(--vp-text-dim)",
             width: 30,
             height: 30,
-            borderRadius: 8,
+            borderRadius: "var(--vp-radius-lg)",
             border: "1px solid var(--vp-bg-surface-hover)",
             background: "transparent",
             cursor: "pointer",
@@ -716,7 +816,7 @@ export default function StatsBar() {
             height: 32,
             background: showUsagePanel ? "var(--vp-accent-blue-bg-hover)" : "transparent",
             border: `1px solid ${showUsagePanel ? "var(--vp-accent-blue-border)" : "var(--vp-bg-surface-hover)"}`,
-            borderRadius: 7,
+            borderRadius: "var(--vp-radius-md)",
             cursor: "pointer",
             transition: "all 0.2s",
           }}
@@ -748,7 +848,7 @@ export default function StatsBar() {
             height: 32,
             background: showSettingsPanel ? "var(--vp-accent-blue-bg-hover)" : "transparent",
             border: `1px solid ${showSettingsPanel ? "var(--vp-accent-blue-border)" : "var(--vp-bg-surface-hover)"}`,
-            borderRadius: 7,
+            borderRadius: "var(--vp-radius-md)",
             cursor: "pointer",
             transition: "all 0.2s",
           }}
@@ -788,7 +888,7 @@ export default function StatsBar() {
                 ? "var(--vp-accent-blue-bg-hover)"
                 : "transparent",
               border: `1px solid ${showCustomizePanel ? "var(--vp-accent-blue-border)" : "var(--vp-bg-surface-hover)"}`,
-              borderRadius: 7,
+              borderRadius: "var(--vp-radius-md)",
               cursor: "pointer",
               transition: "all 0.2s",
             }}

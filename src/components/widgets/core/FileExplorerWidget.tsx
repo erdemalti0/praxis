@@ -89,7 +89,7 @@ export default function FileExplorerWidget({
             color: showHidden ? "var(--vp-text-primary)" : "var(--vp-text-faint)",
             cursor: "pointer",
             padding: 4,
-            borderRadius: 4,
+            borderRadius: "var(--vp-radius-sm)",
           }}
           title={showHidden ? "Hide hidden files" : "Show hidden files"}
         >
@@ -103,7 +103,7 @@ export default function FileExplorerWidget({
             color: previewEnabled ? "var(--vp-accent-blue)" : "var(--vp-text-faint)",
             cursor: "pointer",
             padding: 4,
-            borderRadius: 4,
+            borderRadius: "var(--vp-radius-sm)",
           }}
           title={previewEnabled ? "Preview enabled" : "Preview disabled"}
         >

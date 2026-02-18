@@ -132,9 +132,21 @@ async function fetchClaudeOAuth(): Promise<ProviderUsage | null> {
   }
 }
 
-// Claude JSONL cost scanning
+// Claude JSONL cost scanning — with incremental cache
+// Only re-reads files whose mtime has changed since last scan
+const costFileCache = new Map<string, { mtimeMs: number; cost: number; modelCosts: Record<string, number> }>();
+let costCacheResult: ProviderUsage | null = null;
+let costCacheTime = 0;
+const COST_CACHE_TTL = 30_000; // 30 seconds — cost data doesn't change rapidly
+
 async function fetchClaudeCost(): Promise<ProviderUsage | null> {
   try {
+    // Return cached result if fresh
+    const now = Date.now();
+    if (costCacheResult && now - costCacheTime < COST_CACHE_TTL) {
+      return costCacheResult;
+    }
+
     const projectsDir = path.join(os.homedir(), ".config", "claude", "projects");
     if (!fs.existsSync(projectsDir)) {
       return null;
@@ -145,38 +157,72 @@ async function fetchClaudeCost(): Promise<ProviderUsage | null> {
       return null;
     }
 
-    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
     let totalCost = 0;
     const modelCosts: Record<string, number> = {};
+    const seenFiles = new Set<string>();
 
     for (const file of jsonlFiles) {
       const filePath = path.join(projectsDir, file);
-      const stat = fs.statSync(filePath);
+      seenFiles.add(filePath);
+
+      let stat: fs.Stats;
+      try {
+        stat = fs.statSync(filePath);
+      } catch {
+        continue;
+      }
 
       // Skip files older than 30 days
       if (stat.mtimeMs < thirtyDaysAgo) {
         continue;
       }
 
-      const content = fs.readFileSync(filePath, "utf-8");
-      const lines = content.split("\n").filter((l) => l.trim());
+      // Use cached result if file hasn't changed
+      const cached = costFileCache.get(filePath);
+      if (cached && cached.mtimeMs === stat.mtimeMs) {
+        totalCost += cached.cost;
+        for (const [model, cost] of Object.entries(cached.modelCosts)) {
+          modelCosts[model] = (modelCosts[model] || 0) + cost;
+        }
+        continue;
+      }
+
+      // Read and parse file
+      let fileCost = 0;
+      const fileModelCosts: Record<string, number> = {};
+      const content = await fs.promises.readFile(filePath, "utf-8");
+      const lines = content.split("\n");
 
       for (const line of lines) {
+        if (!line.trim()) continue;
         try {
           const entry = JSON.parse(line);
           if (entry.costUSD && typeof entry.costUSD === "number") {
-            totalCost += entry.costUSD;
-
+            fileCost += entry.costUSD;
             const model = entry.model || "unknown";
-            modelCosts[model] = (modelCosts[model] || 0) + entry.costUSD;
+            fileModelCosts[model] = (fileModelCosts[model] || 0) + entry.costUSD;
           }
         } catch {
           // Skip invalid lines
         }
       }
+
+      costFileCache.set(filePath, { mtimeMs: stat.mtimeMs, cost: fileCost, modelCosts: fileModelCosts });
+      totalCost += fileCost;
+      for (const [model, cost] of Object.entries(fileModelCosts)) {
+        modelCosts[model] = (modelCosts[model] || 0) + cost;
+      }
+    }
+
+    // Evict deleted files from cache
+    for (const cachedPath of costFileCache.keys()) {
+      if (!seenFiles.has(cachedPath)) costFileCache.delete(cachedPath);
     }
 
     if (totalCost === 0) {
+      costCacheResult = null;
+      costCacheTime = now;
       return null;
     }
 
@@ -185,7 +231,7 @@ async function fetchClaudeCost(): Promise<ProviderUsage | null> {
       cost,
     }));
 
-    return {
+    costCacheResult = {
       id: "claude-cost",
       name: "Claude Code Cost",
       available: true,
@@ -195,6 +241,8 @@ async function fetchClaudeCost(): Promise<ProviderUsage | null> {
         breakdown,
       },
     };
+    costCacheTime = now;
+    return costCacheResult;
   } catch {
     return null;
   }

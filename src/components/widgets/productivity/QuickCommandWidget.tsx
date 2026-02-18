@@ -186,7 +186,7 @@ export default function QuickCommandWidget({
     <div className="h-full flex flex-col" style={{ gap: 6, padding: 8 }}>
       {/* Search + actions */}
       <div className="flex gap-2">
-        <div className="flex items-center gap-1" style={{ flex: 1, background: "var(--vp-bg-surface)", borderRadius: 6, padding: "4px 8px" }}>
+        <div className="flex items-center gap-1" style={{ flex: 1, background: "var(--vp-bg-surface)", borderRadius: "var(--vp-radius-md)", padding: "4px 8px" }}>
           <Search size={12} style={{ color: "var(--vp-text-faint)" }} />
           <input
             value={filter}
@@ -200,7 +200,7 @@ export default function QuickCommandWidget({
         </button>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          style={{ background: showAddForm ? "var(--vp-accent-blue-bg-hover)" : "none", border: "none", color: showAddForm ? "var(--vp-accent-blue)" : "var(--vp-text-faint)", cursor: "pointer", padding: 6, borderRadius: 4 }}
+          style={{ background: showAddForm ? "var(--vp-accent-blue-bg-hover)" : "none", border: "none", color: showAddForm ? "var(--vp-accent-blue)" : "var(--vp-text-faint)", cursor: "pointer", padding: 6, borderRadius: "var(--vp-radius-sm)" }}
           title="Add command"
         >
           <Plus size={12} />
@@ -209,15 +209,15 @@ export default function QuickCommandWidget({
 
       {/* Add form */}
       {showAddForm && (
-        <div style={{ background: "var(--vp-bg-surface)", borderRadius: 6, padding: 8 }}>
+        <div style={{ background: "var(--vp-bg-surface)", borderRadius: "var(--vp-radius-md)", padding: 8 }}>
           <div style={{ marginBottom: 6, fontSize: 11, color: "var(--vp-text-muted)" }}>Add Custom Command</div>
           <div className="flex gap-2" style={{ marginBottom: 6 }}>
-            <input type="text" value={newIcon} onChange={(e) => setNewIcon(e.target.value)} placeholder="Icon" style={{ width: 40, background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: 4, padding: "4px 6px", fontSize: 11, color: "var(--vp-text-primary)", textAlign: "center" }} />
-            <input type="text" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="Label" style={{ flex: 1, background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: 4, padding: "4px 8px", fontSize: 11, color: "var(--vp-text-primary)" }} />
+            <input type="text" value={newIcon} onChange={(e) => setNewIcon(e.target.value)} placeholder="Icon" style={{ width: 40, background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: "var(--vp-radius-sm)", padding: "4px 6px", fontSize: 11, color: "var(--vp-text-primary)", textAlign: "center" }} />
+            <input type="text" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="Label" style={{ flex: 1, background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: "var(--vp-radius-sm)", padding: "4px 8px", fontSize: 11, color: "var(--vp-text-primary)" }} />
           </div>
           <div className="flex gap-2">
-            <input type="text" value={newCmd} onChange={(e) => setNewCmd(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addCustomCommand()} placeholder="Command" style={{ flex: 1, background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: 4, padding: "4px 8px", fontSize: 11, color: "var(--vp-text-primary)", fontFamily: "monospace" }} />
-            <button onClick={addCustomCommand} disabled={!newLabel.trim() || !newCmd.trim()} style={{ padding: "4px 10px", fontSize: 10, borderRadius: 4, background: "var(--vp-accent-blue-bg-hover)", border: "none", color: "var(--vp-accent-blue)", cursor: "pointer" }}>Add</button>
+            <input type="text" value={newCmd} onChange={(e) => setNewCmd(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addCustomCommand()} placeholder="Command" style={{ flex: 1, background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: "var(--vp-radius-sm)", padding: "4px 8px", fontSize: 11, color: "var(--vp-text-primary)", fontFamily: "monospace" }} />
+            <button onClick={addCustomCommand} disabled={!newLabel.trim() || !newCmd.trim()} style={{ padding: "4px 10px", fontSize: 10, borderRadius: "var(--vp-radius-sm)", background: "var(--vp-accent-blue-bg-hover)", border: "none", color: "var(--vp-accent-blue)", cursor: "pointer" }}>Add</button>
           </div>
         </div>
       )}
@@ -228,7 +228,7 @@ export default function QuickCommandWidget({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            style={{ padding: "3px 8px", fontSize: 10, borderRadius: 4, background: activeTab === tab ? "var(--vp-border-light)" : "transparent", border: "none", color: activeTab === tab ? "var(--vp-text-primary)" : "var(--vp-text-dim)", cursor: "pointer", textTransform: "capitalize" }}
+            style={{ padding: "3px 8px", fontSize: 10, borderRadius: "var(--vp-radius-sm)", background: activeTab === tab ? "var(--vp-border-light)" : "transparent", border: "none", color: activeTab === tab ? "var(--vp-text-primary)" : "var(--vp-text-dim)", cursor: "pointer", textTransform: "capitalize" }}
           >
             {tab === "favorites" && <Star size={10} style={{ marginRight: 4 }} />}
             {tab}
@@ -245,7 +245,7 @@ export default function QuickCommandWidget({
             <button onClick={() => setOutput(null)} style={{ fontSize: 10, color: "var(--vp-accent-blue)", background: "none", border: "none", cursor: "pointer", marginBottom: 6 }}>
               ← Back to commands
             </button>
-            <pre style={{ fontSize: 10, color: "var(--vp-text-secondary)", whiteSpace: "pre-wrap", wordBreak: "break-all", background: "rgba(0,0,0,0.3)", padding: 8, borderRadius: 6, margin: 0, maxHeight: 300, overflow: "auto", fontFamily: "'SF Mono', 'Cascadia Code', 'Fira Code', monospace" }}>
+            <pre style={{ fontSize: 10, color: "var(--vp-text-secondary)", whiteSpace: "pre-wrap", wordBreak: "break-all", background: "rgba(0,0,0,0.3)", padding: 8, borderRadius: "var(--vp-radius-md)", margin: 0, maxHeight: 300, overflow: "auto", fontFamily: "'SF Mono', 'Cascadia Code', 'Fira Code', monospace" }}>
               {output}
             </pre>
           </div>
@@ -261,7 +261,7 @@ export default function QuickCommandWidget({
                 </div>
               )}
               {commands.map((c) => (
-                <div key={c.id} className="flex items-center gap-1" style={{ padding: "5px 6px", background: "var(--vp-bg-surface)", border: "1px solid var(--vp-bg-surface-hover)", borderRadius: 5, marginBottom: 2 }}>
+                <div key={c.id} className="flex items-center gap-1" style={{ padding: "5px 6px", background: "var(--vp-bg-surface)", border: "1px solid var(--vp-bg-surface-hover)", borderRadius: "var(--vp-radius-sm)", marginBottom: 2 }}>
                   <span style={{ fontSize: 11, width: 18, textAlign: "center", flexShrink: 0 }}>{c.icon}</span>
                   <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
                     <div style={{ fontSize: 11, color: "var(--vp-text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.label}</div>
@@ -271,7 +271,7 @@ export default function QuickCommandWidget({
                   <button
                     onClick={() => sendToTerminal(c.cmd)}
                     disabled={!activeSessionId}
-                    style={{ background: "none", border: "none", color: activeSessionId ? "var(--vp-accent-blue)" : "var(--vp-text-subtle)", cursor: activeSessionId ? "pointer" : "default", padding: 3, borderRadius: 3 }}
+                    style={{ background: "none", border: "none", color: activeSessionId ? "var(--vp-accent-blue)" : "var(--vp-text-subtle)", cursor: activeSessionId ? "pointer" : "default", padding: 3, borderRadius: "var(--vp-radius-xs)" }}
                     title={activeSessionId ? "Send to terminal" : "No active terminal"}
                   >
                     <Terminal size={11} />
@@ -280,7 +280,7 @@ export default function QuickCommandWidget({
                   <button
                     onClick={() => run(c.cmd)}
                     disabled={running}
-                    style={{ background: "none", border: "none", color: "var(--vp-accent-green)", cursor: "pointer", padding: 3, borderRadius: 3 }}
+                    style={{ background: "none", border: "none", color: "var(--vp-accent-green)", cursor: "pointer", padding: 3, borderRadius: "var(--vp-radius-xs)" }}
                     title="Run and show output"
                   >
                     <Play size={11} />

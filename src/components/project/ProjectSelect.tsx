@@ -62,7 +62,7 @@ function CloneModal({ onClose, onCloned }: { onClose: () => void; onCloned: (pat
         style={{
           background: "var(--vp-bg-primary)",
           border: "1px solid var(--vp-border)",
-          borderRadius: 16,
+          borderRadius: "var(--vp-radius-4xl)",
           padding: 28,
           width: 440,
           maxWidth: "90vw",
@@ -76,7 +76,7 @@ function CloneModal({ onClose, onCloned }: { onClose: () => void; onCloned: (pat
           </h2>
           <button
             onClick={onClose}
-            style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--vp-text-dim)", padding: 4, borderRadius: 6, display: "flex" }}
+            style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--vp-text-dim)", padding: 4, borderRadius: "var(--vp-radius-md)", display: "flex" }}
           >
             <X size={16} />
           </button>
@@ -99,7 +99,7 @@ function CloneModal({ onClose, onCloned }: { onClose: () => void; onCloned: (pat
             background: "var(--vp-bg-surface)",
             color: "var(--vp-text-primary)",
             border: "1px solid var(--vp-border)",
-            borderRadius: 10,
+            borderRadius: "var(--vp-radius-xl)",
             outline: "none",
             marginBottom: 16,
             boxSizing: "border-box",
@@ -122,7 +122,7 @@ function CloneModal({ onClose, onCloned }: { onClose: () => void; onCloned: (pat
               background: "var(--vp-bg-surface)",
               color: targetDir ? "var(--vp-text-primary)" : "var(--vp-text-dim)",
               border: "1px solid var(--vp-border)",
-              borderRadius: 10,
+              borderRadius: "var(--vp-radius-xl)",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -143,7 +143,7 @@ function CloneModal({ onClose, onCloned }: { onClose: () => void; onCloned: (pat
               background: "var(--vp-bg-surface)",
               color: "var(--vp-text-primary)",
               border: "1px solid var(--vp-border)",
-              borderRadius: 10,
+              borderRadius: "var(--vp-radius-xl)",
               cursor: "pointer",
               whiteSpace: "nowrap",
               flexShrink: 0,
@@ -156,7 +156,7 @@ function CloneModal({ onClose, onCloned }: { onClose: () => void; onCloned: (pat
 
         {/* Error */}
         {error && (
-          <div style={{ fontSize: 12, color: "var(--vp-accent-red, #ef4444)", marginBottom: 16, padding: "8px 12px", background: "rgba(239,68,68,0.08)", borderRadius: 8 }}>
+          <div style={{ fontSize: 12, color: "var(--vp-accent-red, #ef4444)", marginBottom: 16, padding: "8px 12px", background: "rgba(239,68,68,0.08)", borderRadius: "var(--vp-radius-lg)" }}>
             {error}
           </div>
         )}
@@ -175,7 +175,7 @@ function CloneModal({ onClose, onCloned }: { onClose: () => void; onCloned: (pat
             background: cloning || !repoUrl.trim() || !targetDir ? "var(--vp-bg-surface)" : "var(--vp-button-primary-bg)",
             color: cloning || !repoUrl.trim() || !targetDir ? "var(--vp-text-dim)" : "var(--vp-button-primary-text)",
             border: "none",
-            borderRadius: 12,
+            borderRadius: "var(--vp-radius-2xl)",
             fontSize: 14,
             fontWeight: 600,
             cursor: cloning || !repoUrl.trim() || !targetDir ? "not-allowed" : "pointer",
@@ -366,7 +366,7 @@ export default function ProjectSelect() {
             style={{
               maxHeight: 240,
               overflowY: "auto",
-              borderRadius: 10,
+              borderRadius: "var(--vp-radius-xl)",
               border: "1px solid var(--vp-border)",
               background: "transparent",
             }}
@@ -382,7 +382,7 @@ export default function ProjectSelect() {
                   padding: "10px 12px",
                   cursor: "pointer",
                   background: "transparent",
-                  borderRadius: 8,
+                  borderRadius: "var(--vp-radius-lg)",
                   margin: 4,
                   transition: "background 0.15s ease",
                 }}
@@ -432,7 +432,7 @@ export default function ProjectSelect() {
                     border: "none",
                     cursor: "pointer",
                     padding: 4,
-                    borderRadius: 4,
+                    borderRadius: "var(--vp-radius-sm)",
                     color: "var(--vp-text-dim)",
                     flexShrink: 0,
                     marginLeft: 8,
@@ -471,7 +471,7 @@ export default function ProjectSelect() {
             background: "var(--vp-button-primary-bg)",
             color: "var(--vp-button-primary-text)",
             border: "none",
-            borderRadius: 14,
+            borderRadius: "var(--vp-radius-3xl)",
             fontSize: 15,
             fontWeight: 600,
             cursor: "pointer",
@@ -495,7 +495,7 @@ export default function ProjectSelect() {
             background: "var(--vp-bg-surface)",
             color: "var(--vp-text-primary)",
             border: "1px solid var(--vp-border)",
-            borderRadius: 14,
+            borderRadius: "var(--vp-radius-3xl)",
             fontSize: 15,
             fontWeight: 600,
             cursor: "pointer",

@@ -1,4 +1,4 @@
-export function Skeleton({ width, height, borderRadius = 4 }: { width?: number | string; height?: number | string; borderRadius?: number }) {
+export function Skeleton({ width, height, borderRadius = "var(--vp-radius-sm)" }: { width?: number | string; height?: number | string; borderRadius?: number | string }) {
   return (
     <div
       style={{

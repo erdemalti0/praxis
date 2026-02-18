@@ -93,7 +93,7 @@ export default function OnboardingOverlay() {
           maxWidth: 480,
           width: "90%",
           background: "var(--vp-bg-primary)",
-          borderRadius: 16,
+          borderRadius: "var(--vp-radius-4xl)",
           padding: 40,
           textAlign: "center",
           position: "relative",
@@ -142,7 +142,7 @@ export default function OnboardingOverlay() {
                 style={{
                   padding: "8px 20px",
                   fontSize: 13,
-                  borderRadius: 8,
+                  borderRadius: "var(--vp-radius-lg)",
                   border: "1px solid var(--vp-border-medium)",
                   background: "var(--vp-bg-surface-hover)",
                   color: "var(--vp-text-primary)",
@@ -158,7 +158,7 @@ export default function OnboardingOverlay() {
                 style={{
                   padding: "8px 24px",
                   fontSize: 13,
-                  borderRadius: 8,
+                  borderRadius: "var(--vp-radius-lg)",
                   border: "none",
                   background: "var(--vp-accent-green)",
                   color: "#fff",
@@ -176,7 +176,7 @@ export default function OnboardingOverlay() {
                   style={{
                     padding: "8px 24px",
                     fontSize: 13,
-                    borderRadius: 8,
+                    borderRadius: "var(--vp-radius-lg)",
                     border: "none",
                     background: "var(--vp-accent-blue)",
                     color: "#fff",
@@ -192,7 +192,7 @@ export default function OnboardingOverlay() {
                   style={{
                     padding: "8px 20px",
                     fontSize: 13,
-                    borderRadius: 8,
+                    borderRadius: "var(--vp-radius-lg)",
                     border: "1px solid var(--vp-border-medium)",
                     background: "var(--vp-bg-surface-hover)",
                     color: "var(--vp-text-primary)",
@@ -213,7 +213,7 @@ export default function OnboardingOverlay() {
                 style={{
                   padding: "8px 20px",
                   fontSize: 13,
-                  borderRadius: 8,
+                  borderRadius: "var(--vp-radius-lg)",
                   border: "1px solid var(--vp-border-medium)",
                   background: "var(--vp-bg-surface-hover)",
                   color: "var(--vp-text-primary)",
@@ -234,7 +234,7 @@ export default function OnboardingOverlay() {
               style={{
                 padding: "8px 24px",
                 fontSize: 13,
-                borderRadius: 8,
+                borderRadius: "var(--vp-radius-lg)",
                 border: "none",
                 background: "var(--vp-accent-blue)",
                 color: "#fff",

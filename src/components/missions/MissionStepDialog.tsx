@@ -41,7 +41,7 @@ export default function MissionStepDialog({ open, onClose, onSubmit, editStep }:
     width: "100%",
     background: "var(--vp-bg-surface)",
     border: "1px solid var(--vp-border-light)",
-    borderRadius: 10,
+    borderRadius: "var(--vp-radius-xl)",
     padding: "10px 14px",
     color: "var(--vp-text-primary)",
     fontSize: 12 as const,
@@ -63,7 +63,7 @@ export default function MissionStepDialog({ open, onClose, onSubmit, editStep }:
         style={{
           width: 440, background: "var(--vp-bg-secondary)",
           border: "1px solid var(--vp-border-light)",
-          borderRadius: 16,
+          borderRadius: "var(--vp-radius-4xl)",
           boxShadow: "0 20px 60px var(--vp-bg-overlay)",
           overflow: "hidden",
         }}
@@ -81,7 +81,7 @@ export default function MissionStepDialog({ open, onClose, onSubmit, editStep }:
             onClick={onClose}
             style={{
               background: "none", border: "none", color: "var(--vp-text-faint)", cursor: "pointer",
-              width: 28, height: 28, borderRadius: 6,
+              width: 28, height: 28, borderRadius: "var(--vp-radius-md)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}
             onMouseEnter={(e) => { e.currentTarget.style.color = "var(--vp-text-primary)"; }}
@@ -130,7 +130,7 @@ export default function MissionStepDialog({ open, onClose, onSubmit, editStep }:
               onClick={() => setShowPrompt(true)}
               style={{
                 display: "flex", alignItems: "center", gap: 6,
-                padding: "8px 12px", borderRadius: 8,
+                padding: "8px 12px", borderRadius: "var(--vp-radius-lg)",
                 background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.15)",
                 color: "#a78bfa", fontSize: 11, cursor: "pointer",
                 transition: "all 0.15s", width: "100%",
@@ -188,7 +188,7 @@ export default function MissionStepDialog({ open, onClose, onSubmit, editStep }:
           <button
             onClick={onClose}
             style={{
-              padding: "8px 18px", borderRadius: 9,
+              padding: "8px 18px", borderRadius: "var(--vp-radius-lg)",
               background: "transparent", border: "1px solid var(--vp-border-light)",
               color: "var(--vp-text-muted)", fontSize: 12, cursor: "pointer",
               transition: "all 0.15s",
@@ -202,7 +202,7 @@ export default function MissionStepDialog({ open, onClose, onSubmit, editStep }:
             onClick={handleSubmit}
             disabled={!title.trim()}
             style={{
-              padding: "8px 18px", borderRadius: 9,
+              padding: "8px 18px", borderRadius: "var(--vp-radius-lg)",
               background: title.trim() ? "var(--vp-accent-blue-bg)" : "var(--vp-bg-surface)",
               border: `1px solid ${title.trim() ? "var(--vp-accent-blue-border)" : "var(--vp-border-subtle)"}`,
               color: title.trim() ? "var(--vp-accent-blue)" : "var(--vp-text-subtle)",

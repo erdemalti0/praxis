@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { Terminal, XCircle } from "lucide-react";
 import type { Agent } from "../../types/agent";
 import { useAgentStore } from "../../stores/agentStore";
-import { useTerminalStore } from "../../stores/terminalStore";
+import { useTerminalStore, getLastOutputAt } from "../../stores/terminalStore";
 import { useUIStore } from "../../stores/uiStore";
-import { getSessionIds, closePane } from "../../lib/layout/layoutUtils";
+import { getSessionIds, closePane, rebalanceLayout } from "../../lib/layout/layoutUtils";
 import { cleanupTerminal } from "../../lib/terminal/terminalCache";
 import { invoke } from "../../lib/ipc";
 
@@ -39,26 +39,20 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
     return () => document.removeEventListener("mousedown", handleClick);
   }, [contextMenu]);
 
-  // Reactively subscribe to the last output timestamp for this session
+  // Poll output timestamp on a 1s timer (activity data lives outside Zustand)
   const sid = agent.sessionId || "";
-  const lastOutputTs = useTerminalStore((s) => s.lastOutputAt[sid] || 0);
   const [isWorking, setIsWorking] = useState(false);
 
   useEffect(() => {
-    if (lastOutputTs === 0) {
-      setIsWorking(false);
-      return;
-    }
-    const elapsed = Date.now() - lastOutputTs;
-    if (elapsed < 4000) {
-      setIsWorking(true);
-      // Schedule turning off after the remaining time
-      const timeout = setTimeout(() => setIsWorking(false), 4000 - elapsed + 100);
-      return () => clearTimeout(timeout);
-    } else {
-      setIsWorking(false);
-    }
-  }, [lastOutputTs]);
+    const check = () => {
+      const ts = getLastOutputAt(sid);
+      if (ts === 0) { setIsWorking(false); return; }
+      setIsWorking(Date.now() - ts < 4000);
+    };
+    check();
+    const timer = setInterval(check, 1000);
+    return () => clearInterval(timer);
+  }, [sid]);
 
   const agentType = session?.agentType || agent.type;
   const config = getAgentConfig(agentType);
@@ -124,8 +118,8 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
       if (ids.includes(sessionId)) {
         const newLayout = closePane(layout, sessionId);
         if (newLayout) {
-          // Pane removed but group still has other sessions
-          ui.setWorkspaceLayout(gid, newLayout);
+          // Pane removed but group still has other sessions — rebalance
+          ui.setWorkspaceLayout(gid, rebalanceLayout(newLayout));
         } else {
           // No sessions left in this group — remove the group (tab)
           ui.removeTerminalGroup(workspaceId, gid);
@@ -155,7 +149,7 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
           background: isSelected ? "var(--vp-bg-surface-hover)" : "transparent",
           border: "1px solid",
           borderColor: isSelected ? "var(--vp-border-light)" : "transparent",
-          borderRadius: 10,
+          borderRadius: "var(--vp-radius-xl)",
           cursor: "pointer",
           transition: "all 0.2s ease",
         }}
@@ -189,7 +183,7 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
           style={{
             width: 26,
             height: 26,
-            borderRadius: 7,
+            borderRadius: "var(--vp-radius-md)",
             background: config.logo ? "var(--vp-bg-surface-hover)" : `${config.color}20`,
             border: config.logo ? "none" : `1px solid ${config.color}40`,
             display: "flex",
@@ -238,7 +232,7 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
                   textTransform: "uppercase",
                   background: "var(--vp-accent-green-bg)",
                   padding: "1px 6px",
-                  borderRadius: 8,
+                  borderRadius: "var(--vp-radius-lg)",
                   animation: "workingPulse 2s ease-in-out infinite",
                 }}
               >
@@ -259,12 +253,12 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
             {groupLabel && <span style={{ color: "var(--vp-text-dim)" }}>{groupLabel}</span>}
             {groupLabel && <span style={{ margin: "0 3px", color: "var(--vp-text-subtle)" }}>&middot;</span>}
             {dirName}
-            {lastOutputTs > 0 && (
+            {getLastOutputAt(sid) > 0 && (
               <>
                 <span style={{ margin: "0 3px", color: "var(--vp-text-subtle)" }}>&middot;</span>
                 <span style={{ color: "var(--vp-text-subtle)" }}>
                   {isWorking ? "Active now" : (() => {
-                    const diff = Math.floor((Date.now() - lastOutputTs) / 1000);
+                    const diff = Math.floor((Date.now() - getLastOutputAt(sid)) / 1000);
                     if (diff < 60) return `${diff}s ago`;
                     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
                     return `${Math.floor(diff / 3600)}h ago`;
@@ -298,7 +292,7 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
             zIndex: 9999,
             background: "var(--vp-bg-tertiary)",
             border: "1px solid var(--vp-border-medium)",
-            borderRadius: 8,
+            borderRadius: "var(--vp-radius-lg)",
             padding: 4,
             minWidth: 160,
             boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
@@ -314,7 +308,7 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
               padding: "7px 10px",
               background: "transparent",
               border: "none",
-              borderRadius: 6,
+              borderRadius: "var(--vp-radius-md)",
               color: "var(--vp-accent-red)",
               fontSize: 12,
               cursor: "pointer",

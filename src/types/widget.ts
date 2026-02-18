@@ -140,6 +140,21 @@ export interface PromptLibraryConfig extends BaseWidgetConfig {
   category?: string;
 }
 
+export interface EnvManagerConfig extends BaseWidgetConfig {
+  activeFile?: string;
+  showValues?: boolean;
+}
+
+export interface DependencyDashboardConfig extends BaseWidgetConfig {
+  showDevDeps?: boolean;
+}
+
+export interface HttpClientConfig extends BaseWidgetConfig {}
+
+export interface ClipboardHistoryConfig extends BaseWidgetConfig {
+  maxItems?: number;
+}
+
 export type AgentType = "claude-code" | "opencode" | "aider" | "unknown";
 export type AgentStatus = "active" | "idle" | "stopped" | "error";
 
@@ -160,4 +175,8 @@ export type WidgetConfigMap = {
   tasks: TasksConfig;
   "file-explorer": FileExplorerConfig;
   "prompt-library": PromptLibraryConfig;
+  "env-manager": EnvManagerConfig;
+  "dependency-dashboard": DependencyDashboardConfig;
+  "http-client": HttpClientConfig;
+  "clipboard-history": ClipboardHistoryConfig;
 };

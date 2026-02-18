@@ -94,7 +94,7 @@ export default function PortMonitorWidget({
           style={{
             background: "var(--vp-bg-surface-hover)",
             border: "none",
-            borderRadius: 4,
+            borderRadius: "var(--vp-radius-sm)",
             padding: "4px 8px",
             color: "var(--vp-text-muted)",
             cursor: "pointer",
@@ -139,7 +139,7 @@ export default function PortMonitorWidget({
             padding: 4,
             display: "flex",
             alignItems: "center",
-            borderRadius: 4,
+            borderRadius: "var(--vp-radius-sm)",
           }}
           title="Filter"
         >
@@ -152,7 +152,7 @@ export default function PortMonitorWidget({
               color: "var(--vp-accent-blue)",
               background: "var(--vp-accent-blue-bg)",
               padding: "2px 6px",
-              borderRadius: 3,
+              borderRadius: "var(--vp-radius-xs)",
             }}
           >
             {filterProtocol.toUpperCase()}
@@ -178,7 +178,7 @@ export default function PortMonitorWidget({
               style={{
                 padding: "3px 8px",
                 fontSize: 10,
-                borderRadius: 4,
+                borderRadius: "var(--vp-radius-sm)",
                 background: filterProtocol === proto ? "var(--vp-border-light)" : "transparent",
                 border: "1px solid var(--vp-border-subtle)",
                 color: filterProtocol === proto ? "var(--vp-text-primary)" : "var(--vp-text-dim)",
@@ -249,7 +249,7 @@ export default function PortMonitorWidget({
                       padding: 2,
                       display: "flex",
                       alignItems: "center",
-                      borderRadius: 4,
+                      borderRadius: "var(--vp-radius-sm)",
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = "var(--vp-accent-red-text)")}
                     onMouseLeave={(e) => (e.currentTarget.style.color = "var(--vp-text-faint)")}

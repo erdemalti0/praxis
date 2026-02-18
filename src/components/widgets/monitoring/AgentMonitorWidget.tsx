@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { useTerminalStore, isSessionWorking, type TerminalSession } from "../../../stores/terminalStore";
+import { useTerminalStore, isSessionWorking, getOutputActivity, type TerminalSession } from "../../../stores/terminalStore";
 import { useUIStore } from "../../../stores/uiStore";
 import { getAgentConfig } from "../../../lib/agentTypes";
 import type { AgentMonitorConfig } from "../../../types/widget";
@@ -13,7 +13,6 @@ export default function AgentMonitorWidget({
   config?: AgentMonitorConfig;
 }) {
   const sessions = useTerminalStore((s) => s.sessions);
-  const outputActivity = useTerminalStore((s) => s.outputActivity);
   const workspaces = useUIStore((s) => s.workspaces);
   const [, setTick] = useState(0);
 
@@ -31,7 +30,7 @@ export default function AgentMonitorWidget({
     }> = [];
 
     for (const ws of workspaces) {
-      const wsSessions = sessions.filter((s) => s.workspaceId === ws.id);
+      const wsSessions = sessions.filter((s) => s.workspaceId === ws.id && s.agentType !== "runner" && !s.id.startsWith("runner-"));
       if (wsSessions.length === 0) continue;
       result.push({
         workspaceName: ws.name,
@@ -42,9 +41,10 @@ export default function AgentMonitorWidget({
     return result;
   }, [sessions, workspaces]);
 
-  const totalCount = sessions.length;
-  const workingCount = sessions.filter(
-    (s) => isSessionWorking(outputActivity[s.id])
+  const nonRunnerSessions = sessions.filter((s) => s.agentType !== "runner" && !s.id.startsWith("runner-"));
+  const totalCount = nonRunnerSessions.length;
+  const workingCount = nonRunnerSessions.filter(
+    (s) => isSessionWorking(getOutputActivity(s.id))
   ).length;
 
   if (totalCount === 0) {
@@ -76,7 +76,7 @@ export default function AgentMonitorWidget({
                 borderBottom: "1px solid var(--vp-bg-surface)",
               }}
             >
-              <div style={{ width: 8, height: 8, borderRadius: 2, background: group.workspaceColor, flexShrink: 0 }} />
+              <div style={{ width: 8, height: 8, borderRadius: "var(--vp-radius-xs)", background: group.workspaceColor, flexShrink: 0 }} />
               <span style={{ fontSize: 11, fontWeight: 500, color: "var(--vp-text-secondary)", flex: 1 }}>
                 {group.workspaceName}
               </span>
@@ -86,7 +86,7 @@ export default function AgentMonitorWidget({
             {/* Session cards */}
             {group.sessions.map((session) => {
               const agentConfig = getAgentConfig(session.agentType);
-              const isWorking = isSessionWorking(outputActivity[session.id]);
+              const isWorking = isSessionWorking(getOutputActivity(session.id));
               const dirName = (session.projectPath || "~").split("/").filter(Boolean).pop() || "~";
 
               return (
@@ -120,7 +120,7 @@ export default function AgentMonitorWidget({
                     style={{
                       width: 24,
                       height: 24,
-                      borderRadius: 6,
+                      borderRadius: "var(--vp-radius-md)",
                       background: "var(--vp-bg-surface-hover)",
                       display: "flex",
                       alignItems: "center",
@@ -212,7 +212,7 @@ function Header({ total, working }: { total: number; working: number }) {
             style={{
               fontSize: 9,
               padding: "1px 5px",
-              borderRadius: 3,
+              borderRadius: "var(--vp-radius-xs)",
               background: "var(--vp-accent-green-bg-hover)",
               color: "var(--vp-accent-green)",
             }}

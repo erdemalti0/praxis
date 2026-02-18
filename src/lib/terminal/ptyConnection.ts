@@ -11,7 +11,7 @@
 import type { Terminal } from "@xterm/xterm";
 import { invoke, send, listen } from "../ipc";
 import { getDefaultShell } from "../platform";
-import { useTerminalStore } from "../../stores/terminalStore";
+import { useTerminalStore, markOutput, markUserInput } from "../../stores/terminalStore";
 
 // ── Flow control watermarks ──
 // HIGH: pause PTY when this many bytes are pending in xterm's write queue
@@ -56,7 +56,7 @@ export function setupPtyConnection({ sessionId, terminal, fallbackCwd = "~" }: P
 
   const flushActivity = () => {
     if (pendingBytes > 0) {
-      useTerminalStore.getState().markOutput(sessionId, pendingBytes);
+      markOutput(sessionId, pendingBytes);
       pendingBytes = 0;
       lastMark = Date.now();
     }
@@ -103,7 +103,7 @@ export function setupPtyConnection({ sessionId, terminal, fallbackCwd = "~" }: P
       terminal.write("\r\n\x1b[90m[Process exited — starting shell...]\x1b[0m\r\n\r\n");
       getDefaultShell()
         .then((defaultShell) =>
-          invoke<{ id: string; cwd: string }>("spawn_pty", {
+          invoke<{ id: string; cwd: string; pid?: number }>("spawn_pty", {
             id: sessionId,
             cmd: defaultShell,
             args: [],
@@ -114,8 +114,10 @@ export function setupPtyConnection({ sessionId, terminal, fallbackCwd = "~" }: P
           const actualCwd = res?.cwd || shellCwd;
           store.updateSession(sessionId, {
             agentType: "shell",
+            originalAgentType: "shell",
             title: `Shell@${actualCwd.split("/").pop() || actualCwd}`,
             projectPath: actualCwd,
+            pid: res?.pid,
           });
         })
         .catch(() => {
@@ -140,7 +142,7 @@ export function setupPtyConnection({ sessionId, terminal, fallbackCwd = "~" }: P
   // ── User input → PTY ──
   const dataDisposable = terminal.onData((data) => {
     ptyWrite(sessionId, data);
-    useTerminalStore.getState().markUserInput(sessionId);
+    markUserInput(sessionId);
   });
 
   // ── Resize → PTY ──

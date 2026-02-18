@@ -182,7 +182,7 @@ export default function CommandPalette() {
           maxWidth: 500,
           width: "90%",
           background: "var(--vp-bg-surface)",
-          borderRadius: 12,
+          borderRadius: "var(--vp-radius-2xl)",
           border: "1px solid var(--vp-border-panel)",
           overflow: "hidden",
           maxHeight: 400,
@@ -241,7 +241,7 @@ export default function CommandPalette() {
                         color: "var(--vp-text-muted)",
                         background: "var(--vp-bg-surface-hover)",
                         padding: "2px 6px",
-                        borderRadius: 4,
+                        borderRadius: "var(--vp-radius-sm)",
                         fontFamily: "monospace",
                       }}>
                         {action.shortcut}

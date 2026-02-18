@@ -172,6 +172,24 @@ export function registerGitHandlers() {
     }
   });
 
+  ipcMain.handle("git_last_commit", async (_event, args?: { projectPath?: string }) => {
+    const cwd = args?.projectPath || projectPath;
+    if (!cwd) return null;
+    try {
+      const result = await execAsync('git log -1 --format="%H|%cd|%s" --date=iso', {
+        cwd,
+        encoding: "utf-8",
+        timeout: 5000,
+      });
+      const output = result.stdout.trim();
+      if (!output) return null;
+      const [hash, date, ...subjectParts] = output.split("|");
+      return { hash, date, subject: subjectParts.join("|") };
+    } catch {
+      return null;
+    }
+  });
+
   ipcMain.handle("list_images", async (_event, args?: { projectPath?: string }) => {
     const cwd = args?.projectPath || projectPath;
     if (!cwd) return [];

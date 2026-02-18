@@ -260,7 +260,7 @@ export default function TabContextMenu({ isOpen, position, tabId, onClose }: Tab
         top: adjustedPosition.y,
         background: "var(--vp-bg-secondary)",
         border: "1px solid var(--vp-border-light)",
-        borderRadius: 10,
+        borderRadius: "var(--vp-radius-xl)",
         padding: "6px 0",
         minWidth: 180,
         boxShadow: "0 8px 32px rgba(0,0,0,0.5)",

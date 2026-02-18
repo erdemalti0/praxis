@@ -1,0 +1,6 @@
+{
+  "content": "import MainPanel from \"../../layout/MainPanel\";\n\nexport default function TerminalWidget() {\n  return (\n    <div style={{ flex: 1, minHeight: 0, display: \"flex\", flexDirection: \"column\", overflow: \"hidden\" }}>\n      <MainPanel />\n    </div>\n  );\n}\n",
+  "hash": "5348d2d3d8323b041ee6d04cf82f7740",
+  "tokenCount": 56,
+  "timestamp": "2026-02-15T13:19:06.422Z"
+}

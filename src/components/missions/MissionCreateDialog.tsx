@@ -34,7 +34,7 @@ export default function MissionCreateDialog({ open, onClose, onSubmit }: Mission
         style={{
           width: 420, background: "var(--vp-bg-secondary)",
           border: "1px solid var(--vp-border-light)",
-          borderRadius: 16, padding: 0,
+          borderRadius: "var(--vp-radius-4xl)", padding: 0,
           boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
           overflow: "hidden",
         }}
@@ -47,7 +47,7 @@ export default function MissionCreateDialog({ open, onClose, onSubmit }: Mission
         }}>
           <div className="flex items-center gap-2">
             <div style={{
-              width: 28, height: 28, borderRadius: 8,
+              width: 28, height: 28, borderRadius: "var(--vp-radius-lg)",
               background: "var(--vp-accent-blue-bg)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
@@ -61,7 +61,7 @@ export default function MissionCreateDialog({ open, onClose, onSubmit }: Mission
             onClick={onClose}
             style={{
               background: "none", border: "none", color: "var(--vp-text-faint)", cursor: "pointer",
-              width: 28, height: 28, borderRadius: 6,
+              width: 28, height: 28, borderRadius: "var(--vp-radius-md)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}
             onMouseEnter={(e) => { e.currentTarget.style.color = "var(--vp-text-primary)"; }}
@@ -84,7 +84,7 @@ export default function MissionCreateDialog({ open, onClose, onSubmit }: Mission
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) handleSubmit(); if (e.key === "Escape") onClose(); }}
             style={{
               width: "100%", background: "var(--vp-bg-surface)",
-              border: "1px solid var(--vp-border-light)", borderRadius: 10,
+              border: "1px solid var(--vp-border-light)", borderRadius: "var(--vp-radius-xl)",
               padding: "10px 14px", color: "var(--vp-text-primary)", fontSize: 13,
               outline: "none", fontFamily: "inherit", marginBottom: 14,
               transition: "border-color 0.15s",
@@ -103,7 +103,7 @@ export default function MissionCreateDialog({ open, onClose, onSubmit }: Mission
             rows={3}
             style={{
               width: "100%", background: "var(--vp-bg-surface)",
-              border: "1px solid var(--vp-border-light)", borderRadius: 10,
+              border: "1px solid var(--vp-border-light)", borderRadius: "var(--vp-radius-xl)",
               padding: "10px 14px", color: "var(--vp-text-secondary)", fontSize: 12,
               outline: "none", fontFamily: "inherit", resize: "vertical",
               lineHeight: 1.5,
@@ -123,7 +123,7 @@ export default function MissionCreateDialog({ open, onClose, onSubmit }: Mission
           <button
             onClick={onClose}
             style={{
-              padding: "8px 18px", borderRadius: 9,
+              padding: "8px 18px", borderRadius: "var(--vp-radius-lg)",
               background: "transparent", border: "1px solid var(--vp-border-light)",
               color: "var(--vp-text-muted)", fontSize: 12, cursor: "pointer",
               transition: "all 0.15s",
@@ -137,7 +137,7 @@ export default function MissionCreateDialog({ open, onClose, onSubmit }: Mission
             onClick={handleSubmit}
             disabled={!title.trim()}
             style={{
-              padding: "8px 18px", borderRadius: 9,
+              padding: "8px 18px", borderRadius: "var(--vp-radius-lg)",
               background: title.trim() ? "var(--vp-accent-blue-bg)" : "var(--vp-bg-surface)",
               border: `1px solid ${title.trim() ? "var(--vp-accent-blue-border)" : "var(--vp-bg-surface-hover)"}`,
               color: title.trim() ? "var(--vp-accent-blue)" : "var(--vp-text-subtle)",

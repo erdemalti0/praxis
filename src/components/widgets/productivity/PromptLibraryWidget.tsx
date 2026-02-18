@@ -195,7 +195,7 @@ export default function PromptLibraryWidget({
       <div className="flex gap-2">
         <div
           className="flex items-center gap-1"
-          style={{ flex: 1, background: "var(--vp-bg-surface)", borderRadius: 6, padding: "4px 8px" }}
+          style={{ flex: 1, background: "var(--vp-bg-surface)", borderRadius: "var(--vp-radius-md)", padding: "4px 8px" }}
         >
           <Search size={12} style={{ color: "var(--vp-text-faint)" }} />
           <input
@@ -205,7 +205,7 @@ export default function PromptLibraryWidget({
             style={{ flex: 1, background: "transparent", border: "none", fontSize: 11, color: "var(--vp-text-primary)", outline: "none" }}
           />
         </div>
-        <button onClick={() => setShowAddForm(!showAddForm)} style={{ background: showAddForm ? "var(--vp-accent-blue-bg-hover)" : "none", border: "none", color: showAddForm ? "var(--vp-accent-blue)" : "var(--vp-text-faint)", cursor: "pointer", padding: 6, borderRadius: 4 }} title="Add prompt">
+        <button onClick={() => setShowAddForm(!showAddForm)} style={{ background: showAddForm ? "var(--vp-accent-blue-bg-hover)" : "none", border: "none", color: showAddForm ? "var(--vp-accent-blue)" : "var(--vp-text-faint)", cursor: "pointer", padding: 6, borderRadius: "var(--vp-radius-sm)" }} title="Add prompt">
           <Plus size={12} />
         </button>
         <button onClick={exportPrompts} style={{ background: "none", border: "none", color: "var(--vp-text-faint)", cursor: "pointer", padding: 6 }} title="Export">
@@ -218,27 +218,27 @@ export default function PromptLibraryWidget({
 
       {/* Add Form */}
       {showAddForm && (
-        <div style={{ background: "var(--vp-bg-surface)", borderRadius: 6, padding: 8 }}>
+        <div style={{ background: "var(--vp-bg-surface)", borderRadius: "var(--vp-radius-md)", padding: 8 }}>
           <div style={{ marginBottom: 6, fontSize: 11, color: "var(--vp-text-muted)" }}>New Prompt</div>
           <input
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             placeholder="Title"
-            style={{ width: "100%", background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: 4, padding: "4px 8px", fontSize: 11, color: "var(--vp-text-primary)", marginBottom: 6, boxSizing: "border-box" }}
+            style={{ width: "100%", background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: "var(--vp-radius-sm)", padding: "4px 8px", fontSize: 11, color: "var(--vp-text-primary)", marginBottom: 6, boxSizing: "border-box" }}
           />
           <textarea
             value={newContent}
             onChange={(e) => setNewContent(e.target.value)}
             placeholder="Prompt content... Use {{placeholder}} for variables"
             rows={3}
-            style={{ width: "100%", background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: 4, padding: "4px 8px", fontSize: 11, color: "var(--vp-text-primary)", resize: "vertical", fontFamily: "inherit", marginBottom: 6, boxSizing: "border-box" }}
+            style={{ width: "100%", background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: "var(--vp-radius-sm)", padding: "4px 8px", fontSize: 11, color: "var(--vp-text-primary)", resize: "vertical", fontFamily: "inherit", marginBottom: 6, boxSizing: "border-box" }}
           />
           <div className="flex gap-2 items-center">
             <select
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
-              style={{ flex: 1, background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: 4, padding: "4px 8px", fontSize: 11, color: "var(--vp-text-primary)" }}
+              style={{ flex: 1, background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: "var(--vp-radius-sm)", padding: "4px 8px", fontSize: 11, color: "var(--vp-text-primary)" }}
             >
               {CATEGORIES.filter((c) => c !== "all").map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
@@ -247,7 +247,7 @@ export default function PromptLibraryWidget({
             <button
               onClick={addPrompt}
               disabled={!newTitle.trim() || !newContent.trim()}
-              style={{ padding: "4px 12px", fontSize: 10, borderRadius: 4, background: "var(--vp-accent-blue-bg-hover)", border: "none", color: "var(--vp-accent-blue)", cursor: "pointer" }}
+              style={{ padding: "4px 12px", fontSize: 10, borderRadius: "var(--vp-radius-sm)", background: "var(--vp-accent-blue-bg-hover)", border: "none", color: "var(--vp-accent-blue)", cursor: "pointer" }}
             >
               Add
             </button>
@@ -259,13 +259,13 @@ export default function PromptLibraryWidget({
       <div className="flex gap-1 flex-wrap">
         <button
           onClick={() => setActiveCategory("all")}
-          style={{ padding: "3px 8px", fontSize: 10, borderRadius: 4, background: activeCategory === "all" ? "var(--vp-border-light)" : "transparent", border: "none", color: activeCategory === "all" ? "var(--vp-text-primary)" : "var(--vp-text-dim)", cursor: "pointer" }}
+          style={{ padding: "3px 8px", fontSize: 10, borderRadius: "var(--vp-radius-sm)", background: activeCategory === "all" ? "var(--vp-border-light)" : "transparent", border: "none", color: activeCategory === "all" ? "var(--vp-text-primary)" : "var(--vp-text-dim)", cursor: "pointer" }}
         >
           All ({prompts.length})
         </button>
         <button
           onClick={() => setActiveCategory("favorites")}
-          style={{ padding: "3px 8px", fontSize: 10, borderRadius: 4, background: activeCategory === "favorites" ? "var(--vp-border-light)" : "transparent", border: "none", color: activeCategory === "favorites" ? "var(--vp-accent-amber)" : "var(--vp-text-dim)", cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}
+          style={{ padding: "3px 8px", fontSize: 10, borderRadius: "var(--vp-radius-sm)", background: activeCategory === "favorites" ? "var(--vp-border-light)" : "transparent", border: "none", color: activeCategory === "favorites" ? "var(--vp-accent-amber)" : "var(--vp-text-dim)", cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}
         >
           <Star size={9} fill={activeCategory === "favorites" ? "var(--vp-accent-amber)" : "none"} /> {favorites.length}
         </button>
@@ -276,7 +276,7 @@ export default function PromptLibraryWidget({
             style={{
               padding: "3px 8px",
               fontSize: 10,
-              borderRadius: 4,
+              borderRadius: "var(--vp-radius-sm)",
               background: activeCategory === cat ? `${CATEGORY_COLORS[cat]}20` : "transparent",
               border: "none",
               color: activeCategory === cat ? CATEGORY_COLORS[cat] : "var(--vp-text-dim)",
@@ -347,23 +347,23 @@ function PromptCard({
 
   if (isEditing) {
     return (
-      <div style={{ background: "var(--vp-bg-surface)", border: "1px solid var(--vp-accent-blue-border)", borderRadius: 6, padding: 8 }}>
+      <div style={{ background: "var(--vp-bg-surface)", border: "1px solid var(--vp-accent-blue-border)", borderRadius: "var(--vp-radius-md)", padding: 8 }}>
         <input
           value={editTitle}
           onChange={(e) => setEditTitle(e.target.value)}
-          style={{ width: "100%", background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: 4, padding: "4px 8px", fontSize: 11, color: "var(--vp-text-primary)", marginBottom: 4, boxSizing: "border-box" }}
+          style={{ width: "100%", background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: "var(--vp-radius-sm)", padding: "4px 8px", fontSize: 11, color: "var(--vp-text-primary)", marginBottom: 4, boxSizing: "border-box" }}
         />
         <textarea
           value={editContent}
           onChange={(e) => setEditContent(e.target.value)}
           rows={3}
-          style={{ width: "100%", background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: 4, padding: "4px 8px", fontSize: 11, color: "var(--vp-text-primary)", resize: "vertical", fontFamily: "inherit", marginBottom: 4, boxSizing: "border-box" }}
+          style={{ width: "100%", background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-light)", borderRadius: "var(--vp-radius-sm)", padding: "4px 8px", fontSize: 11, color: "var(--vp-text-primary)", resize: "vertical", fontFamily: "inherit", marginBottom: 4, boxSizing: "border-box" }}
         />
         <div className="flex gap-2 justify-end">
-          <button onClick={onCancelEdit} style={{ padding: "3px 8px", fontSize: 10, borderRadius: 4, background: "none", border: "1px solid var(--vp-border-light)", color: "var(--vp-text-muted)", cursor: "pointer" }}>
+          <button onClick={onCancelEdit} style={{ padding: "3px 8px", fontSize: 10, borderRadius: "var(--vp-radius-sm)", background: "none", border: "1px solid var(--vp-border-light)", color: "var(--vp-text-muted)", cursor: "pointer" }}>
             Cancel
           </button>
-          <button onClick={() => onSaveEdit(editTitle, editContent)} style={{ padding: "3px 8px", fontSize: 10, borderRadius: 4, background: "var(--vp-accent-blue-bg-hover)", border: "none", color: "var(--vp-accent-blue)", cursor: "pointer" }}>
+          <button onClick={() => onSaveEdit(editTitle, editContent)} style={{ padding: "3px 8px", fontSize: 10, borderRadius: "var(--vp-radius-sm)", background: "var(--vp-accent-blue-bg-hover)", border: "none", color: "var(--vp-accent-blue)", cursor: "pointer" }}>
             Save
           </button>
         </div>
@@ -373,12 +373,12 @@ function PromptCard({
 
   return (
     <div
-      style={{ background: "var(--vp-bg-surface)", border: "1px solid var(--vp-bg-surface-hover)", borderRadius: 6, padding: "8px 10px" }}
+      style={{ background: "var(--vp-bg-surface)", border: "1px solid var(--vp-bg-surface-hover)", borderRadius: "var(--vp-radius-md)", padding: "8px 10px" }}
       onMouseEnter={(e) => { e.currentTarget.style.background = "var(--vp-bg-surface-hover)"; e.currentTarget.style.borderColor = "var(--vp-border-light)"; }}
       onMouseLeave={(e) => { e.currentTarget.style.background = "var(--vp-bg-surface)"; e.currentTarget.style.borderColor = "var(--vp-bg-surface-hover)"; }}
     >
       <div className="flex items-center gap-2" style={{ marginBottom: 4 }}>
-        <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 3, background: `${catColor}15`, color: catColor, textTransform: "capitalize" }}>
+        <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: "var(--vp-radius-xs)", background: `${catColor}15`, color: catColor, textTransform: "capitalize" }}>
           {prompt.category}
         </span>
         <span style={{ fontSize: 11, color: "var(--vp-text-primary)", flex: 1, fontWeight: 500 }}>{prompt.title}</span>

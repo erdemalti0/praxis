@@ -1,0 +1,2953 @@
+[
+  {
+    "path": "dist-electron/main.js",
+    "hash": "af73723c5154c51c149258a940856824",
+    "symbolCount": 130,
+    "symbols": [
+      "getDefaultShell",
+      "getUserShellEnv",
+      "expandHome",
+      "spawnPty",
+      "writePty",
+      "resizePty",
+      "closePty",
+      "closeAllPty",
+      "flushOutput",
+      "bufferOutput",
+      "cleanupBuffers",
+      "registerTerminalHandlers",
+      "patternToRegex",
+      "registerFilesystemHandlers",
+      "startFileWatchers",
+      "registerSessionsHandlers",
+      "registerStatsHandlers",
+      "getAgentKeywords",
+      "registerAgentsHandlers",
+      "detectAgentsUnix",
+      "detectAgentsWindows",
+      "projectSlug",
+      "getProjectDataDir$1",
+      "tasksFilePath$1",
+      "oldTasksFilePath",
+      "ensureDir$1",
+      "registerTasksHandlers",
+      "favoritesFilePath",
+      "registerBrowserHandlers",
+      "registerGitHandlers",
+      "registerPortsHandlers",
+      "scanPortsUnix",
+      "scanPortsWindows",
+      "getSystemStatsMac",
+      "getSystemStatsLinux",
+      "getSystemStatsWindows",
+      "getProjectDataDir",
+      "missionsFilePath",
+      "oldMissionsFilePath",
+      "tasksFilePath",
+      "ensureDir",
+      "registerMissionsHandlers",
+      "registerSearchHandlers",
+      "escapeRegex",
+      "requireOld",
+      "requireFs_realpath",
+      "requireConcatMap",
+      "requireBalancedMatch",
+      "requireBraceExpansion",
+      "requireMinimatch",
+      "requireInherits_browser",
+      "requireInherits",
+      "requirePathIsAbsolute",
+      "requireCommon",
+      "requireSync",
+      "requireWrappy",
+      "requireOnce",
+      "requireInflight",
+      "requireGlob",
+      "registerUsageHandlers",
+      "getClaudeAccessToken",
+      "fetchClaudeOAuth",
+      "fetchClaudeCost",
+      "fetchGemini",
+      "fetchAMP",
+      "buildMenu",
+      "parseOpenProject",
+      "getCliSourcePath",
+      "getCliSymlinkPath",
+      "createWindow",
+      "__filename",
+      "__dirname",
+      "require2",
+      "resolvedEnv",
+      "sessions",
+      "outputBuffers",
+      "flushTimers",
+      "BATCH_INTERVAL",
+      "HIDDEN_ENTRIES",
+      "BUILTIN_KEYWORDS",
+      "isWin$1",
+      "isLinux",
+      "projectPath",
+      "isWin",
+      "isMac",
+      "SKIP_DIRS",
+      "BINARY_EXTS",
+      "MAX_RESULTS",
+      "MAX_DEPTH",
+      "MAX_LINE_LENGTH",
+      "old",
+      "hasRequiredOld",
+      "fs_realpath",
+      "hasRequiredFs_realpath",
+      "concatMap",
+      "hasRequiredConcatMap",
+      "balancedMatch",
+      "hasRequiredBalancedMatch",
+      "braceExpansion",
+      "hasRequiredBraceExpansion",
+      "minimatch_1",
+      "hasRequiredMinimatch",
+      "inherits",
+      "inherits_browser",
+      "hasRequiredInherits_browser",
+      "hasRequiredInherits",
+      "pathIsAbsolute",
+      "hasRequiredPathIsAbsolute",
+      "common",
+      "hasRequiredCommon",
+      "sync",
+      "hasRequiredSync",
+      "wrappy_1",
+      "hasRequiredWrappy",
+      "once",
+      "hasRequiredOnce",
+      "inflight_1",
+      "hasRequiredInflight",
+      "glob_1",
+      "hasRequiredGlob",
+      "globExports",
+      "gotTheLock",
+      "mainWindow",
+      "allWindows",
+      "windowProjectPaths",
+      "ipcHandlersRegistered",
+      "platform",
+      "platform",
+      "platform",
+      "name"
+    ],
+    "lineCount": 3147
+  },
+  {
+    "path": "dist-electron/preload.mjs",
+    "hash": "7872b7e593e843e00e46bf905b514c49",
+    "symbolCount": 1,
+    "symbols": [
+      "isAllowedWritePath"
+    ],
+    "lineCount": 46
+  },
+  {
+    "path": "electron/ipc/agents.ts",
+    "hash": "aa8f012195251205c8922a0be79c3dc5",
+    "symbolCount": 8,
+    "symbols": [
+      "getAgentKeywords",
+      "registerAgentsHandlers",
+      "detectAgentsUnix",
+      "detectAgentsWindows",
+      "AgentProcess",
+      "BUILTIN_KEYWORDS",
+      "isWin",
+      "isLinux"
+    ],
+    "lineCount": 82
+  },
+  {
+    "path": "electron/ipc/browser.ts",
+    "hash": "463f69d3e2d001b206ef8e9c322ee19d",
+    "symbolCount": 4,
+    "symbols": [
+      "favoritesFilePath",
+      "registerBrowserHandlers",
+      "Favorite",
+      "BrowserInfo"
+    ],
+    "lineCount": 66
+  },
+  {
+    "path": "electron/ipc/filesystem.ts",
+    "hash": "d7eb016c3806ddbb69ee4a8eacb81dbb",
+    "symbolCount": 5,
+    "symbols": [
+      "patternToRegex",
+      "registerFilesystemHandlers",
+      "startFileWatchers",
+      "FileEntry",
+      "HIDDEN_ENTRIES"
+    ],
+    "lineCount": 168
+  },
+  {
+    "path": "electron/ipc/git.ts",
+    "hash": "cccb004e632785097b61afe4161a4a7e",
+    "symbolCount": 2,
+    "symbols": [
+      "registerGitHandlers",
+      "projectPath"
+    ],
+    "lineCount": 105
+  },
+  {
+    "path": "electron/ipc/logs.ts",
+    "hash": "3fd81626a1cdc754866ac1381b356ec4",
+    "symbolCount": 1,
+    "symbols": [
+      "registerLogsHandlers"
+    ],
+    "lineCount": 5
+  },
+  {
+    "path": "electron/ipc/missions.ts",
+    "hash": "daa821afa43f635ef56a467ebb2d7154",
+    "symbolCount": 7,
+    "symbols": [
+      "getProjectDataDir",
+      "missionsFilePath",
+      "oldMissionsFilePath",
+      "tasksFilePath",
+      "ensureDir",
+      "registerMissionsHandlers",
+      "Mission"
+    ],
+    "lineCount": 94
+  },
+  {
+    "path": "electron/ipc/passwords.ts",
+    "hash": "a433637f3a1c6e7715fd5cd9ed15f5b9",
+    "symbolCount": 17,
+    "symbols": [
+      "getDataDir",
+      "getCredentialsPath",
+      "getKeyPath",
+      "ensureDataDir",
+      "getOrCreateEncryptionKey",
+      "createAndSaveKey",
+      "encrypt",
+      "decrypt",
+      "extractDomain",
+      "registerPasswordHandlers",
+      "Credential",
+      "CredentialMeta",
+      "ALGORITHM",
+      "KEY_LENGTH",
+      "IV_LENGTH",
+      "SALT_LENGTH",
+      "AUTH_TAG_LENGTH"
+    ],
+    "lineCount": 255
+  },
+  {
+    "path": "electron/ipc/ports.ts",
+    "hash": "2a541ad7ac1661690f2e83e56fb5f990",
+    "symbolCount": 8,
+    "symbols": [
+      "registerPortsHandlers",
+      "scanPortsUnix",
+      "scanPortsWindows",
+      "getSystemStatsMac",
+      "getSystemStatsLinux",
+      "getSystemStatsWindows",
+      "isWin",
+      "isMac"
+    ],
+    "lineCount": 190
+  },
+  {
+    "path": "electron/ipc/search.ts",
+    "hash": "1996da3df591473183f30c270776f3c5",
+    "symbolCount": 8,
+    "symbols": [
+      "registerSearchHandlers",
+      "escapeRegex",
+      "SearchResult",
+      "SKIP_DIRS",
+      "BINARY_EXTS",
+      "MAX_RESULTS",
+      "MAX_DEPTH",
+      "MAX_LINE_LENGTH"
+    ],
+    "lineCount": 75
+  },
+  {
+    "path": "electron/ipc/sessions.ts",
+    "hash": "e003808b8f341a22b48227ccac1c74ed",
+    "symbolCount": 2,
+    "symbols": [
+      "registerSessionsHandlers",
+      "ProjectInfo"
+    ],
+    "lineCount": 38
+  },
+  {
+    "path": "electron/ipc/stats.ts",
+    "hash": "ca34a482254bf643708a20b583f1c870",
+    "symbolCount": 1,
+    "symbols": [
+      "registerStatsHandlers"
+    ],
+    "lineCount": 10
+  },
+  {
+    "path": "electron/ipc/tasks.ts",
+    "hash": "b17bfebbeb02ed5ff23b8b4d916efc57",
+    "symbolCount": 6,
+    "symbols": [
+      "getProjectDataDir",
+      "tasksFilePath",
+      "oldTasksFilePath",
+      "ensureDir",
+      "registerTasksHandlers",
+      "PraxisTask"
+    ],
+    "lineCount": 50
+  },
+  {
+    "path": "electron/ipc/terminal.ts",
+    "hash": "972c8550b623d45d4471cf7aad9012dc",
+    "symbolCount": 7,
+    "symbols": [
+      "flushOutput",
+      "bufferOutput",
+      "cleanupBuffers",
+      "registerTerminalHandlers",
+      "outputBuffers",
+      "flushTimers",
+      "BATCH_INTERVAL"
+    ],
+    "lineCount": 60
+  },
+  {
+    "path": "electron/ipc/usage.ts",
+    "hash": "b45a5826a5cc5fc2888a74ee889d6456",
+    "symbolCount": 6,
+    "symbols": [
+      "registerUsageHandlers",
+      "getClaudeAccessToken",
+      "fetchClaudeOAuth",
+      "fetchClaudeCost",
+      "fetchGemini",
+      "fetchAMP"
+    ],
+    "lineCount": 197
+  },
+  {
+    "path": "electron/main.ts",
+    "hash": "37bd870116d7d9cb0420067965ae1270",
+    "symbolCount": 11,
+    "symbols": [
+      "parseOpenProject",
+      "sendOpenProject",
+      "getCliSourcePath",
+      "getCliSymlinkPath",
+      "createWindow",
+      "gotTheLock",
+      "mainWindow",
+      "allWindows",
+      "windowProjectPaths",
+      "ipcHandlersRegistered",
+      "name"
+    ],
+    "lineCount": 320
+  },
+  {
+    "path": "electron/menu.ts",
+    "hash": "29b9417a6fca555a8fb25a869b2c3065",
+    "symbolCount": 1,
+    "symbols": [
+      "buildMenu"
+    ],
+    "lineCount": 146
+  },
+  {
+    "path": "electron/preload.ts",
+    "hash": "e6a7f2fbf0a2cc5fe9443383b02f4c6f",
+    "symbolCount": 1,
+    "symbols": [
+      "isAllowedWritePath"
+    ],
+    "lineCount": 57
+  },
+  {
+    "path": "electron/utils/platform.ts",
+    "hash": "11400f1c0886a41b1fd2f4a013004b89",
+    "symbolCount": 4,
+    "symbols": [
+      "getDefaultShell",
+      "isMac",
+      "isWindows",
+      "isLinux"
+    ],
+    "lineCount": 10
+  },
+  {
+    "path": "electron/utils/projectSlug.ts",
+    "hash": "0f0d86b7357d7bbc4dbec9ce61c1ad6f",
+    "symbolCount": 1,
+    "symbols": [
+      "projectSlug"
+    ],
+    "lineCount": 16
+  },
+  {
+    "path": "electron/utils/pty-manager.ts",
+    "hash": "dc3b578aba1cc3c3d2a7a7d893801142",
+    "symbolCount": 8,
+    "symbols": [
+      "expandHome",
+      "spawnPty",
+      "writePty",
+      "resizePty",
+      "closePty",
+      "closeAllPty",
+      "PtySession",
+      "sessions"
+    ],
+    "lineCount": 71
+  },
+  {
+    "path": "electron/utils/shell-env.ts",
+    "hash": "827d06a52c18b398d034b99c11956d55",
+    "symbolCount": 2,
+    "symbols": [
+      "getUserShellEnv",
+      "resolvedEnv"
+    ],
+    "lineCount": 63
+  },
+  {
+    "path": "electron.vite.config.ts",
+    "hash": "5c256c152e1cab79f00e149ff638fbbd",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 21
+  },
+  {
+    "path": "postcss.config.js",
+    "hash": "c735540bb63936a123bc867d950c9f69",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 3
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/misc/DebugClient.py",
+    "hash": "ce2ef98c020c27b8b96808f2db18ff7c",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 39
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/misc/DebugServer.py",
+    "hash": "715581b70b84eb7947b895b9efd42444",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 60
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/misc/DumpLines.py",
+    "hash": "2714a1c1357d04f891412eb9daaa8075",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 3
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/misc/FormatChar.h",
+    "hash": "e30dbab32f82311ba516a26e94a4f804",
+    "symbolCount": 1,
+    "symbols": [
+      "switch"
+    ],
+    "lineCount": 14
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/misc/Spew.py",
+    "hash": "5ead618ba0001ced6037872f8d1f950b",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 2
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/ship/common_ship.py",
+    "hash": "ea845831a06d2c1717b63a5d482a451c",
+    "symbolCount": 3,
+    "symbols": [
+      "rmrf",
+      "mkdir",
+      "requireExe"
+    ],
+    "lineCount": 43
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/ship/make_msvc_package.py",
+    "hash": "7cff32e87d7d89ed9052b5df6a99f26f",
+    "symbolCount": 5,
+    "symbols": [
+      "readArguments",
+      "checkoutGyp",
+      "cleanMsvc",
+      "build",
+      "buildPackage"
+    ],
+    "lineCount": 136
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/ship/ship.py",
+    "hash": "e29b532c8a02c94736032888b095be53",
+    "symbolCount": 3,
+    "symbols": [
+      "dllVersion",
+      "buildTarget",
+      "main"
+    ],
+    "lineCount": 101
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/Agent.h",
+    "hash": "8f59f6db71557eb713968c68f4793532",
+    "symbolCount": 7,
+    "symbols": [
+      "ConsoleInput",
+      "NamedPipe",
+      "ReadBuffer",
+      "Scraper",
+      "WriteBuffer",
+      "Win32ConsoleBuffer",
+      "Agent"
+    ],
+    "lineCount": 88
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/AgentCreateDesktop.h",
+    "hash": "6be55ec4ffb822683174e4e9492c676c",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 33
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/ConsoleFont.h",
+    "hash": "e6e45f42cf8c4d244027b6e8ef7034c9",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 32
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/ConsoleInput.h",
+    "hash": "9045411a4164898eaf972f6143fa05f7",
+    "symbolCount": 5,
+    "symbols": [
+      "Win32Console",
+      "DsrSender",
+      "ConsoleInput",
+      "setMouseWindowRect",
+      "DoubleClickDetection"
+    ],
+    "lineCount": 99
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/ConsoleInputReencoding.h",
+    "hash": "37db7bd5ddc0af5a78d5a48d144062ab",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 37
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/ConsoleLine.h",
+    "hash": "d71a4f56e7c261412fb6e0eacba6924f",
+    "symbolCount": 1,
+    "symbols": [
+      "ConsoleLine"
+    ],
+    "lineCount": 39
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/Coord.h",
+    "hash": "025075b7c9c7a6a7e084df0a3f26c527",
+    "symbolCount": 1,
+    "symbols": [
+      "Coord"
+    ],
+    "lineCount": 56
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/DebugShowInput.h",
+    "hash": "617386371f2e5055e0257272dd740350",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 36
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/DefaultInputMap.h",
+    "hash": "ef4d122a3a22510519e3b217449e478a",
+    "symbolCount": 1,
+    "symbols": [
+      "InputMap"
+    ],
+    "lineCount": 32
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/DsrSender.h",
+    "hash": "759f8e7e9d9047db0e332720783af6c9",
+    "symbolCount": 1,
+    "symbols": [
+      "DsrSender"
+    ],
+    "lineCount": 32
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/EventLoop.h",
+    "hash": "481ad45a9dfb908682597f08c283ce47",
+    "symbolCount": 4,
+    "symbols": [
+      "NamedPipe",
+      "EventLoop",
+      "onPollTimeout",
+      "onPipeIo"
+    ],
+    "lineCount": 41
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/InputMap.h",
+    "hash": "f0eccfc4225ab5eab99572223b1b8791",
+    "symbolCount": 10,
+    "symbols": [
+      "InputMap",
+      "Key",
+      "Node",
+      "Branch",
+      "Branch",
+      "Node",
+      "hasKey",
+      "if",
+      "for",
+      "if"
+    ],
+    "lineCount": 85
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/LargeConsoleRead.h",
+    "hash": "2b324fb3e2c7933dd2799e2aae4d11ff",
+    "symbolCount": 4,
+    "symbols": [
+      "Win32ConsoleBuffer",
+      "LargeConsoleReadBuffer",
+      "validateLineNumber",
+      "if"
+    ],
+    "lineCount": 61
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/NamedPipe.h",
+    "hash": "2254256c14850a59a9e7340d2fb0e3d1",
+    "symbolCount": 11,
+    "symbols": [
+      "EventLoop",
+      "NamedPipe",
+      "NamedPipe",
+      "IoWorker",
+      "InputWorker",
+      "OutputWorker",
+      "OpenMode",
+      "name",
+      "isClosed",
+      "isConnected",
+      "isConnecting"
+    ],
+    "lineCount": 104
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/Scraper.h",
+    "hash": "af79a9458a10520085ca7b9f951d7519",
+    "symbolCount": 4,
+    "symbols": [
+      "ConsoleScreenBufferInfo",
+      "Win32Console",
+      "Win32ConsoleBuffer",
+      "Scraper"
+    ],
+    "lineCount": 94
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/SimplePool.h",
+    "hash": "8f9d95d4cdd84f313332bf28892eedf8",
+    "symbolCount": 3,
+    "symbols": [
+      "SimplePool",
+      "Chunk",
+      "for"
+    ],
+    "lineCount": 60
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/SmallRect.h",
+    "hash": "f9691a7df081f664a917f0b81ba45d87",
+    "symbolCount": 11,
+    "symbols": [
+      "SmallRect",
+      "if",
+      "top",
+      "left",
+      "width",
+      "height",
+      "setTop",
+      "setLeft",
+      "setWidth",
+      "setHeight",
+      "size"
+    ],
+    "lineCount": 111
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/Terminal.h",
+    "hash": "19f95cb39e3dd74239679047d8e4db53",
+    "symbolCount": 2,
+    "symbols": [
+      "NamedPipe",
+      "Terminal"
+    ],
+    "lineCount": 57
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/UnicodeEncoding.h",
+    "hash": "c44bce6522152fb1a20d24f680c8f98d",
+    "symbolCount": 10,
+    "symbols": [
+      "encodeUtf8",
+      "if",
+      "if",
+      "encodeUtf16",
+      "if",
+      "if",
+      "utf8CharLength",
+      "decodeUtf8",
+      "if",
+      "decodeSurrogatePair"
+    ],
+    "lineCount": 133
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/Win32Console.h",
+    "hash": "4adcde67ae812d069b7e30de518aa30b",
+    "symbolCount": 7,
+    "symbols": [
+      "Win32Console",
+      "FreezeGuard",
+      "hwnd",
+      "setFreezeUsesMark",
+      "setNewW10",
+      "isNewW10",
+      "frozen"
+    ],
+    "lineCount": 59
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/agent/Win32ConsoleBuffer.h",
+    "hash": "52c638a329f609d206eba5d088e16cc1",
+    "symbolCount": 7,
+    "symbols": [
+      "ConsoleScreenBufferInfo",
+      "bufferSize",
+      "windowRect",
+      "cursorPosition",
+      "Win32ConsoleBuffer",
+      "if",
+      "resizeBufferRange"
+    ],
+    "lineCount": 82
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/include/winpty.h",
+    "hash": "3ea9f32123f019d33ec8613912a93773",
+    "symbolCount": 4,
+    "symbols": [
+      "winpty_error_s",
+      "winpty_config_s",
+      "winpty_s",
+      "winpty_spawn_config_s"
+    ],
+    "lineCount": 236
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/include/winpty_constants.h",
+    "hash": "5e9d06644acef135bf94aedff1e937a5",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 143
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/libwinpty/AgentLocation.h",
+    "hash": "92c08f8e3bca2d7b0f0acb1be30bebda",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 32
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/libwinpty/LibWinptyException.h",
+    "hash": "5244436db778a359cc5637c73a174479",
+    "symbolCount": 1,
+    "symbols": [
+      "LibWinptyException"
+    ],
+    "lineCount": 50
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/libwinpty/WinptyInternal.h",
+    "hash": "2103cb43897af823280116f6f21dc44c",
+    "symbolCount": 4,
+    "symbols": [
+      "winpty_error_s",
+      "winpty_config_s",
+      "winpty_s",
+      "winpty_spawn_config_s"
+    ],
+    "lineCount": 60
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/AgentMsg.h",
+    "hash": "ea53414fb01e8c2047bed659badb2e5e",
+    "symbolCount": 1,
+    "symbols": [
+      "AgentMsg"
+    ],
+    "lineCount": 36
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/BackgroundDesktop.h",
+    "hash": "8d28568db546460b413f7320786b961d",
+    "symbolCount": 1,
+    "symbols": [
+      "BackgroundDesktop"
+    ],
+    "lineCount": 71
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/Buffer.h",
+    "hash": "bb73465c301b82054b4c046d8e59376e",
+    "symbolCount": 9,
+    "symbols": [
+      "WriteBuffer",
+      "WriteBuffer",
+      "putRawValue",
+      "replaceRawValue",
+      "putWString",
+      "putWString",
+      "ReadBuffer",
+      "DecodeError",
+      "getRawValue"
+    ],
+    "lineCount": 85
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/DebugClient.h",
+    "hash": "d3ad6a2937fcbd052976187e5d3e4cc1",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 43
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/GenRandom.h",
+    "hash": "2e402639de9ec53c8a35370db3815f7c",
+    "symbolCount": 2,
+    "symbols": [
+      "GenRandom",
+      "valid"
+    ],
+    "lineCount": 51
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/Mutex.h",
+    "hash": "11641cacdadf71bcf1e9c21c8a4af4f9",
+    "symbolCount": 5,
+    "symbols": [
+      "Mutex",
+      "Mutex",
+      "lock",
+      "unlock",
+      "LockGuard"
+    ],
+    "lineCount": 55
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/OsModule.h",
+    "hash": "af7b7b2c079d3e00042fd2471aa7e15e",
+    "symbolCount": 7,
+    "symbols": [
+      "OsModule",
+      "OsModule",
+      "if",
+      "if",
+      "handle",
+      "proc",
+      "if"
+    ],
+    "lineCount": 58
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/OwnedHandle.h",
+    "hash": "02da1188f5b979354e692c494a76591e",
+    "symbolCount": 3,
+    "symbols": [
+      "OwnedHandle",
+      "get",
+      "release"
+    ],
+    "lineCount": 47
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/PrecompiledHeader.h",
+    "hash": "c4bfa6d1f99a0649f7a41a458dd28b15",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 39
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/StringBuilder.h",
+    "hash": "d404f1cd2b4a6f976bb53c4955f07e1a",
+    "symbolCount": 14,
+    "symbols": [
+      "ValueString",
+      "size",
+      "str",
+      "if",
+      "if",
+      "if",
+      "for",
+      "if",
+      "for",
+      "GStringBuilder",
+      "GStringBuilder",
+      "GStringBuilder",
+      "str",
+      "str_moved"
+    ],
+    "lineCount": 213
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/StringUtil.h",
+    "hash": "2f438c562738b8356667bf7bf12dfdd5",
+    "symbolCount": 5,
+    "symbols": [
+      "vectorFromString",
+      "vectorWithNulFromString",
+      "for",
+      "if",
+      "for"
+    ],
+    "lineCount": 67
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/TimeMeasurement.h",
+    "hash": "46428cf10418f377ddcbc0116b2b1c3c",
+    "symbolCount": 5,
+    "symbols": [
+      "TimeMeasurement",
+      "TimeMeasurement",
+      "elapsed",
+      "getFrequency",
+      "value"
+    ],
+    "lineCount": 55
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/UnixCtrlChars.h",
+    "hash": "67786393a255d14d38435dcbf059d2e9",
+    "symbolCount": 2,
+    "symbols": [
+      "decodeUnixCtrlChar",
+      "if"
+    ],
+    "lineCount": 51
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/WindowsSecurity.h",
+    "hash": "353c46e0af850e2638e4f3be214bed08",
+    "symbolCount": 7,
+    "symbols": [
+      "SidTag",
+      "AclTag",
+      "SecurityDescriptorTag",
+      "SecurityItem",
+      "Impl",
+      "get",
+      "bool"
+    ],
+    "lineCount": 87
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/WindowsVersion.h",
+    "hash": "b80d587d70cd628e00515156fed2e16c",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 34
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/WinptyAssert.h",
+    "hash": "0cda9bf4832e42065ee7f19097136a2e",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 71
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/WinptyException.h",
+    "hash": "bd8bf6e9ceacfb1c38d7706d82ce8965",
+    "symbolCount": 1,
+    "symbols": [
+      "WinptyException"
+    ],
+    "lineCount": 42
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/WinptyVersion.h",
+    "hash": "d43dec6ca1cac405459448e1a0573f89",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 32
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/shared/winpty_snprintf.h",
+    "hash": "1c603fa206b079b54742e7bc8a51a533",
+    "symbolCount": 1,
+    "symbols": [
+      "winpty_snprintf"
+    ],
+    "lineCount": 92
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/unix-adapter/InputHandler.h",
+    "hash": "56848f481ffa1b540e27e13e7ec73c39",
+    "symbolCount": 3,
+    "symbols": [
+      "InputHandler",
+      "isComplete",
+      "startShutdown"
+    ],
+    "lineCount": 52
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/unix-adapter/OutputHandler.h",
+    "hash": "365f9b264d38608ed223198b365b9abc",
+    "symbolCount": 2,
+    "symbols": [
+      "OutputHandler",
+      "isComplete"
+    ],
+    "lineCount": 49
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/unix-adapter/Util.h",
+    "hash": "c7a25ee33f50818f000e3a1488694ae5",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 36
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/deps/winpty/src/unix-adapter/WakeupFd.h",
+    "hash": "36f5d7c360f465ff207675df57af8580",
+    "symbolCount": 2,
+    "symbols": [
+      "WakeupFd",
+      "fd"
+    ],
+    "lineCount": 39
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/conpty_console_list_agent.js",
+    "hash": "9f20eb554addc05a0948b6e441914f3b",
+    "symbolCount": 4,
+    "symbols": [
+      "utils_1",
+      "getConsoleProcessList",
+      "shellPid",
+      "consoleProcessList"
+    ],
+    "lineCount": 19
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/eventEmitter2.js",
+    "hash": "1c7c2a107991b0a0f26a07c56fc7819e",
+    "symbolCount": 3,
+    "symbols": [
+      "EventEmitter2",
+      "EventEmitter2",
+      "EventEmitter2"
+    ],
+    "lineCount": 40
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/eventEmitter2.test.js",
+    "hash": "2007e7f9b499a3d493bf9c944c95053d",
+    "symbolCount": 2,
+    "symbols": [
+      "assert",
+      "eventEmitter2_1"
+    ],
+    "lineCount": 32
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/index.js",
+    "hash": "8248244e34619fbc801b33439111f1a9",
+    "symbolCount": 12,
+    "symbols": [
+      "spawn",
+      "fork",
+      "createTerminal",
+      "open",
+      "utils_1",
+      "terminalCtor",
+      "native",
+      "spawn",
+      "fork",
+      "createTerminal",
+      "open",
+      "native"
+    ],
+    "lineCount": 51
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/interfaces.js",
+    "hash": "4c9a3e0ca982c52d0cb6bb5e46a78a29",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 6
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/shared/conout.js",
+    "hash": "958082d3a727bcb0ef7c300b25e8f819",
+    "symbolCount": 3,
+    "symbols": [
+      "getWorkerPipeName",
+      "getWorkerPipeName",
+      "getWorkerPipeName"
+    ],
+    "lineCount": 9
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/terminal.js",
+    "hash": "d4e217b17aadaa890d9eae24115e5336",
+    "symbolCount": 9,
+    "symbols": [
+      "events_1",
+      "eventEmitter2_1",
+      "FLOW_CONTROL_PAUSE",
+      "FLOW_CONTROL_RESUME",
+      "Terminal",
+      "Terminal",
+      "DEFAULT_COLS",
+      "DEFAULT_ROWS",
+      "Terminal"
+    ],
+    "lineCount": 187
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/terminal.test.js",
+    "hash": "f0734621deacef6e533c2d0b74cf0ad2",
+    "symbolCount": 10,
+    "symbols": [
+      "stripEscapeSequences",
+      "__extends",
+      "assert",
+      "windowsTerminal_1",
+      "unixTerminal_1",
+      "terminal_1",
+      "terminalConstructor",
+      "SHELL",
+      "terminalCtor",
+      "TestTerminal"
+    ],
+    "lineCount": 157
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/testUtils.test.js",
+    "hash": "c8441226c91f5144a8cfa8063fa43e2e",
+    "symbolCount": 3,
+    "symbols": [
+      "pollUntil",
+      "pollUntil",
+      "pollUntil"
+    ],
+    "lineCount": 21
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/types.js",
+    "hash": "3b536d02531f45ccc8b1a366be60b090",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 6
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/unixTerminal.js",
+    "hash": "70b62636744a9f76400210beabda714c",
+    "symbolCount": 16,
+    "symbols": [
+      "__extends",
+      "fs",
+      "path",
+      "tty",
+      "terminal_1",
+      "utils_1",
+      "native",
+      "pty",
+      "helperPath",
+      "DEFAULT_FILE",
+      "DEFAULT_NAME",
+      "DESTROY_SOCKET_TIMEOUT_MS",
+      "UnixTerminal",
+      "CustomWriteStream",
+      "UnixTerminal",
+      "UnixTerminal"
+    ],
+    "lineCount": 335
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/unixTerminal.test.js",
+    "hash": "39059292f908b0b8125d3a0c64957678",
+    "symbolCount": 11,
+    "symbols": [
+      "__awaiter",
+      "__generator",
+      "unixTerminal_1",
+      "assert",
+      "cp",
+      "path",
+      "tty",
+      "fs",
+      "os_1",
+      "testUtils_test_1",
+      "FIXTURES_PATH"
+    ],
+    "lineCount": 483
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/utils.js",
+    "hash": "e009fe49e65c61a3d07a9680b787b82c",
+    "symbolCount": 5,
+    "symbols": [
+      "assign",
+      "loadNativeModule",
+      "loadNativeModule",
+      "assign",
+      "loadNativeModule"
+    ],
+    "lineCount": 39
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/windowsConoutConnection.js",
+    "hash": "e6ef01deaeaa1c0f0ff45a081ef27696",
+    "symbolCount": 10,
+    "symbols": [
+      "__awaiter",
+      "__generator",
+      "worker_threads_1",
+      "conout_1",
+      "path_1",
+      "eventEmitter2_1",
+      "FLUSH_DATA_INTERVAL",
+      "ConoutConnection",
+      "ConoutConnection",
+      "ConoutConnection"
+    ],
+    "lineCount": 153
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/windowsPtyAgent.js",
+    "hash": "7c12d4c1776629a17471e16ee5f30234",
+    "symbolCount": 18,
+    "symbols": [
+      "argsToCommandLine",
+      "isCommandLine",
+      "repeatText",
+      "xOr",
+      "fs",
+      "os",
+      "path",
+      "child_process_1",
+      "net_1",
+      "windowsConoutConnection_1",
+      "utils_1",
+      "conptyNative",
+      "winptyNative",
+      "FLUSH_DATA_INTERVAL",
+      "WindowsPtyAgent",
+      "argsToCommandLine",
+      "WindowsPtyAgent",
+      "argsToCommandLine"
+    ],
+    "lineCount": 310
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/windowsPtyAgent.test.js",
+    "hash": "27f572dc4d1ac53d040d3476cbe6af16",
+    "symbolCount": 3,
+    "symbols": [
+      "check",
+      "assert",
+      "windowsPtyAgent_1"
+    ],
+    "lineCount": 104
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/windowsTerminal.js",
+    "hash": "e4d2fb6f123c97a302c6c6bb0ebb50b7",
+    "symbolCount": 9,
+    "symbols": [
+      "__extends",
+      "terminal_1",
+      "windowsPtyAgent_1",
+      "utils_1",
+      "DEFAULT_FILE",
+      "DEFAULT_NAME",
+      "WindowsTerminal",
+      "WindowsTerminal",
+      "WindowsTerminal"
+    ],
+    "lineCount": 197
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/windowsTerminal.test.js",
+    "hash": "16dfd4e47ff288c698e1c03c8599d4de",
+    "symbolCount": 7,
+    "symbols": [
+      "pollForProcessState",
+      "pollForProcessTreeSize",
+      "fs",
+      "assert",
+      "windowsTerminal_1",
+      "path",
+      "psList"
+    ],
+    "lineCount": 269
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/lib/worker/conoutSocketWorker.js",
+    "hash": "bff6e22e0549b676a5e3cf0269a49210",
+    "symbolCount": 5,
+    "symbols": [
+      "worker_threads_1",
+      "net_1",
+      "conout_1",
+      "conoutPipeName",
+      "conoutSocket"
+    ],
+    "lineCount": 22
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/scripts/gen-compile-commands.js",
+    "hash": "8b10b20c1bc4bc56c7e7802e989248e3",
+    "symbolCount": 1,
+    "symbols": [
+      "{ execSync }"
+    ],
+    "lineCount": 7
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/scripts/increment-version.js",
+    "hash": "4e10634ee69023b1dff8e229aa12c0b4",
+    "symbolCount": 11,
+    "symbols": [
+      "getNextBetaVersion",
+      "getPublishedVersions",
+      "cp",
+      "fs",
+      "path",
+      "packageJson",
+      "publishedVersions",
+      "isStableRelease",
+      "nextVersion",
+      "packageJsonFile",
+      "version"
+    ],
+    "lineCount": 55
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/scripts/post-install.js",
+    "hash": "c7c708f4b2a73e6a3e2bded248a24cde",
+    "symbolCount": 8,
+    "symbols": [
+      "cleanFolderRecursive",
+      "fs",
+      "os",
+      "path",
+      "RELEASE_DIR",
+      "BUILD_FILES",
+      "CONPTY_DIR",
+      "CONPTY_SUPPORTED_ARCH"
+    ],
+    "lineCount": 65
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/scripts/prebuild.js",
+    "hash": "563d19efc98660bc422670fb27395340",
+    "symbolCount": 4,
+    "symbols": [
+      "fs",
+      "path",
+      "PREBUILDS_ROOT",
+      "PREBUILD_DIR"
+    ],
+    "lineCount": 30
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/conpty_console_list_agent.ts",
+    "hash": "713ef9f37472415e3e42166c2789dd7c",
+    "symbolCount": 3,
+    "symbols": [
+      "getConsoleProcessList",
+      "shellPid",
+      "consoleProcessList"
+    ],
+    "lineCount": 15
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/eventEmitter2.test.ts",
+    "hash": "f01afabde92612332b18ca084a658f24",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 25
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/eventEmitter2.ts",
+    "hash": "c76e3ddaa1cfb8d7eec9244424199a7b",
+    "symbolCount": 3,
+    "symbols": [
+      "EventEmitter2",
+      "IListener",
+      "IEvent"
+    ],
+    "lineCount": 28
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/index.ts",
+    "hash": "857f9195de576ad1cc6183852ff0a90c",
+    "symbolCount": 6,
+    "symbols": [
+      "spawn",
+      "fork",
+      "createTerminal",
+      "open",
+      "terminalCtor",
+      "native"
+    ],
+    "lineCount": 54
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/interfaces.ts",
+    "hash": "c2377261b05ca4562f559bb3c82fa533",
+    "symbolCount": 6,
+    "symbols": [
+      "IProcessEnv",
+      "ITerminal",
+      "IBasePtyForkOptions",
+      "IPtyForkOptions",
+      "IWindowsPtyForkOptions",
+      "IPtyOpenOptions"
+    ],
+    "lineCount": 72
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/shared/conout.ts",
+    "hash": "5a0b7b86008f43deafd779af7e8f0500",
+    "symbolCount": 3,
+    "symbols": [
+      "getWorkerPipeName",
+      "IWorkerData",
+      "ConoutWorkerMessage"
+    ],
+    "lineCount": 8
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/terminal.test.ts",
+    "hash": "14b05a62a6d96a1c426b9d294b9ac0c3",
+    "symbolCount": 5,
+    "symbols": [
+      "stripEscapeSequences",
+      "TestTerminal",
+      "terminalConstructor",
+      "SHELL",
+      "terminalCtor"
+    ],
+    "lineCount": 109
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/terminal.ts",
+    "hash": "3197667c6c7756de3315e7d8c2cc5bb7",
+    "symbolCount": 5,
+    "symbols": [
+      "Terminal",
+      "DEFAULT_COLS",
+      "DEFAULT_ROWS",
+      "FLOW_CONTROL_PAUSE",
+      "FLOW_CONTROL_RESUME"
+    ],
+    "lineCount": 168
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/testUtils.test.ts",
+    "hash": "703021d6ce64859c00c2db8c9b7913bd",
+    "symbolCount": 1,
+    "symbols": [
+      "pollUntil"
+    ],
+    "lineCount": 15
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/types.ts",
+    "hash": "eb24ec6b3c5fbe8281ac9f48b06c742b",
+    "symbolCount": 3,
+    "symbols": [
+      "IExitEvent",
+      "IDisposable",
+      "ArgvOrCommandLine"
+    ],
+    "lineCount": 8
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/unixTerminal.test.ts",
+    "hash": "9126db9d6617630109675f196dc5ad4f",
+    "symbolCount": 1,
+    "symbols": [
+      "FIXTURES_PATH"
+    ],
+    "lineCount": 328
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/unixTerminal.ts",
+    "hash": "2e96d76bc9543b9e3347c7c232653648",
+    "symbolCount": 9,
+    "symbols": [
+      "UnixTerminal",
+      "CustomWriteStream",
+      "IWriteTask",
+      "native",
+      "pty",
+      "helperPath",
+      "DEFAULT_FILE",
+      "DEFAULT_NAME",
+      "DESTROY_SOCKET_TIMEOUT_MS"
+    ],
+    "lineCount": 275
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/utils.ts",
+    "hash": "77f12e087ba15374d01833e9a835350f",
+    "symbolCount": 2,
+    "symbols": [
+      "assign",
+      "loadNativeModule"
+    ],
+    "lineCount": 25
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/win/conpty.h",
+    "hash": "4a68a91a83defee47eba109fcbc3bb13",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 44
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/win/path_util.h",
+    "hash": "7928127176fb3d8e9eeb10f23699daa1",
+    "symbolCount": 1,
+    "symbols": [
+      "path_util"
+    ],
+    "lineCount": 18
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/windowsConoutConnection.ts",
+    "hash": "8d4820d3492adac95ec8da2dd5a7dfd5",
+    "symbolCount": 2,
+    "symbols": [
+      "ConoutConnection",
+      "FLUSH_DATA_INTERVAL"
+    ],
+    "lineCount": 69
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/windowsPtyAgent.test.ts",
+    "hash": "bb25b3989adcd19f819833f54b64de6e",
+    "symbolCount": 1,
+    "symbols": [
+      "check"
+    ],
+    "lineCount": 86
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/windowsPtyAgent.ts",
+    "hash": "52a604f8c2ba762cb6a4598738b60d3f",
+    "symbolCount": 8,
+    "symbols": [
+      "argsToCommandLine",
+      "isCommandLine",
+      "repeatText",
+      "xOr",
+      "WindowsPtyAgent",
+      "conptyNative",
+      "winptyNative",
+      "FLUSH_DATA_INTERVAL"
+    ],
+    "lineCount": 260
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/windowsTerminal.test.ts",
+    "hash": "10baea69df3f56a471a5081f22b5aa18",
+    "symbolCount": 4,
+    "symbols": [
+      "pollForProcessState",
+      "pollForProcessTreeSize",
+      "IProcessState",
+      "IWindowsProcessTreeResult"
+    ],
+    "lineCount": 205
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/windowsTerminal.ts",
+    "hash": "ffda93e9205d2b2af355574901187ad4",
+    "symbolCount": 3,
+    "symbols": [
+      "WindowsTerminal",
+      "DEFAULT_FILE",
+      "DEFAULT_NAME"
+    ],
+    "lineCount": 144
+  },
+  {
+    "path": "release/mac-arm64/Praxis.app/Contents/Resources/app.asar.unpacked/node_modules/node-pty/src/worker/conoutSocketWorker.ts",
+    "hash": "0d7552ca8b8161cbc5d460a61d24f7e2",
+    "symbolCount": 2,
+    "symbols": [
+      "{ conoutPipeName }",
+      "conoutSocket"
+    ],
+    "lineCount": 18
+  },
+  {
+    "path": "scripts/patch-electron-name.js",
+    "hash": "556ea2c3dccb95a56a9c7d806ec87a89",
+    "symbolCount": 5,
+    "symbols": [
+      "{ execSync }",
+      "path",
+      "fs",
+      "appPath",
+      "plistPath"
+    ],
+    "lineCount": 26
+  },
+  {
+    "path": "src/App.tsx",
+    "hash": "3133579310e456b748d5e7db342760cb",
+    "symbolCount": 2,
+    "symbols": [
+      "getProjectFromURL",
+      "App"
+    ],
+    "lineCount": 122
+  },
+  {
+    "path": "src/components/agents/AgentCard.tsx",
+    "hash": "3b533f778015c5886527bd5a42eb5ade",
+    "symbolCount": 2,
+    "symbols": [
+      "AgentCard",
+      "AgentCardProps"
+    ],
+    "lineCount": 254
+  },
+  {
+    "path": "src/components/agents/AgentGroupHeader.tsx",
+    "hash": "3e16da20a4584ec9a890521feb3b6378",
+    "symbolCount": 1,
+    "symbols": [
+      "AgentGroupHeader"
+    ],
+    "lineCount": 20
+  },
+  {
+    "path": "src/components/agents/AgentList.tsx",
+    "hash": "e795109f7cb6a73b19180fea0eb84101",
+    "symbolCount": 2,
+    "symbols": [
+      "AgentList",
+      "WorkspaceGroup"
+    ],
+    "lineCount": 125
+  },
+  {
+    "path": "src/components/browser/BrowserLanding.tsx",
+    "hash": "57d8fb3ed967dbd37ae727d42e800d23",
+    "symbolCount": 5,
+    "symbols": [
+      "BrowserLanding",
+      "getFaviconUrl",
+      "FavoriteCard",
+      "BrowserLandingProps",
+      "inputStyle"
+    ],
+    "lineCount": 286
+  },
+  {
+    "path": "src/components/browser/BrowserPanel.tsx",
+    "hash": "9ca5750f3954bdcf1fa974a2abcb867e",
+    "symbolCount": 5,
+    "symbols": [
+      "BrowserPanel",
+      "WebviewContainer",
+      "injectCustomStyles",
+      "mapErrorCodeToType",
+      "WebviewContainerProps"
+    ],
+    "lineCount": 318
+  },
+  {
+    "path": "src/components/browser/ErrorPage.tsx",
+    "hash": "6726faa439e709f28231b2ee4661c060",
+    "symbolCount": 3,
+    "symbols": [
+      "ErrorPage",
+      "ErrorPageProps",
+      "ERROR_CONFIG"
+    ],
+    "lineCount": 122
+  },
+  {
+    "path": "src/components/browser/NavigationBar.tsx",
+    "hash": "97e70c3edaebe9b2d1cc817ddc88a898",
+    "symbolCount": 4,
+    "symbols": [
+      "NavigationBar",
+      "NavButton",
+      "NavigationBarProps",
+      "NavButtonProps"
+    ],
+    "lineCount": 185
+  },
+  {
+    "path": "src/components/browser/TabBar.tsx",
+    "hash": "cccee5c661a953e7a36aa5d2b8f6d989",
+    "symbolCount": 2,
+    "symbols": [
+      "TabBar",
+      "TabBarProps"
+    ],
+    "lineCount": 257
+  },
+  {
+    "path": "src/components/browser/TabContextMenu.tsx",
+    "hash": "06b006e82dff5b0e94f9382a6a6eb5ef",
+    "symbolCount": 4,
+    "symbols": [
+      "TabContextMenu",
+      "ContextMenuPosition",
+      "TabContextMenuProps",
+      "MenuItem"
+    ],
+    "lineCount": 210
+  },
+  {
+    "path": "src/components/browser/TabGroupIndicator.tsx",
+    "hash": "2add8ebae771f5c32b329267b7bfb704",
+    "symbolCount": 5,
+    "symbols": [
+      "TabGroupIndicator",
+      "CreateGroupDialog",
+      "AddToGroupButton",
+      "TabGroupIndicatorProps",
+      "CreateGroupDialogProps"
+    ],
+    "lineCount": 227
+  },
+  {
+    "path": "src/components/editor/CodeEditor.tsx",
+    "hash": "b89d40240e301b5b646f7d205371881b",
+    "symbolCount": 6,
+    "symbols": [
+      "CodeEditor",
+      "CodeEditorProps",
+      "FONT",
+      "FONT_SIZE",
+      "LINE_HEIGHT",
+      "PADDING"
+    ],
+    "lineCount": 186
+  },
+  {
+    "path": "src/components/editor/EditorPanel.tsx",
+    "hash": "fb7c8aa37f5086a6677c7a286b9d66c7",
+    "symbolCount": 1,
+    "symbols": [
+      "EditorPanel"
+    ],
+    "lineCount": 151
+  },
+  {
+    "path": "src/components/explorer/FileExplorer.tsx",
+    "hash": "aac9c242c7b4afa334ad198c5a8a769b",
+    "symbolCount": 1,
+    "symbols": [
+      "formatSize"
+    ],
+    "lineCount": 341
+  },
+  {
+    "path": "src/components/layout/AppShell.tsx",
+    "hash": "2bb4596b43d341a654cb2b17fe53ca58",
+    "symbolCount": 5,
+    "symbols": [
+      "AppShell",
+      "DropOverlay",
+      "WidgetCatalog",
+      "SIDEBAR_COLLAPSED_WIDTH",
+      "TASK_PANEL_WIDTH"
+    ],
+    "lineCount": 289
+  },
+  {
+    "path": "src/components/layout/BottomPanel.tsx",
+    "hash": "733079596acf8aa6c789493c5b0f708d",
+    "symbolCount": 1,
+    "symbols": [
+      "BottomPanel"
+    ],
+    "lineCount": 22
+  },
+  {
+    "path": "src/components/layout/MainPanel.tsx",
+    "hash": "6495a90d14f53cc1eb76c3a37823f6c0",
+    "symbolCount": 1,
+    "symbols": [
+      "EMPTY_LEAF"
+    ],
+    "lineCount": 38
+  },
+  {
+    "path": "src/components/layout/Sidebar.tsx",
+    "hash": "5980c5f10b15a7369a073ed1f672d14e",
+    "symbolCount": 3,
+    "symbols": [
+      "Sidebar",
+      "SidebarTab",
+      "tabs"
+    ],
+    "lineCount": 158
+  },
+  {
+    "path": "src/components/missions/AgentPicker.tsx",
+    "hash": "2395ade2e4b3b4aad78bf5178b3f79be",
+    "symbolCount": 2,
+    "symbols": [
+      "AgentPicker",
+      "AgentPickerProps"
+    ],
+    "lineCount": 175
+  },
+  {
+    "path": "src/components/missions/MissionBoard.tsx",
+    "hash": "629def6d33e293ea859615a0ecb841d2",
+    "symbolCount": 6,
+    "symbols": [
+      "MissionBoard",
+      "StepTree",
+      "StepRow",
+      "MissionBoardProps",
+      "STATUS_ICONS",
+      "STATUS_COLORS"
+    ],
+    "lineCount": 324
+  },
+  {
+    "path": "src/components/missions/MissionCreateDialog.tsx",
+    "hash": "94c696c8b260a37327c138dc265abc48",
+    "symbolCount": 2,
+    "symbols": [
+      "MissionCreateDialog",
+      "MissionCreateDialogProps"
+    ],
+    "lineCount": 166
+  },
+  {
+    "path": "src/components/missions/MissionExportImportDialog.tsx",
+    "hash": "8eded103d1b070bccca9a0cc83f9fd38",
+    "symbolCount": 8,
+    "symbols": [
+      "countSteps",
+      "validateImportData",
+      "MissionExportImportDialog",
+      "ExportTab",
+      "ImportTab",
+      "actionBtnStyle",
+      "Props",
+      "AI_PROMPT"
+    ],
+    "lineCount": 626
+  },
+  {
+    "path": "src/components/missions/MissionFlowChart.tsx",
+    "hash": "4137f28f803212fd7373012ae5c83cbc",
+    "symbolCount": 6,
+    "symbols": [
+      "MissionFlowChart",
+      "MissionFlowChartProps",
+      "PADDING",
+      "MIN_ZOOM",
+      "MAX_ZOOM",
+      "PORT_RADIUS"
+    ],
+    "lineCount": 533
+  },
+  {
+    "path": "src/components/missions/MissionList.tsx",
+    "hash": "baaf0a213df21e6e97c2d4a45d37602a",
+    "symbolCount": 2,
+    "symbols": [
+      "MissionList",
+      "MissionListProps"
+    ],
+    "lineCount": 258
+  },
+  {
+    "path": "src/components/missions/MissionStepDialog.tsx",
+    "hash": "b953f182f048e928399cbd5e55f37293",
+    "symbolCount": 2,
+    "symbols": [
+      "MissionStepDialog",
+      "MissionStepDialogProps"
+    ],
+    "lineCount": 225
+  },
+  {
+    "path": "src/components/missions/MissionStepEdge.tsx",
+    "hash": "ab00fa8c77a3537912270b529a319e1d",
+    "symbolCount": 3,
+    "symbols": [
+      "MissionStepEdge",
+      "MissionStepEdgeProps",
+      "STATUS_COLORS"
+    ],
+    "lineCount": 87
+  },
+  {
+    "path": "src/components/missions/MissionStepNode.tsx",
+    "hash": "b6d1a3353165bad29763bd2578d5e8e4",
+    "symbolCount": 3,
+    "symbols": [
+      "MissionStepNode",
+      "MissionStepNodeProps",
+      "STATUS_CONFIG"
+    ],
+    "lineCount": 285
+  },
+  {
+    "path": "src/components/project/ProjectSelect.tsx",
+    "hash": "6c8eda065c7d833aff0d8182f268cc65",
+    "symbolCount": 2,
+    "symbols": [
+      "truncatePath",
+      "ProjectSelect"
+    ],
+    "lineCount": 230
+  },
+  {
+    "path": "src/components/settings/SettingsPanel.tsx",
+    "hash": "9847f0176ca9246e3c770d7bbe978b8f",
+    "symbolCount": 9,
+    "symbols": [
+      "SettingsPanel",
+      "SettingsTab",
+      "TABS",
+      "COLOR_TOKEN_GROUPS",
+      "TOKEN_LABELS",
+      "AGENT_COLORS",
+      "iconBtnStyle",
+      "fieldLabelStyle",
+      "fieldInputStyle"
+    ],
+    "lineCount": 741
+  },
+  {
+    "path": "src/components/sidebar/GitPanel.tsx",
+    "hash": "d41a5f1e6cfcaac5c2b6d0d00c3412f2",
+    "symbolCount": 2,
+    "symbols": [
+      "GitPanel",
+      "FileSection"
+    ],
+    "lineCount": 313
+  },
+  {
+    "path": "src/components/sidebar/SearchPanel.tsx",
+    "hash": "b5bb7a8648acbf742ec6e46f4526c99e",
+    "symbolCount": 1,
+    "symbols": [
+      "SearchPanel"
+    ],
+    "lineCount": 181
+  },
+  {
+    "path": "src/components/sidebar/ServicesPanel.tsx",
+    "hash": "6452fa9ac48410babe565235c3fcdfbb",
+    "symbolCount": 1,
+    "symbols": [
+      "ServicesPanel"
+    ],
+    "lineCount": 126
+  },
+  {
+    "path": "src/components/stats/StatsBar.tsx",
+    "hash": "54e3b814178201fb677ebdd35958f5bc",
+    "symbolCount": 1,
+    "symbols": [
+      "StatsBar"
+    ],
+    "lineCount": 794
+  },
+  {
+    "path": "src/components/stats/UsagePanel.tsx",
+    "hash": "aa0442f8c87ad45e077f8afbdcb91a42",
+    "symbolCount": 6,
+    "symbols": [
+      "UsagePanel",
+      "ProviderCard",
+      "getUtilizationColor",
+      "formatResetTime",
+      "UsagePanelProps",
+      "PROVIDER_TABS"
+    ],
+    "lineCount": 375
+  },
+  {
+    "path": "src/components/tasks/TaskBoard.tsx",
+    "hash": "3f6d91f04e71d11bb5964c9978a85c26",
+    "symbolCount": 3,
+    "symbols": [
+      "sortByDate",
+      "Props",
+      "statusSections"
+    ],
+    "lineCount": 401
+  },
+  {
+    "path": "src/components/tasks/TaskCard.tsx",
+    "hash": "c02f751e8f0d231e64afe34a2155245d",
+    "symbolCount": 7,
+    "symbols": [
+      "hashString",
+      "getTagColor",
+      "TaskCard",
+      "AgentPicker",
+      "Props",
+      "TAG_PALETTE",
+      "statusColors"
+    ],
+    "lineCount": 563
+  },
+  {
+    "path": "src/components/tasks/TaskCreateDialog.tsx",
+    "hash": "b9279cff267f31f8894c20b875b4231c",
+    "symbolCount": 2,
+    "symbols": [
+      "TaskCreateDialog",
+      "Props"
+    ],
+    "lineCount": 184
+  },
+  {
+    "path": "src/components/terminal/ResizeHandle.tsx",
+    "hash": "cdc4090324af3805d12502bed8001bc7",
+    "symbolCount": 2,
+    "symbols": [
+      "ResizeHandle",
+      "ResizeHandleProps"
+    ],
+    "lineCount": 63
+  },
+  {
+    "path": "src/components/terminal/SpawnDialog.tsx",
+    "hash": "0353f6b3413f746202d71b2fd6c83e01",
+    "symbolCount": 4,
+    "symbols": [
+      "SpawnDialog",
+      "FlagOption",
+      "AgentPreset",
+      "AGENT_PRESETS"
+    ],
+    "lineCount": 955
+  },
+  {
+    "path": "src/components/terminal/SplitPaneLayout.tsx",
+    "hash": "5bcf138887b7906fa552c9f8cbf5d9f7",
+    "symbolCount": 2,
+    "symbols": [
+      "SplitPaneLayoutProps",
+      "EMPTY_PATH"
+    ],
+    "lineCount": 62
+  },
+  {
+    "path": "src/components/terminal/TerminalPane.tsx",
+    "hash": "047062b5b68564b14e80183fed4317a1",
+    "symbolCount": 7,
+    "symbols": [
+      "saveImageToTemp",
+      "pasteToTerminal",
+      "TerminalPane",
+      "DropOverlay",
+      "TerminalPaneProps",
+      "BRACKET_PASTE_START",
+      "BRACKET_PASTE_END"
+    ],
+    "lineCount": 532
+  },
+  {
+    "path": "src/components/terminal/TerminalTabs.tsx",
+    "hash": "4edae2f024b7e19224f937a1e1e0ace1",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 551
+  },
+  {
+    "path": "src/components/timeline/Timeline.tsx",
+    "hash": "09233796c879f2c6722b3910dfac5fcd",
+    "symbolCount": 1,
+    "symbols": [
+      "Timeline"
+    ],
+    "lineCount": 20
+  },
+  {
+    "path": "src/components/timeline/TimelineEntry.tsx",
+    "hash": "c209fdcb8deafc41cbcfe1d8a109450e",
+    "symbolCount": 4,
+    "symbols": [
+      "formatTime",
+      "truncate",
+      "TimelineEntry",
+      "typeIcons"
+    ],
+    "lineCount": 44
+  },
+  {
+    "path": "src/components/ui/CommandPalette.tsx",
+    "hash": "f793781f1b0785e2f4463fdc3962d66b",
+    "symbolCount": 2,
+    "symbols": [
+      "CommandPalette",
+      "Action"
+    ],
+    "lineCount": 210
+  },
+  {
+    "path": "src/components/ui/ConfirmDialog.tsx",
+    "hash": "e846a176f92221376eefa026c472249f",
+    "symbolCount": 1,
+    "symbols": [
+      "ConfirmDialog"
+    ],
+    "lineCount": 71
+  },
+  {
+    "path": "src/components/ui/OnboardingOverlay.tsx",
+    "hash": "50abba203869d1da7a1f3661cfbb0d58",
+    "symbolCount": 3,
+    "symbols": [
+      "OnboardingOverlay",
+      "StepDef",
+      "STEPS"
+    ],
+    "lineCount": 211
+  },
+  {
+    "path": "src/components/ui/ShortcutsDialog.tsx",
+    "hash": "239dd1fe4959d7a19ac356df524cfe3c",
+    "symbolCount": 5,
+    "symbols": [
+      "ShortcutsDialog",
+      "ShortcutsDialogProps",
+      "ShortcutEntry",
+      "mod",
+      "SECTIONS"
+    ],
+    "lineCount": 103
+  },
+  {
+    "path": "src/components/ui/Skeleton.tsx",
+    "hash": "d8ce7c2e27e29094151899ee1e845412",
+    "symbolCount": 1,
+    "symbols": [
+      "Skeleton"
+    ],
+    "lineCount": 10
+  },
+  {
+    "path": "src/components/ui/Toast.tsx",
+    "hash": "3a028d6de2c3a3b39a799a2eb1dad78d",
+    "symbolCount": 4,
+    "symbols": [
+      "ToastItem",
+      "ToastContainer",
+      "ICON_MAP",
+      "COLOR_MAP"
+    ],
+    "lineCount": 64
+  },
+  {
+    "path": "src/components/widgets/WidgetCard.tsx",
+    "hash": "f2ef18f69a72d584bcedd2ebb1ee5fa7",
+    "symbolCount": 2,
+    "symbols": [
+      "WidgetCardProps",
+      "LOADING_FALLBACK"
+    ],
+    "lineCount": 124
+  },
+  {
+    "path": "src/components/widgets/WidgetCatalog.tsx",
+    "hash": "7708a2c2f8de4716edd2fe0adc243a02",
+    "symbolCount": 6,
+    "symbols": [
+      "getIcon",
+      "WidgetCatalog",
+      "WidgetCatalogProps",
+      "CATEGORIES",
+      "CATEGORY_COLORS",
+      "ICON_MAP"
+    ],
+    "lineCount": 449
+  },
+  {
+    "path": "src/components/widgets/WorkspaceContent.tsx",
+    "hash": "84a19cd58fd6c94be736c76386ae86ce",
+    "symbolCount": 4,
+    "symbols": [
+      "WorkspaceContent",
+      "WorkspaceContentProps",
+      "EMPTY_WIDGETS",
+      "EMPTY_LAYOUT"
+    ],
+    "lineCount": 202
+  },
+  {
+    "path": "src/components/widgets/core/FileExplorerWidget.tsx",
+    "hash": "e60cb6367b9b706707bde92c2b14a688",
+    "symbolCount": 1,
+    "symbols": [
+      "FileExplorerWidget"
+    ],
+    "lineCount": 105
+  },
+  {
+    "path": "src/components/widgets/core/TasksWidget.tsx",
+    "hash": "0d20685cf46039d2f902403409788c41",
+    "symbolCount": 1,
+    "symbols": [
+      "TasksWidget"
+    ],
+    "lineCount": 65
+  },
+  {
+    "path": "src/components/widgets/core/TerminalWidget.tsx",
+    "hash": "5348d2d3d8323b041ee6d04cf82f7740",
+    "symbolCount": 1,
+    "symbols": [
+      "TerminalWidget"
+    ],
+    "lineCount": 7
+  },
+  {
+    "path": "src/components/widgets/development/DiffViewerWidget.tsx",
+    "hash": "fac2d1212693b950e152b4cacff9ae97",
+    "symbolCount": 6,
+    "symbols": [
+      "parseDiff",
+      "DiffLineView",
+      "DiffViewerWidget",
+      "SplitDiffView",
+      "DiffLine",
+      "ParsedDiff"
+    ],
+    "lineCount": 367
+  },
+  {
+    "path": "src/components/widgets/development/GitStatusWidget.tsx",
+    "hash": "02cc88440e34038b749377543043cc50",
+    "symbolCount": 4,
+    "symbols": [
+      "FileItem",
+      "GitStatusWidget",
+      "GitStatus",
+      "FileItemProps"
+    ],
+    "lineCount": 400
+  },
+  {
+    "path": "src/components/widgets/development/MarkdownPreviewWidget.tsx",
+    "hash": "56e6851f1735ed7684cdf67703dc5ae7",
+    "symbolCount": 2,
+    "symbols": [
+      "MarkdownPreviewWidget",
+      "previewStyles"
+    ],
+    "lineCount": 432
+  },
+  {
+    "path": "src/components/widgets/monitoring/AgentMonitorWidget.tsx",
+    "hash": "ef2ba64328c2dd238f77232ca6eaafb2",
+    "symbolCount": 2,
+    "symbols": [
+      "AgentMonitorWidget",
+      "Header"
+    ],
+    "lineCount": 199
+  },
+  {
+    "path": "src/components/widgets/monitoring/LogViewerWidget.tsx",
+    "hash": "215b8b869f860ce13eae1c2075d411b3",
+    "symbolCount": 6,
+    "symbols": [
+      "getLineColor",
+      "LogViewerWidget",
+      "VirtualLogList",
+      "MAX_LINES",
+      "ROW_HEIGHT",
+      "OVERSCAN"
+    ],
+    "lineCount": 332
+  },
+  {
+    "path": "src/components/widgets/monitoring/PortMonitorWidget.tsx",
+    "hash": "93fc7c02aac5a628599be930b8331c23",
+    "symbolCount": 3,
+    "symbols": [
+      "ProcessTooltip",
+      "PortMonitorWidget",
+      "PortEntry"
+    ],
+    "lineCount": 293
+  },
+  {
+    "path": "src/components/widgets/monitoring/SystemMonitorWidget.tsx",
+    "hash": "bc9f81b4739fbff4ac772216f69675be",
+    "symbolCount": 7,
+    "symbols": [
+      "Sparkline",
+      "Gauge",
+      "NetworkGauge",
+      "SettingsPanel",
+      "SystemMonitorWidget",
+      "SystemStats",
+      "HistoryPoint"
+    ],
+    "lineCount": 308
+  },
+  {
+    "path": "src/components/widgets/productivity/BookmarksWidget.tsx",
+    "hash": "e72956ce49db15f480cf889bc94c21d3",
+    "symbolCount": 4,
+    "symbols": [
+      "getFaviconUrl",
+      "BookmarksWidget",
+      "Bookmark",
+      "BookmarkGroup"
+    ],
+    "lineCount": 632
+  },
+  {
+    "path": "src/components/widgets/productivity/NotesWidget.tsx",
+    "hash": "81e6c0a57cbdcb72bbed9eea086aa9bb",
+    "symbolCount": 3,
+    "symbols": [
+      "NotesWidget",
+      "Note",
+      "noteStyles"
+    ],
+    "lineCount": 409
+  },
+  {
+    "path": "src/components/widgets/productivity/PomodoroWidget.tsx",
+    "hash": "7baa536f2ea6371fdec62d1df6f66ca9",
+    "symbolCount": 2,
+    "symbols": [
+      "PomodoroWidget",
+      "SettingRow"
+    ],
+    "lineCount": 290
+  },
+  {
+    "path": "src/components/widgets/productivity/PromptLibraryWidget.tsx",
+    "hash": "4417371bf27e5e85cbccbb1a94cb23af",
+    "symbolCount": 6,
+    "symbols": [
+      "PromptLibraryWidget",
+      "PromptCard",
+      "Prompt",
+      "CATEGORIES",
+      "CATEGORY_COLORS",
+      "DEFAULT_PROMPTS"
+    ],
+    "lineCount": 492
+  },
+  {
+    "path": "src/components/widgets/productivity/QuickCommandWidget.tsx",
+    "hash": "19d2ac85a8adab6d00e068defd90069b",
+    "symbolCount": 4,
+    "symbols": [
+      "QuickCommandWidget",
+      "Command",
+      "DEFAULT_COMMANDS",
+      "CATEGORY_LABELS"
+    ],
+    "lineCount": 411
+  },
+  {
+    "path": "src/components/widgets/registry.ts",
+    "hash": "2d62584935b7c3cecf0460e0247138cc",
+    "symbolCount": 5,
+    "symbols": [
+      "getWidgetComponent",
+      "getWidgetDefinition",
+      "WIDGET_REGISTRY",
+      "WIDGET_COMPONENTS",
+      "lazyCache"
+    ],
+    "lineCount": 120
+  },
+  {
+    "path": "src/env.d.ts",
+    "hash": "7790fa01e539ef0d1008dbb57d327205",
+    "symbolCount": 2,
+    "symbols": [
+      "ElectronAPI",
+      "Window"
+    ],
+    "lineCount": 16
+  },
+  {
+    "path": "src/hooks/useBrowserShortcuts.ts",
+    "hash": "03c7feefd76dd7d4b321944ca8b060f7",
+    "symbolCount": 1,
+    "symbols": [
+      "useBrowserShortcuts"
+    ],
+    "lineCount": 157
+  },
+  {
+    "path": "src/hooks/useMenuEvents.ts",
+    "hash": "fa5b8aec329f2ca913a202025a08a0de",
+    "symbolCount": 1,
+    "symbols": [
+      "useMenuEvents"
+    ],
+    "lineCount": 150
+  },
+  {
+    "path": "src/hooks/usePersistence.ts",
+    "hash": "d459a934a9c828d098d860bdf0f36cbb",
+    "symbolCount": 4,
+    "symbols": [
+      "getProjectDir",
+      "usePersistence",
+      "UI_PERSIST_KEYS",
+      "BROWSER_PERSIST_KEYS"
+    ],
+    "lineCount": 121
+  },
+  {
+    "path": "src/hooks/useWebviewEvents.ts",
+    "hash": "4a84bfb94a7c20efc7313d0e374a058d",
+    "symbolCount": 3,
+    "symbols": [
+      "useWebviewEvents",
+      "mapErrorCodeToType",
+      "ErrorType"
+    ],
+    "lineCount": 170
+  },
+  {
+    "path": "src/lib/agentTypes.ts",
+    "hash": "1dc241d6ec5aaf0e3ead0139b63f721b",
+    "symbolCount": 6,
+    "symbols": [
+      "registerUserAgentGetter",
+      "getAgentConfig",
+      "AgentTypeConfig",
+      "UserAgentGetter",
+      "agentTypeConfig",
+      "_getUserAgents"
+    ],
+    "lineCount": 42
+  },
+  {
+    "path": "src/lib/agents/detector.ts",
+    "hash": "32d6405888d9548ddf795f52da571469",
+    "symbolCount": 6,
+    "symbols": [
+      "registerCustomAgentCmds",
+      "detectAgentType",
+      "projectNameFromPath",
+      "detectAgents",
+      "RawProcess",
+      "_customAgentCmds"
+    ],
+    "lineCount": 50
+  },
+  {
+    "path": "src/lib/ipc.ts",
+    "hash": "487da4948183a8f071fea0af9036be81",
+    "symbolCount": 3,
+    "symbols": [
+      "invoke",
+      "listen",
+      "unlisten"
+    ],
+    "lineCount": 21
+  },
+  {
+    "path": "src/lib/layout/layoutUtils.ts",
+    "hash": "a7530d450849fde9ebcd9c40a070f12a",
+    "symbolCount": 7,
+    "symbols": [
+      "splitPane",
+      "closePane",
+      "updateRatio",
+      "swapPanes",
+      "getSessionIds",
+      "fillEmptyLeaf",
+      "hasEmptyLeaf"
+    ],
+    "lineCount": 103
+  },
+  {
+    "path": "src/lib/mission/layoutEngine.ts",
+    "hash": "ae5f313c6748d0af80f93ad927e2f3bb",
+    "symbolCount": 6,
+    "symbols": [
+      "computeTreeLayout",
+      "LayoutResult",
+      "NODE_WIDTH",
+      "NODE_HEIGHT",
+      "HORIZONTAL_GAP",
+      "VERTICAL_GAP"
+    ],
+    "lineCount": 159
+  },
+  {
+    "path": "src/lib/parsers/historyParser.ts",
+    "hash": "c8762553ea4f5b319683028a8dd1fbf6",
+    "symbolCount": 2,
+    "symbols": [
+      "parseHistoryJsonl",
+      "parseIncrementalLine"
+    ],
+    "lineCount": 37
+  },
+  {
+    "path": "src/lib/parsers/statsParser.ts",
+    "hash": "1d15d5d8224985f2e8e24d08e4e81023",
+    "symbolCount": 1,
+    "symbols": [
+      "parseStatsCache"
+    ],
+    "lineCount": 23
+  },
+  {
+    "path": "src/lib/persistence.ts",
+    "hash": "dc4e8197635407a98a736daa423f0c56",
+    "symbolCount": 5,
+    "symbols": [
+      "loadJsonFile",
+      "saveJsonFile",
+      "createDebouncedSaver",
+      "autoSave",
+      "AnyObject"
+    ],
+    "lineCount": 81
+  },
+  {
+    "path": "src/lib/platform.ts",
+    "hash": "5d003bd4302f6870bc29cc5b90c7def1",
+    "symbolCount": 6,
+    "symbols": [
+      "getPlatform",
+      "getDefaultShell",
+      "isMac",
+      "modKey",
+      "cachedPlatform",
+      "cachedDefaultShell"
+    ],
+    "lineCount": 22
+  },
+  {
+    "path": "src/lib/projectSlug.ts",
+    "hash": "8cb471d3149f3db27b513f6dee717cf5",
+    "symbolCount": 2,
+    "symbols": [
+      "projectSlug",
+      "getProjectDataDir"
+    ],
+    "lineCount": 17
+  },
+  {
+    "path": "src/lib/terminal/terminalCache.ts",
+    "hash": "e64a0c8cc4f973d464d9330c0e8a02bd",
+    "symbolCount": 10,
+    "symbols": [
+      "getOrCreateTerminal",
+      "activateWebGL",
+      "getCachedTerminal",
+      "cleanupTerminal",
+      "disposeTerminal",
+      "hasCachedTerminal",
+      "refitAllTerminals",
+      "CachedTerminal",
+      "cache",
+      "TERMINAL_THEME"
+    ],
+    "lineCount": 88
+  },
+  {
+    "path": "src/lib/themes.ts",
+    "hash": "6f6102e2c5f920aa951c496a088ac175",
+    "symbolCount": 10,
+    "symbols": [
+      "camelToKebab",
+      "applyTheme",
+      "getThemeById",
+      "createDefaultThemeColors",
+      "ThemeColors",
+      "ThemeDefinition",
+      "darkTheme",
+      "lightTheme",
+      "navyBlurTheme",
+      "BUILTIN_THEMES"
+    ],
+    "lineCount": 159
+  },
+  {
+    "path": "src/main.tsx",
+    "hash": "7257866a9f6aa8c8769e0a032782f7c5",
+    "symbolCount": 2,
+    "symbols": [
+      "ErrorBoundary",
+      "root"
+    ],
+    "lineCount": 39
+  },
+  {
+    "path": "src/stores/agentStore.ts",
+    "hash": "8661324f9f82ee3597336e909507813e",
+    "symbolCount": 2,
+    "symbols": [
+      "AgentState",
+      "useAgentStore"
+    ],
+    "lineCount": 29
+  },
+  {
+    "path": "src/stores/browserStore.ts",
+    "hash": "bc95b7451d71bb5562f7f3f52d371d6d",
+    "symbolCount": 10,
+    "symbols": [
+      "extractHostname",
+      "getFaviconUrl",
+      "Favorite",
+      "BrowserTabError",
+      "BrowserTab",
+      "TabGroup",
+      "ClosedTab",
+      "BrowserState",
+      "DEFAULT_FAVORITES",
+      "useBrowserStore"
+    ],
+    "lineCount": 325
+  },
+  {
+    "path": "src/stores/confirmStore.ts",
+    "hash": "a94663b27dc5dddddcd38085b5987615",
+    "symbolCount": 2,
+    "symbols": [
+      "ConfirmState",
+      "useConfirmStore"
+    ],
+    "lineCount": 17
+  },
+  {
+    "path": "src/stores/editorStore.ts",
+    "hash": "21afb8334efdf20fc81b9be390cd2b29",
+    "symbolCount": 7,
+    "symbols": [
+      "detectLanguage",
+      "readFileContent",
+      "writeFileContent",
+      "EditorTab",
+      "EditorState",
+      "EXT_LANG",
+      "useEditorStore"
+    ],
+    "lineCount": 153
+  },
+  {
+    "path": "src/stores/gitStore.ts",
+    "hash": "b5612d9b0ead9218b327d27e9c875d74",
+    "symbolCount": 3,
+    "symbols": [
+      "GitStatus",
+      "GitState",
+      "useGitStore"
+    ],
+    "lineCount": 81
+  },
+  {
+    "path": "src/stores/missionStore.ts",
+    "hash": "822945ba25e19c55d62dfa8ba78a7650",
+    "symbolCount": 9,
+    "symbols": [
+      "now",
+      "genId",
+      "persist",
+      "ExportedStep",
+      "ExportedMission",
+      "MissionExportData",
+      "MissionState",
+      "STATUS_CYCLE",
+      "useMissionStore"
+    ],
+    "lineCount": 404
+  },
+  {
+    "path": "src/stores/pomodoroStore.ts",
+    "hash": "7972bcf361f19c7e9ebb88f0bb5bfec2",
+    "symbolCount": 9,
+    "symbols": [
+      "getChannel",
+      "SessionRecord",
+      "PomodoroSettings",
+      "PomodoroState",
+      "BroadcastPayload",
+      "TimerPhase",
+      "saver",
+      "channel",
+      "usePomodoroStore"
+    ],
+    "lineCount": 239
+  },
+  {
+    "path": "src/stores/searchStore.ts",
+    "hash": "68dccb63d4b366eca752fad315492604",
+    "symbolCount": 3,
+    "symbols": [
+      "SearchResult",
+      "SearchState",
+      "useSearchStore"
+    ],
+    "lineCount": 32
+  },
+  {
+    "path": "src/stores/servicesStore.ts",
+    "hash": "55e9e4eb8a18d394e874767d4fd41362",
+    "symbolCount": 3,
+    "symbols": [
+      "ServiceInfo",
+      "ServicesState",
+      "useServicesStore"
+    ],
+    "lineCount": 23
+  },
+  {
+    "path": "src/stores/settingsStore.ts",
+    "hash": "58da6588c0065ea28dab3ab046fcee15",
+    "symbolCount": 12,
+    "symbols": [
+      "getSettingsPath",
+      "readSettingsFile",
+      "writeSettingsFile",
+      "debouncedSave",
+      "UserAgent",
+      "PersistedWorkspace",
+      "WorkspaceTemplate",
+      "PersistedSettings",
+      "SettingsState",
+      "DEFAULT_SETTINGS",
+      "_saveTimer",
+      "useSettingsStore"
+    ],
+    "lineCount": 220
+  },
+  {
+    "path": "src/stores/taskStore.ts",
+    "hash": "338d593057b23716ed911fd782f4d241",
+    "symbolCount": 5,
+    "symbols": [
+      "now",
+      "genId",
+      "persist",
+      "TaskState",
+      "useTaskStore"
+    ],
+    "lineCount": 59
+  },
+  {
+    "path": "src/stores/terminalStore.ts",
+    "hash": "156b38bb996f9e6522bbf29ee71e1f09",
+    "symbolCount": 5,
+    "symbols": [
+      "isSessionWorking",
+      "TerminalSession",
+      "OutputActivity",
+      "TerminalState",
+      "useTerminalStore"
+    ],
+    "lineCount": 114
+  },
+  {
+    "path": "src/stores/toastStore.ts",
+    "hash": "511e8d36ad939bd0f6c18c07bd1d8147",
+    "symbolCount": 3,
+    "symbols": [
+      "Toast",
+      "ToastState",
+      "useToastStore"
+    ],
+    "lineCount": 22
+  },
+  {
+    "path": "src/stores/uiStore.ts",
+    "hash": "4de51e4a5377fc72c4d6dcc5f169043c",
+    "symbolCount": 6,
+    "symbols": [
+      "clearSessionIds",
+      "Workspace",
+      "UIState",
+      "ViewMode",
+      "WORKSPACE_COLORS",
+      "useUIStore"
+    ],
+    "lineCount": 297
+  },
+  {
+    "path": "src/stores/widgetStore.ts",
+    "hash": "faf366458c7e86ed4c7f51f3487a4010",
+    "symbolCount": 4,
+    "symbols": [
+      "findNextPosition",
+      "WidgetState",
+      "GRID_COLS",
+      "useWidgetStore"
+    ],
+    "lineCount": 132
+  },
+  {
+    "path": "src/types/agent.ts",
+    "hash": "217b2d0fd67e0a9727f008353ccb769b",
+    "symbolCount": 4,
+    "symbols": [
+      "Agent",
+      "AgentGroup",
+      "AgentType",
+      "AgentStatus"
+    ],
+    "lineCount": 11
+  },
+  {
+    "path": "src/types/layout.ts",
+    "hash": "d37fc08f3aadfd840b69cd4a1b1c9855",
+    "symbolCount": 1,
+    "symbols": [
+      "LayoutNode"
+    ],
+    "lineCount": 6
+  },
+  {
+    "path": "src/types/mission.ts",
+    "hash": "ad6269191963742f295698752610d77f",
+    "symbolCount": 3,
+    "symbols": [
+      "MissionStep",
+      "Mission",
+      "MissionStepStatus"
+    ],
+    "lineCount": 14
+  },
+  {
+    "path": "src/types/session.ts",
+    "hash": "f464138dfe73170a9c7a623cc44a32eb",
+    "symbolCount": 8,
+    "symbols": [
+      "ProjectInfo",
+      "HistoryEntry",
+      "TeamMember",
+      "TeamConfig",
+      "FileEntry",
+      "TaskItem",
+      "PraxisTask",
+      "TaskStatus"
+    ],
+    "lineCount": 28
+  },
+  {
+    "path": "src/types/stats.ts",
+    "hash": "815cfcb53c2d3eefff00205fa9ed71af",
+    "symbolCount": 2,
+    "symbols": [
+      "DailyStats",
+      "StatsCache"
+    ],
+    "lineCount": 10
+  },
+  {
+    "path": "src/types/usage.ts",
+    "hash": "2d887180500571dd5810609ffb90d642",
+    "symbolCount": 4,
+    "symbols": [
+      "UsageWindow",
+      "CostBreakdown",
+      "ProviderUsage",
+      "UsageResponse"
+    ],
+    "lineCount": 15
+  },
+  {
+    "path": "src/types/widget.ts",
+    "hash": "cd78b1b3ae9c70d6f4fd6711551c245b",
+    "symbolCount": 23,
+    "symbols": [
+      "WidgetDefinition",
+      "WidgetInstance",
+      "WidgetLayoutItem",
+      "BaseWidgetConfig",
+      "SystemMonitorConfig",
+      "PortMonitorConfig",
+      "LogViewerConfig",
+      "AgentMonitorConfig",
+      "GitStatusConfig",
+      "DiffViewerConfig",
+      "MarkdownPreviewConfig",
+      "NotesConfig",
+      "QuickCommandConfig",
+      "PomodoroConfig",
+      "BookmarksConfig",
+      "TerminalConfig",
+      "BrowserConfig",
+      "TasksConfig",
+      "FileExplorerConfig",
+      "PromptLibraryConfig",
+      "AgentType",
+      "AgentStatus",
+      "WidgetConfigMap"
+    ],
+    "lineCount": 99
+  },
+  {
+    "path": "tailwind.config.js",
+    "hash": "a23f1979ffc51cd7ea160beb5220b0aa",
+    "symbolCount": 0,
+    "symbols": [],
+    "lineCount": 26
+  }
+]

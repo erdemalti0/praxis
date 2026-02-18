@@ -1,11 +1,10 @@
-import { lazy, Suspense } from "react";
 import { Cpu, FolderOpen, Search, GitBranch, Activity, PanelLeftClose, PanelLeftOpen } from "lucide-react";
-
-const AgentList = lazy(() => import("../agents/AgentList"));
-const FileExplorer = lazy(() => import("../explorer/FileExplorer"));
-const SearchPanel = lazy(() => import("../sidebar/SearchPanel"));
-const GitPanel = lazy(() => import("../sidebar/GitPanel"));
-const ServicesPanel = lazy(() => import("../sidebar/ServicesPanel"));
+import AgentList from "../agents/AgentList";
+import RunnerSidebarSection from "../runner/RunnerSidebarSection";
+import FileExplorer from "../explorer/FileExplorer";
+import SearchPanel from "../sidebar/SearchPanel";
+import GitPanel from "../sidebar/GitPanel";
+import ServicesPanel from "../sidebar/ServicesPanel";
 import { useUIStore, type SidebarTab } from "../../stores/uiStore";
 
 const tabs: { key: SidebarTab; label: string; icon: typeof Cpu }[] = [
@@ -168,19 +167,24 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Tab content */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <Suspense fallback={<div style={{ padding: 12, color: "var(--vp-text-dim)", fontSize: 12 }}>Loading...</div>}>
-          {activeTab === "agents" && (
-            <div className="h-full overflow-y-auto px-2 py-2">
-              <AgentList />
-            </div>
-          )}
-          {activeTab === "explorer" && <FileExplorer />}
-          {activeTab === "search" && <SearchPanel />}
-          {activeTab === "git" && <GitPanel />}
-          {activeTab === "services" && <ServicesPanel />}
-        </Suspense>
+      {/* Tab content — all panels stay mounted, hidden via CSS for instant switching */}
+      <div className="flex-1 min-h-0 overflow-hidden" style={{ position: "relative" }}>
+        <div className="h-full overflow-y-auto px-2 py-2" style={{ display: activeTab === "agents" ? undefined : "none" }}>
+          <AgentList />
+          <RunnerSidebarSection />
+        </div>
+        <div className="h-full" style={{ display: activeTab === "explorer" ? undefined : "none" }}>
+          <FileExplorer />
+        </div>
+        <div className="h-full" style={{ display: activeTab === "search" ? undefined : "none" }}>
+          <SearchPanel />
+        </div>
+        <div className="h-full" style={{ display: activeTab === "git" ? undefined : "none" }}>
+          <GitPanel />
+        </div>
+        <div className="h-full" style={{ display: activeTab === "services" ? undefined : "none" }}>
+          <ServicesPanel />
+        </div>
       </div>
     </div>
   );

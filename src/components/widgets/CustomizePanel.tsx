@@ -1,9 +1,8 @@
-import { lazy, Suspense, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import WorkspaceContent from "./WorkspaceContent";
 import { useUIStore } from "../../stores/uiStore";
 import { LayoutGrid } from "lucide-react";
-
-const WidgetCatalog = lazy(() => import("./WidgetCatalog"));
+import WidgetCatalog from "./WidgetCatalog";
 
 interface CustomizePanelProps {
   workspaceId: string;
@@ -38,7 +37,7 @@ export default function CustomizePanel({ workspaceId }: CustomizePanelProps) {
         background: "var(--vp-bg-primary)",
         display: "flex",
         flexDirection: "column",
-        borderRadius: 14,
+        borderRadius: "var(--vp-radius-3xl)",
         overflow: "hidden",
         animation: isClosing
           ? "customizePanelOut 0.25s cubic-bezier(0.7, 0, 0.84, 0) forwards"
@@ -71,7 +70,7 @@ export default function CustomizePanel({ workspaceId }: CustomizePanelProps) {
             alignItems: "center",
             gap: 6,
             padding: "6px 16px",
-            borderRadius: 7,
+            borderRadius: "var(--vp-radius-md)",
             background: "var(--vp-accent-blue)",
             border: "none",
             color: "#fff",
@@ -98,12 +97,10 @@ export default function CustomizePanel({ workspaceId }: CustomizePanelProps) {
           <WorkspaceContent workspaceId={workspaceId} isCustomizeMode />
         </div>
         {/* Catalog sidebar */}
-        <Suspense fallback={null}>
-          <WidgetCatalog
-            workspaceId={workspaceId}
-            onClose={handleClose}
-          />
-        </Suspense>
+        <WidgetCatalog
+          workspaceId={workspaceId}
+          onClose={handleClose}
+        />
       </div>
     </div>
   );
