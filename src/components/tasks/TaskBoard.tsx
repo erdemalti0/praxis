@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, memo } from "react";
 import { useTaskStore } from "../../stores/taskStore";
 import { useUIStore } from "../../stores/uiStore";
+import { useShallow } from "zustand/shallow";
 import TaskCreateDialog from "./TaskCreateDialog";
 import TaskCard from "./TaskCard";
 import { Plus, Loader2, ListTodo, X } from "lucide-react";
@@ -21,9 +22,13 @@ function sortByDate(arr: PraxisTask[]) {
 }
 
 export default memo(function TaskBoard({ variant }: Props) {
-  const selectedProject = useUIStore((s) => s.selectedProject);
-  const setViewMode = useUIStore((s) => s.setViewMode);
-  const setSplitEnabled = useUIStore((s) => s.setSplitEnabled);
+  const { selectedProject, setViewMode, setSplitEnabled } = useUIStore(
+    useShallow((s) => ({
+      selectedProject: s.selectedProject,
+      setViewMode: s.setViewMode,
+      setSplitEnabled: s.setSplitEnabled,
+    }))
+  );
   const tasks = useTaskStore((s) => s.tasks);
   const loading = useTaskStore((s) => s.loading);
   const loadTasks = useTaskStore((s) => s.loadTasks);

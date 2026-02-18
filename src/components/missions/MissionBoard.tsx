@@ -505,7 +505,7 @@ function StepRow({
             </button>
           )}
           {step.prompt && (
-            <span style={{ fontSize: 8, color: "#a78bfa", flexShrink: 0, fontWeight: 600 }}>AI</span>
+            <span style={{ fontSize: 10, color: "#a78bfa", flexShrink: 0, fontWeight: 600 }}>AI</span>
           )}
         </div>
         {/* Dependency indicator */}

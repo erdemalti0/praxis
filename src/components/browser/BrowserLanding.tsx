@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, X } from "lucide-react";
+import { Search, Plus, X, Globe } from "lucide-react";
 import { useBrowserStore } from "../../stores/browserStore";
 import type { Favorite } from "../../stores/browserStore";
+import { parseUrlOrSearch } from "../../lib/urlUtils";
 
 interface BrowserLandingProps {
   onNavigate: (url: string) => void;
@@ -24,19 +25,13 @@ export default function BrowserLanding({ onNavigate }: BrowserLandingProps) {
   }, [favoritesLoaded, loadFavorites]);
 
   const handleSearch = () => {
-    const q = searchQuery.trim();
-    if (!q) return;
-    if (q.includes(".") || q.startsWith("http")) {
-      onNavigate(q.startsWith("http") ? q : `https://${q}`);
-    } else {
-      onNavigate(
-        `https://www.google.com/search?q=${encodeURIComponent(q)}`
-      );
-    }
+    const url = parseUrlOrSearch(searchQuery);
+    if (!url) return;
+    onNavigate(url);
   };
 
   const handleAddFavorite = async () => {
-    if (!newName.trim() || !newUrl.trim()) return;
+    if (!newName.trim() || newUrl.trim().length < 8) return;
     await addFavorite(newName.trim(), newUrl.trim());
     setNewName("");
     setNewUrl("https://");
@@ -191,6 +186,7 @@ export default function BrowserLanding({ onNavigate }: BrowserLandingProps) {
               overflow: "hidden",
             }}
             onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => { if (e.key === "Escape") setShowAddForm(false); }}
           >
             <div
               className="flex items-center justify-between px-5 py-3.5"
@@ -250,7 +246,7 @@ export default function BrowserLanding({ onNavigate }: BrowserLandingProps) {
               </div>
               <button
                 onClick={handleAddFavorite}
-                disabled={!newName.trim() || !newUrl.trim()}
+                disabled={!newName.trim() || newUrl.trim().length < 8}
                 style={{
                   width: "100%",
                   padding: "10px 0",
@@ -298,6 +294,7 @@ function FavoriteCard({
   onRemove: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
+  const [faviconError, setFaviconError] = useState(false);
 
   return (
     <div
@@ -321,17 +318,22 @@ function FavoriteCard({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <img
-        src={getFaviconUrl(favorite.url, 64)}
-        alt={favorite.name}
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: "var(--vp-radius-lg)",
-          objectFit: "contain",
-        }}
-        draggable={false}
-      />
+      {faviconError ? (
+        <Globe size={32} style={{ color: "var(--vp-text-faint)" }} />
+      ) : (
+        <img
+          src={getFaviconUrl(favorite.url, 64)}
+          alt={favorite.name}
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: "var(--vp-radius-lg)",
+            objectFit: "contain",
+          }}
+          draggable={false}
+          onError={() => setFaviconError(true)}
+        />
+      )}
       <span
         style={{
           fontSize: 11,

@@ -44,7 +44,7 @@ export function registerRunnerHandlers() {
     if (process.platform === "win32") {
       try {
         const { stdout } = await execAsync(
-          `wmic process where (ParentProcessId=${args.pid}) get ProcessId`,
+          `powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter 'ParentProcessId=${args.pid}' | Select-Object -ExpandProperty ProcessId"`,
           { encoding: "utf-8", timeout: 3000 }
         );
         return stdout

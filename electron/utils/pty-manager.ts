@@ -63,6 +63,7 @@ export function spawnPty(
       ...(isWindows ? {} : { TERM: "xterm-256color" }),
       PWD: safeCwd,
       HOME: os.homedir(),
+      USERPROFILE: os.homedir(),
     },
   });
 

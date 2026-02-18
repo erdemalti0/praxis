@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { FolderOpen, Eye, EyeOff, FileCode } from "lucide-react";
 
 import { useUIStore } from "../../../stores/uiStore";
+import { getBaseName } from "../../../lib/pathUtils";
 import { useWidgetStore } from "../../../stores/widgetStore";
 
 export default function FileExplorerWidget({
@@ -35,7 +36,7 @@ export default function FileExplorerWidget({
       setSelectedProject({
         ...selectedProject,
         path: customRoot,
-        name: customRoot.split("/").pop() || customRoot,
+        name: getBaseName(customRoot),
       });
     }
   }, [customRoot]);

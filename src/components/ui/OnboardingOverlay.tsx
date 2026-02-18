@@ -3,6 +3,8 @@ import { Terminal, LayoutGrid, Rocket, TerminalSquare } from "lucide-react";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { invoke } from "../../lib/ipc";
 
+const APP_NAME = "Praxis";
+
 interface StepDef {
   title: string;
   description: string;
@@ -13,7 +15,7 @@ interface StepDef {
 
 const STEPS: StepDef[] = [
   {
-    title: "Welcome to Praxis",
+    title: `Welcome to ${APP_NAME}`,
     description: "Your AI-powered development workspace",
     icon: null,
     actionLabel: "Get Started",
@@ -32,7 +34,7 @@ const STEPS: StepDef[] = [
   },
   {
     title: "Open from Terminal",
-    description: "Type praxis . in any terminal to open that folder in Praxis — just like code . for VS Code.",
+    description: `Type ${APP_NAME.toLowerCase()} . in any terminal to open that folder in ${APP_NAME} — just like code . for VS Code.`,
     icon: TerminalSquare,
     actionLabel: "Next",
     isCliStep: true,
@@ -250,15 +252,17 @@ export default function OnboardingOverlay() {
         {/* Error message */}
         {cliResult === "error" && step.isCliStep && (
           <p style={{ fontSize: 11, color: "var(--vp-accent-red)", marginTop: 12 }}>
-            Failed to install. You may need to run Praxis with elevated permissions, or install manually from Settings.
+            Failed to install. You may need to run {APP_NAME} with elevated permissions, or install manually from Settings.
           </p>
         )}
 
         {/* Step dots */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 24 }}>
+        <div role="tablist" aria-label="Onboarding progress" style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 24 }}>
           {STEPS.map((_, i) => (
             <div
               key={i}
+              role="tab"
+              aria-selected={i === currentStep}
               style={{
                 width: 8,
                 height: 8,
@@ -269,6 +273,10 @@ export default function OnboardingOverlay() {
             />
           ))}
         </div>
+        {/* Visually-hidden step counter for screen readers */}
+        <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap" }}>
+          Step {currentStep + 1} of {STEPS.length}
+        </span>
       </div>
     </div>
   );

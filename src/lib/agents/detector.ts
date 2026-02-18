@@ -1,4 +1,5 @@
 import { invoke } from "../ipc";
+import { splitPath } from "../pathUtils";
 
 import type { Agent } from "../../types/agent";
 
@@ -36,7 +37,7 @@ function detectAgentType(name: string, cmd: string[]): string {
 
 function projectNameFromPath(path: string): string {
   if (!path) return "unknown";
-  const parts = path.split("/").filter(Boolean);
+  const parts = splitPath(path);
   return parts[parts.length - 1] || "unknown";
 }
 

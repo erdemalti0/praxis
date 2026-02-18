@@ -201,14 +201,23 @@ async function getSystemStatsLinux() {
 
 async function getSystemStatsWindows() {
   // Run wmic commands in parallel
+  // Use PowerShell Get-CimInstance instead of deprecated wmic
   const [cpuResult, memResult, diskResult] = await Promise.all([
-    execAsync("wmic cpu get loadpercentage /value", { encoding: "utf-8", timeout: 5000 }).catch(() => ({ stdout: "" })),
-    execAsync("wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /value", { encoding: "utf-8", timeout: 5000 }).catch(() => ({ stdout: "" })),
-    execAsync("wmic logicaldisk where \"DeviceID='C:'\" get Size,FreeSpace /value", { encoding: "utf-8", timeout: 5000 }).catch(() => ({ stdout: "" })),
+    execAsync(
+      'powershell -NoProfile -Command "Get-CimInstance Win32_Processor | Select-Object -ExpandProperty LoadPercentage"',
+      { encoding: "utf-8", timeout: 5000 }
+    ).catch(() => ({ stdout: "" })),
+    execAsync(
+      'powershell -NoProfile -Command "Get-CimInstance Win32_OperatingSystem | ForEach-Object { \\"FreePhysicalMemory=$($_.FreePhysicalMemory)`nTotalVisibleMemorySize=$($_.TotalVisibleMemorySize)\\" }"',
+      { encoding: "utf-8", timeout: 5000 }
+    ).catch(() => ({ stdout: "" })),
+    execAsync(
+      'powershell -NoProfile -Command "Get-CimInstance Win32_LogicalDisk -Filter \\"DeviceID=\'C:\'\\" | ForEach-Object { \\"FreeSpace=$($_.FreeSpace)`nSize=$($_.Size)\\" }"',
+      { encoding: "utf-8", timeout: 5000 }
+    ).catch(() => ({ stdout: "" })),
   ]);
 
-  const cpuMatch = cpuResult.stdout.match(/LoadPercentage=(\d+)/);
-  const cpuUsage = cpuMatch ? parseInt(cpuMatch[1]) : 0;
+  const cpuUsage = parseInt(cpuResult.stdout.trim()) || 0;
 
   const freeMemMatch = memResult.stdout.match(/FreePhysicalMemory=(\d+)/);
   const totalMemMatch = memResult.stdout.match(/TotalVisibleMemorySize=(\d+)/);

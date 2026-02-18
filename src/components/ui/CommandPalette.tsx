@@ -80,9 +80,10 @@ export default function CommandPalette() {
         const wsId = useUIStore.getState().activeWorkspaceId;
         if (wsId) {
           const state = useUIStore.getState();
-          state.setShowCustomizePanel(!state.showCustomizePanel);
+          const willOpen = !state.showCustomizePanel;
+          state.setShowCustomizePanel(willOpen);
           useToastStore.getState().addToast(
-            state.showCustomizePanel ? "Customize panel closed" : "Customize panel opened",
+            willOpen ? "Customize panel opened" : "Customize panel closed",
             "info"
           );
         } else {

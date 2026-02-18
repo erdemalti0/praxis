@@ -64,14 +64,14 @@ async function detectChildAgents(
   const keywords = getAgentKeywords();
 
   if (isWin) {
-    // Windows: use wmic to find child processes
+    // Windows: use PowerShell Get-CimInstance to find child processes
     for (const [sessionId, parentPid] of Object.entries(pids)) {
       try {
         const { stdout } = await execAsync(
-          `wmic process where (ParentProcessId=${parentPid}) get Name /format:csv`,
+          `powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter 'ParentProcessId=${parentPid}' | Select-Object -ExpandProperty Name"`,
           { encoding: "utf-8", timeout: 3000 }
         );
-        const names = stdout.split("\n").map((l) => l.trim().split(",").pop()?.toLowerCase() || "");
+        const names = stdout.split("\n").map((l) => l.trim().toLowerCase()).filter(Boolean);
         const matched = keywords.find((kw) => names.some((n) => n.includes(kw)));
         result[sessionId] = matched || null;
       } catch {

@@ -47,6 +47,23 @@ const ERROR_CONFIG = {
   },
 };
 
+function friendlyErrorMessage(rawMessage: string | undefined): string | undefined {
+  if (!rawMessage) return undefined;
+  const map: Record<string, string> = {
+    "ERR_NAME_NOT_RESOLVED": "This domain could not be found. Check the URL and try again.",
+    "ERR_CONNECTION_REFUSED": "The connection was refused. The server may not be running.",
+    "ERR_CONNECTION_TIMED_OUT": "The connection timed out. Try again later.",
+    "ERR_INTERNET_DISCONNECTED": "No internet connection. Check your network.",
+    "ERR_SSL_PROTOCOL_ERROR": "SSL connection failed. The site may have an invalid certificate.",
+    "ERR_CERT_AUTHORITY_INVALID": "The site's certificate is not trusted.",
+    "ERR_ABORTED": "The page load was cancelled.",
+  };
+  for (const [key, friendly] of Object.entries(map)) {
+    if (rawMessage.includes(key)) return friendly;
+  }
+  return undefined;
+}
+
 export default function ErrorPage({ type, url, message, onRetry, onHome }: ErrorPageProps) {
   const config = ERROR_CONFIG[type];
   const Icon = config.icon;
@@ -93,7 +110,7 @@ export default function ErrorPage({ type, url, message, onRetry, onHome }: Error
           maxWidth: 400,
         }}
       >
-        {message || config.description}
+        {friendlyErrorMessage(message) || message || config.description}
       </p>
 
       {url && (

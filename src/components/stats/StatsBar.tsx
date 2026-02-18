@@ -33,6 +33,7 @@ export default function StatsBar() {
   const showCustomizePanel = useUIStore((s) => s.showCustomizePanel);
   const setShowCustomizePanel = useUIStore((s) => s.setShowCustomizePanel);
 
+
   const browserTabs = useBrowserStore((s) => s.tabs);
   const createLandingTab = useBrowserStore((s) => s.createLandingTab);
 
@@ -454,7 +455,9 @@ export default function StatsBar() {
               >
                 {editorTabs.length}
               </span>
-              <div
+              <button
+                title="Close all editor tabs"
+                aria-label="Close all editor tabs"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -467,6 +470,8 @@ export default function StatsBar() {
                   pointerEvents: "auto",
                   transition: "all 0.15s",
                   background: "var(--vp-bg-surface)",
+                  border: "none",
+                  padding: 0,
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = "var(--vp-accent-red-border)";
@@ -477,17 +482,27 @@ export default function StatsBar() {
                 onClick={(e) => {
                   e.stopPropagation();
                   const store = useEditorStore.getState();
-                  // Close all editor tabs
-                  for (const tab of [...store.tabs]) {
-                    store.closeFile(tab.filePath);
-                  }
-                  if (viewMode === "editor") {
-                    setViewMode(store.previousViewMode as any || "terminal");
+                  const closeAll = () => {
+                    for (const tab of [...store.tabs]) {
+                      store.closeFile(tab.filePath);
+                    }
+                    if (viewMode === "editor") {
+                      setViewMode(store.previousViewMode as any || "terminal");
+                    }
+                  };
+                  if (store.tabs.length > 1) {
+                    useConfirmStore.getState().showConfirm(
+                      "Close All Tabs",
+                      `Close ${store.tabs.length} editor tabs?`,
+                      closeAll
+                    );
+                  } else {
+                    closeAll();
                   }
                 }}
               >
                 <X size={11} style={{ color: "var(--vp-text-muted)" }} />
-              </div>
+              </button>
             </button>
           </>
         )}

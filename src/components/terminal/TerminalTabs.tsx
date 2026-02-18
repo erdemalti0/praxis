@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { createPortal } from "react-dom";
-import { Plus, X, Columns2, Maximize2, Minimize2, ArrowUpDown, Pencil, Copy, Terminal } from "lucide-react";
+import { Plus, X, Columns2, Maximize2, Minimize2, ArrowUpDown, Pencil, Copy, Terminal, Globe, Play, ArrowLeftRight } from "lucide-react";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useUIStore } from "../../stores/uiStore";
+import { useShallow } from "zustand/shallow";
 import { closePane, getSessionIds, rebalanceLayout } from "../../lib/layout/layoutUtils";
 import { PANE_DRAG_MIME, type PaneDragData } from "../../types/layout";
 import { LAYOUT_PRESETS, type LayoutPreset } from "../../lib/layout/layoutPresets";
@@ -10,6 +11,7 @@ import { cleanupTerminal, refitAllTerminals } from "../../lib/terminal/terminalC
 import { invoke } from "../../lib/ipc";
 import { useConfirmStore } from "../../stores/confirmStore";
 import { useWidgetStore } from "../../stores/widgetStore";
+import { useBrowserStore } from "../../stores/browserStore";
 
 /** Miniature grid icon showing the layout pattern */
 function PresetIcon({ grid }: { grid: string[][] }) {
@@ -76,31 +78,48 @@ export default memo(function TerminalTabs() {
   const allSessions = useTerminalStore((s) => s.sessions);
   const removeSession = useTerminalStore((s) => s.removeSession);
   const updateSession = useTerminalStore((s) => s.updateSession);
-  const setShowSpawn = useUIStore((s) => s.setShowSpawnDialog);
-  const activeWorkspaceId = useUIStore((s) => s.activeWorkspaceId);
-  const viewMode = useUIStore((s) => s.viewMode);
-  const setViewMode = useUIStore((s) => s.setViewMode);
-  const setSplitEnabled = useUIStore((s) => s.setSplitEnabled);
-  const terminalMaximized = useUIStore((s) => s.terminalMaximized);
-  const setTerminalMaximized = useUIStore((s) => s.setTerminalMaximized);
-  const swapPanes = useUIStore((s) => s.swapPanes);
-  const topPaneContent = useUIStore((s) => s.topPaneContent);
+  const {
+    setShowSpawn, activeWorkspaceId, viewMode, setViewMode, setSplitEnabled,
+    terminalMaximized, setTerminalMaximized, maximizedContent, setMaximizedContent,
+    swapPanes, topPaneContent,
+    focusedPaneSessionId, workspaceLayouts, setWorkspaceLayout,
+    terminalGroups, activeTerminalGroup, addTerminalGroup, removeTerminalGroup,
+    setActiveTerminalGroup, moveSessionToGroup, setDraggingPaneSessionId,
+  } = useUIStore(
+    useShallow((s) => ({
+      setShowSpawn: s.setShowSpawnDialog,
+      activeWorkspaceId: s.activeWorkspaceId,
+      viewMode: s.viewMode,
+      setViewMode: s.setViewMode,
+      setSplitEnabled: s.setSplitEnabled,
+      terminalMaximized: s.terminalMaximized,
+      setTerminalMaximized: s.setTerminalMaximized,
+      maximizedContent: s.maximizedContent,
+      setMaximizedContent: s.setMaximizedContent,
+      swapPanes: s.swapPanes,
+      topPaneContent: s.topPaneContent,
+      focusedPaneSessionId: s.focusedPaneSessionId,
+      workspaceLayouts: s.workspaceLayouts,
+      setWorkspaceLayout: s.setWorkspaceLayout,
+      terminalGroups: s.terminalGroups,
+      activeTerminalGroup: s.activeTerminalGroup,
+      addTerminalGroup: s.addTerminalGroup,
+      removeTerminalGroup: s.removeTerminalGroup,
+      setActiveTerminalGroup: s.setActiveTerminalGroup,
+      moveSessionToGroup: s.moveSessionToGroup,
+      setDraggingPaneSessionId: s.setDraggingPaneSessionId,
+    }))
+  );
   const workspaceWidgets = useWidgetStore((s) => s.workspaceWidgets);
   const hasWidgets = activeWorkspaceId
     ? (workspaceWidgets[activeWorkspaceId]?.length ?? 0) > 0
     : false;
+  const { browserTabs, createLandingTab } = useBrowserStore(useShallow((s) => ({
+    browserTabs: s.tabs,
+    createLandingTab: s.createLandingTab,
+  })));
   // Terminal is at the bottom when widgets are on top
   const terminalIsBottom = hasWidgets && topPaneContent === "widgets";
-  const focusedPaneSessionId = useUIStore((s) => s.focusedPaneSessionId);
-  const workspaceLayouts = useUIStore((s) => s.workspaceLayouts);
-  const setWorkspaceLayout = useUIStore((s) => s.setWorkspaceLayout);
-  const terminalGroups = useUIStore((s) => s.terminalGroups);
-  const activeTerminalGroup = useUIStore((s) => s.activeTerminalGroup);
-  const addTerminalGroup = useUIStore((s) => s.addTerminalGroup);
-  const removeTerminalGroup = useUIStore((s) => s.removeTerminalGroup);
-  const setActiveTerminalGroup = useUIStore((s) => s.setActiveTerminalGroup);
-  const moveSessionToGroup = useUIStore((s) => s.moveSessionToGroup);
-  const setDraggingPaneSessionId = useUIStore((s) => s.setDraggingPaneSessionId);
 
   // Drag-over state for group tabs and "+" button
   const [tabDragOver, setTabDragOver] = useState<string | null>(null);
@@ -129,6 +148,10 @@ export default memo(function TerminalTabs() {
   // Context menu for a terminal session (right-click on group tab)
   const [sessionCtxMenu, setSessionCtxMenu] = useState<{ x: number; y: number; sessionId: string } | null>(null);
   const sessionCtxRef = useRef<HTMLDivElement>(null);
+
+  // Inline rename state
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   // Close context menus on any click outside
   useEffect(() => {
@@ -178,6 +201,48 @@ export default memo(function TerminalTabs() {
       document.removeEventListener("mousedown", close);
     };
   }, [showLayoutMenu]);
+
+  // Keyboard shortcuts:
+  // Cmd+1-9 = switch terminal groups (always), Cmd+Shift+B = Browser, Cmd+Shift+R = Runner (maximized only)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!e.metaKey && !e.ctrlKey) return;
+      // Skip when typing in inputs
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      // Cmd+Shift+B = Browser (maximized only)
+      if (terminalMaximized && e.shiftKey && (e.key === "b" || e.key === "B")) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (browserTabs.length === 0) createLandingTab();
+        setMaximizedContent(maximizedContent === "browser" ? "terminal" : "browser");
+        return;
+      }
+
+      // Cmd+Shift+R = Runner (maximized only)
+      if (terminalMaximized && e.shiftKey && (e.key === "r" || e.key === "R")) {
+        e.preventDefault();
+        e.stopPropagation();
+        setMaximizedContent(maximizedContent === "runner" ? "terminal" : "runner");
+        return;
+      }
+
+      // Cmd+1-9 = terminal groups (always available)
+      if (e.shiftKey) return;
+      const num = parseInt(e.key, 10);
+      if (isNaN(num) || num < 1 || num > 9) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const groupIndex = num - 1;
+      if (groupIndex >= 0 && groupIndex < groupIds.length && activeWorkspaceId) {
+        setActiveTerminalGroup(activeWorkspaceId, groupIds[groupIndex]);
+        if (terminalMaximized && maximizedContent !== "terminal") setMaximizedContent("terminal");
+      }
+    };
+    document.addEventListener("keydown", handler, true);
+    return () => document.removeEventListener("keydown", handler, true);
+  }, [terminalMaximized, maximizedContent, groupIds, activeWorkspaceId, browserTabs.length]);
 
   // Create a preset layout with empty panes (user fills each via "+ New Terminal" button)
   const handlePresetSelect = useCallback((preset: LayoutPreset) => {
@@ -275,6 +340,80 @@ export default memo(function TerminalTabs() {
       }}
       onContextMenu={handleBarContextMenu}
     >
+      {/* Quick-access buttons when maximized: Browser + Run (before terminal tabs) */}
+      {terminalMaximized && (
+        <div className="flex items-center gap-1" style={{ marginRight: 4 }}>
+          <button
+            onClick={() => {
+              if (browserTabs.length === 0) createLandingTab();
+              setMaximizedContent(maximizedContent === "browser" ? "terminal" : "browser");
+            }}
+            title="Browser (⌘⇧B)"
+            className="flex items-center gap-1.5 px-2.5 py-1"
+            style={{
+              color: maximizedContent === "browser" ? "var(--vp-accent-blue)" : "var(--vp-text-dim)",
+              fontSize: 11,
+              borderRadius: "var(--vp-radius-lg)",
+              border: `1px solid ${maximizedContent === "browser" ? "var(--vp-accent-blue-border)" : "var(--vp-border-light)"}`,
+              background: maximizedContent === "browser" ? "var(--vp-accent-blue-bg)" : "transparent",
+              transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+            onMouseEnter={(e) => {
+              if (maximizedContent !== "browser") {
+                e.currentTarget.style.color = "var(--vp-accent-blue)";
+                e.currentTarget.style.background = "var(--vp-accent-blue-bg)";
+                e.currentTarget.style.borderColor = "var(--vp-accent-blue-border)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (maximizedContent !== "browser") {
+                e.currentTarget.style.color = "var(--vp-text-dim)";
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.borderColor = "var(--vp-border-light)";
+              }
+            }}
+          >
+            <Globe size={12} />
+            <span>Browser</span>
+          </button>
+          <button
+            onClick={() => {
+              setMaximizedContent(maximizedContent === "runner" ? "terminal" : "runner");
+            }}
+            title="Runner (⌘⇧R)"
+            className="flex items-center gap-1.5 px-2.5 py-1"
+            style={{
+              color: maximizedContent === "runner" ? "#fb923c" : "var(--vp-text-dim)",
+              fontSize: 11,
+              borderRadius: "var(--vp-radius-lg)",
+              border: `1px solid ${maximizedContent === "runner" ? "rgba(251,146,60,0.3)" : "var(--vp-border-light)"}`,
+              background: maximizedContent === "runner" ? "rgba(251,146,60,0.12)" : "transparent",
+              transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+            onMouseEnter={(e) => {
+              if (maximizedContent !== "runner") {
+                e.currentTarget.style.color = "#fb923c";
+                e.currentTarget.style.background = "rgba(251,146,60,0.12)";
+                e.currentTarget.style.borderColor = "rgba(251,146,60,0.3)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (maximizedContent !== "runner") {
+                e.currentTarget.style.color = "var(--vp-text-dim)";
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.borderColor = "var(--vp-border-light)";
+              }
+            }}
+          >
+            <Play size={12} />
+            <span>Run</span>
+          </button>
+
+          {/* Separator */}
+          <div style={{ width: 1, height: 16, background: "var(--vp-border-light)", marginLeft: 2, marginRight: 2 }} />
+        </div>
+      )}
+
       {/* Terminal group tabs */}
       {groupIds.map((gid, index) => {
         const isActive = gid === activeGroupId;
@@ -288,6 +427,7 @@ export default memo(function TerminalTabs() {
             key={gid}
             onClick={() => {
               if (activeWorkspaceId) setActiveTerminalGroup(activeWorkspaceId, gid);
+              if (terminalMaximized && maximizedContent !== "terminal") setMaximizedContent("terminal");
             }}
             onContextMenu={(e) => {
               handleTabContextMenu(e, gid);
@@ -435,8 +575,69 @@ export default memo(function TerminalTabs() {
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Swap button (when widgets exist) or Maximize button */}
-      {terminalIsBottom && !terminalMaximized ? (
+      {/* Right-side controls */}
+      {terminalMaximized ? (
+        <div className="flex items-center gap-1">
+          {/* Switch between terminal and widgets (only if widgets exist) */}
+          {hasWidgets && (
+            <button
+              onClick={() => {
+                setMaximizedContent(maximizedContent === "widgets" ? "terminal" : "widgets");
+              }}
+              title={maximizedContent === "widgets" ? "Switch to Terminal" : "Switch to Widgets"}
+              className="flex items-center gap-1.5 px-2.5 py-1"
+              style={{
+                color: maximizedContent === "widgets" ? "var(--vp-accent-purple, #a78bfa)" : "var(--vp-text-dim)",
+                fontSize: 11,
+                borderRadius: "var(--vp-radius-lg)",
+                border: `1px solid ${maximizedContent === "widgets" ? "rgba(167,139,250,0.3)" : "var(--vp-border-light)"}`,
+                background: maximizedContent === "widgets" ? "rgba(167,139,250,0.12)" : "transparent",
+                transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+              }}
+              onMouseEnter={(e) => {
+                if (maximizedContent !== "widgets") {
+                  e.currentTarget.style.color = "var(--vp-text-primary)";
+                  e.currentTarget.style.background = "var(--vp-bg-surface-hover)";
+                  e.currentTarget.style.borderColor = "var(--vp-border-strong)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (maximizedContent !== "widgets") {
+                  e.currentTarget.style.color = "var(--vp-text-dim)";
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.borderColor = "var(--vp-border-light)";
+                }
+              }}
+            >
+              <ArrowLeftRight size={12} />
+              <span>Widgets</span>
+            </button>
+          )}
+          {/* Exit fullscreen */}
+          <button
+            onClick={() => setTerminalMaximized(false)}
+            title="Exit full screen"
+            className="flex items-center justify-center"
+            style={{
+              color: "var(--vp-text-dim)",
+              width: 28,
+              height: 28,
+              borderRadius: "var(--vp-radius-lg)",
+              transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--vp-text-primary)";
+              e.currentTarget.style.background = "var(--vp-bg-surface-hover)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--vp-text-dim)";
+              e.currentTarget.style.background = "transparent";
+            }}
+          >
+            <Minimize2 size={13} />
+          </button>
+        </div>
+      ) : terminalIsBottom ? (
         <button
           onClick={() => { swapPanes(); setTimeout(() => refitAllTerminals(), 50); }}
           title="Swap terminal &amp; widgets"
@@ -461,8 +662,8 @@ export default memo(function TerminalTabs() {
         </button>
       ) : (
         <button
-          onClick={() => setTerminalMaximized(!terminalMaximized)}
-          title={terminalMaximized ? "Exit full screen" : "Full screen"}
+          onClick={() => setTerminalMaximized(true)}
+          title="Full screen"
           className="flex items-center justify-center"
           style={{
             color: "var(--vp-text-dim)",
@@ -480,7 +681,7 @@ export default memo(function TerminalTabs() {
             e.currentTarget.style.background = "transparent";
           }}
         >
-          {terminalMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+          <Maximize2 size={13} />
         </button>
       )}
 
@@ -608,6 +809,7 @@ export default memo(function TerminalTabs() {
                   setSplitEnabled(false);
                   setViewMode("terminal");
                 } else {
+                  setSplitEnabled(true);
                   setViewMode("split");
                 }
               }}
@@ -684,7 +886,29 @@ export default memo(function TerminalTabs() {
                       flexShrink: 0,
                     }}
                   />
-                  <span>{s!.title}</span>
+                  {editingSessionId === s!.id ? (
+                    <input
+                      autoFocus
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          if (editValue.trim()) updateSession(editingSessionId!, { title: editValue.trim() });
+                          setEditingSessionId(null);
+                        } else if (e.key === "Escape") {
+                          setEditingSessionId(null);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (editValue.trim()) updateSession(editingSessionId!, { title: editValue.trim() });
+                        setEditingSessionId(null);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ background: "var(--vp-input-bg)", border: "1px solid var(--vp-accent-blue)", borderRadius: "var(--vp-radius-sm)", padding: "1px 4px", color: "var(--vp-text-primary)", fontSize: 10, outline: "none", width: 80 }}
+                    />
+                  ) : (
+                    <span>{s!.title}</span>
+                  )}
                 </div>
                 <button
                   onClick={(e) => {
@@ -772,10 +996,8 @@ export default memo(function TerminalTabs() {
             <button
               onClick={() => {
                 const session = allSessions.find((s) => s.id === sessionCtxMenu.sessionId);
-                const newName = window.prompt("Rename terminal:", session?.title ?? "");
-                if (newName && newName.trim()) {
-                  updateSession(sessionCtxMenu.sessionId, { title: newName.trim() });
-                }
+                setEditingSessionId(sessionCtxMenu.sessionId);
+                setEditValue(session?.title ?? "");
                 setSessionCtxMenu(null);
               }}
               className="flex items-center gap-2 w-full px-3 py-2"

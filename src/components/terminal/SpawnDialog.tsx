@@ -9,6 +9,8 @@ import { invoke } from "../../lib/ipc";
 import { getOrCreateTerminal, cleanupTerminal } from "../../lib/terminal/terminalCache";
 import { setupPtyConnection } from "../../lib/terminal/ptyConnection";
 import { getDefaultShell } from "../../lib/platform";
+import { useToastStore } from "../../stores/toastStore";
+import { getBaseName } from "../../lib/pathUtils";
 
 import claudeLogo from "../../assets/logos/claude.png";
 import opencodeLogo from "../../assets/logos/opencode.svg";
@@ -350,7 +352,7 @@ export default function SpawnDialog() {
       // Step 3: Add session to store and update layout
       addSession({
         id,
-        title: `${preset.label}@${resolvedCwd.split("/").pop() || resolvedCwd}`,
+        title: `${preset.label}@${getBaseName(resolvedCwd)}`,
         workspaceId: activeWorkspaceId ?? "",
         agentType: preset.type,
         originalAgentType: preset.type,
@@ -373,7 +375,7 @@ export default function SpawnDialog() {
       // Clean up the pre-created xterm instance on failure
       cleanupTerminal(id);
       console.error("Failed to spawn:", err);
-      alert(`Failed to spawn terminal: ${err}`);
+      useToastStore.getState().addToast(`Failed to spawn terminal: ${err}`, "error");
     }
   };
 
@@ -414,7 +416,7 @@ export default function SpawnDialog() {
       const resolvedCwd = result?.cwd || spawnCwd;
 
       addSession({
-        id, title: `${matchedPreset.label}@${resolvedCwd.split("/").pop() || resolvedCwd}`,
+        id, title: `${matchedPreset.label}@${getBaseName(resolvedCwd)}`,
         workspaceId: activeWorkspaceId ?? "", agentType: matchedPreset.type,
         originalAgentType: matchedPreset.type,
         projectPath: resolvedCwd, pid: result?.pid, isActive: true,
@@ -425,7 +427,7 @@ export default function SpawnDialog() {
       // Clean up the pre-created xterm instance on failure
       cleanupTerminal(id);
       console.error("Failed to quick spawn:", err);
-      alert(`Failed to spawn terminal: ${err}`);
+      useToastStore.getState().addToast(`Failed to spawn terminal: ${err}`, "error");
     }
   };
 

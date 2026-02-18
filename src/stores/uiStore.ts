@@ -51,6 +51,7 @@ interface UIState {
   sidebarCollapsed: boolean;
   draggingTab: string | null;
   terminalMaximized: boolean;
+  maximizedContent: "terminal" | "browser" | "runner" | "widgets";
   selectedProject: ProjectInfo | null;
   workspaces: Workspace[];
   activeWorkspaceId: string | null;
@@ -72,6 +73,7 @@ interface UIState {
   setViewMode: (mode: ViewMode) => void;
   setSplitEnabled: (enabled: boolean) => void;
   setTerminalMaximized: (maximized: boolean) => void;
+  setMaximizedContent: (content: "terminal" | "browser" | "runner" | "widgets") => void;
   setDraggingTab: (tab: string | null) => void;
   setSidebarWidth: (w: number) => void;
   setBottomPanelHeight: (h: number) => void;
@@ -122,6 +124,7 @@ export const useUIStore = create<UIState>((set) => ({
   sidebarCollapsed: false,
   draggingTab: null,
   terminalMaximized: false,
+  maximizedContent: "terminal" as "terminal" | "browser" | "runner" | "widgets",
   selectedProject: null,
   workspaces: [],
   activeWorkspaceId: null,
@@ -143,10 +146,11 @@ export const useUIStore = create<UIState>((set) => ({
 
   setViewMode: (mode) => set((s) => ({
     viewMode: mode,
-    splitEnabled: mode === "split" ? true : s.splitEnabled,
+    splitEnabled: mode === "split" ? true : s.viewMode === "split" ? false : s.splitEnabled,
   })),
   setSplitEnabled: (enabled) => set({ splitEnabled: enabled }),
-  setTerminalMaximized: (maximized) => set({ terminalMaximized: maximized }),
+  setTerminalMaximized: (maximized) => set({ terminalMaximized: maximized, ...(!maximized ? { maximizedContent: "terminal" as const } : {}) }),
+  setMaximizedContent: (content) => set({ maximizedContent: content }),
   setDraggingTab: (tab) => set({ draggingTab: tab }),
   setSidebarWidth: (w) => set({ sidebarWidth: w }),
   setBottomPanelHeight: (h) => set({ bottomPanelHeight: h }),

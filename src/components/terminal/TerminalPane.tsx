@@ -647,17 +647,15 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
         />
       )}
 
-      {/* Toolbar: keep in DOM during drag (isDragging) so onDragEnd fires.
-          Visible when hovered and nobody is dragging, OR hidden-but-present when this pane is dragging. */}
-      {(hovered || isDragging) && (
-        <div
-          className="absolute top-1 right-1 flex gap-1 z-10"
-          style={{
-            animation: !isDragging ? "fadeIn 0.15s ease" : undefined,
-            opacity: isDragging ? 0 : someoneIsDragging ? 0 : 1,
-            pointerEvents: isDragging || someoneIsDragging ? "none" : "auto",
-          }}
-        >
+      {/* Toolbar: always mounted, visible on hover via CSS opacity */}
+      <div
+        className="absolute top-1 right-1 flex gap-1 z-10"
+        style={{
+          opacity: isDragging ? 0 : someoneIsDragging ? 0 : hovered ? 1 : 0,
+          pointerEvents: isDragging || someoneIsDragging || !hovered ? "none" : "auto",
+          transition: "opacity 0.15s ease",
+        }}
+      >
           <div
             draggable
             onDragStart={handleDragStart}
@@ -688,6 +686,7 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
           <button
             onClick={(e) => { e.stopPropagation(); handleSplit("horizontal"); }}
             title="Split Right"
+            aria-label="Split Right"
             className="flex items-center justify-center"
             style={{
               width: 24,
@@ -713,6 +712,7 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
           <button
             onClick={(e) => { e.stopPropagation(); handleSplit("vertical"); }}
             title="Split Down"
+            aria-label="Split Down"
             className="flex items-center justify-center"
             style={{
               width: 24,
@@ -736,7 +736,6 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
             <Rows2 size={12} />
           </button>
         </div>
-      )}
 
       <div
         ref={containerRef}

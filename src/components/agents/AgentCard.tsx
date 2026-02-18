@@ -7,6 +7,7 @@ import { useUIStore } from "../../stores/uiStore";
 import { getSessionIds, closePane, rebalanceLayout } from "../../lib/layout/layoutUtils";
 import { cleanupTerminal } from "../../lib/terminal/terminalCache";
 import { invoke } from "../../lib/ipc";
+import { getBaseName } from "../../lib/pathUtils";
 
 import { getAgentConfig } from "../../lib/agentTypes";
 
@@ -27,7 +28,7 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close context menu on click outside
+  // Close context menu on click outside or ESC
   useEffect(() => {
     if (!contextMenu) return;
     const handleClick = (e: MouseEvent) => {
@@ -35,8 +36,15 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
         setContextMenu(null);
       }
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setContextMenu(null);
+    };
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [contextMenu]);
 
   // Poll output timestamp on a 1s timer (activity data lives outside Zustand)
@@ -56,7 +64,7 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
 
   const agentType = session?.agentType || agent.type;
   const config = getAgentConfig(agentType);
-  const dirName = (session?.projectPath || agent.cwd || "").split("/").filter(Boolean).pop() || "~";
+  const dirName = getBaseName(session?.projectPath || agent.cwd || "") || "~";
 
   const handleClick = () => {
     selectAgent(agent.id);
@@ -269,22 +277,13 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
           </div>
         </div>
 
-        <style>{`
-          @keyframes agentPulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-          }
-          @keyframes workingPulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-          }
-        `}</style>
       </button>
 
       {/* Context menu */}
       {contextMenu && (
         <div
           ref={menuRef}
+          role="menu"
           style={{
             position: "fixed",
             left: contextMenu.x,
@@ -299,6 +298,7 @@ export default function AgentCard({ agent, workspaceId, displayIndex, groupLabel
           }}
         >
           <button
+            role="menuitem"
             onClick={handleKillProcess}
             style={{
               width: "100%",

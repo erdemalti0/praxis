@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight, RotateCw, Home, Star, Loader2 } from "lucide-react";
 import { useBrowserStore } from "../../stores/browserStore";
 import { useState, useEffect, useRef } from "react";
+import { parseUrlOrSearch } from "../../lib/urlUtils";
 
 interface NavigationBarProps {
   onNavigate: (url: string) => void;
@@ -36,16 +37,8 @@ export default function NavigationBar({ onNavigate, webviewRef, tabId }: Navigat
   }, [activeTab?.showLanding, isFocused]);
 
   const handleNavigate = (input: string) => {
-    const q = input.trim();
-    if (!q) return;
-    
-    let url: string;
-    if (q.includes(".") || q.startsWith("http")) {
-      url = q.startsWith("http") ? q : `https://${q}`;
-    } else {
-      url = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
-    }
-    
+    const url = parseUrlOrSearch(input);
+    if (!url) return;
     setUrlInput(url);
     onNavigate(url);
     inputRef.current?.blur();

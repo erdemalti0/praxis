@@ -211,10 +211,11 @@ export default function TabBar({ onContextMenu }: TabBarProps) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 14,
-              height: 14,
+              width: 24,
+              height: 24,
               borderRadius: "var(--vp-radius-sm)",
               marginLeft: "auto",
+              cursor: "pointer",
             }}
             onClick={(e) => {
               e.stopPropagation();
@@ -227,7 +228,7 @@ export default function TabBar({ onContextMenu }: TabBarProps) {
               e.currentTarget.style.background = "transparent";
             }}
           >
-            <X size={8} style={{ color: "#888" }} />
+            <X size={12} style={{ color: "#888" }} />
           </div>
         </div>
         {!group.collapsed && groupTabs.map((tab) => {

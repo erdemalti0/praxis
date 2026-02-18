@@ -6,7 +6,10 @@ export default function ConfirmDialog() {
   const title = useConfirmStore((s) => s.title);
   const message = useConfirmStore((s) => s.message);
   const danger = useConfirmStore((s) => s.danger);
+  const confirmLabel = useConfirmStore((s) => s.confirmLabel);
+  const cancelLabel = useConfirmStore((s) => s.cancelLabel);
   const onConfirm = useConfirmStore((s) => s.onConfirm);
+  const onCancel = useConfirmStore((s) => s.onCancel);
   const hideConfirm = useConfirmStore((s) => s.hideConfirm);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -14,6 +17,7 @@ export default function ConfirmDialog() {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        onCancel?.();
         hideConfirm();
       } else if (e.key === "Enter") {
         e.preventDefault();
@@ -23,7 +27,7 @@ export default function ConfirmDialog() {
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [isOpen, onConfirm, hideConfirm]);
+  }, [isOpen, onConfirm, onCancel, hideConfirm]);
 
   useEffect(() => {
     if (isOpen && modalRef.current) {
@@ -44,7 +48,7 @@ export default function ConfirmDialog() {
         alignItems: "center",
         justifyContent: "center",
       }}
-      onClick={hideConfirm}
+      onClick={() => { onCancel?.(); hideConfirm(); }}
     >
       <div
         ref={modalRef}
@@ -68,7 +72,7 @@ export default function ConfirmDialog() {
         </p>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
           <button
-            onClick={hideConfirm}
+            onClick={() => { onCancel?.(); hideConfirm(); }}
             style={{
               padding: "6px 14px",
               fontSize: 12,
@@ -79,7 +83,7 @@ export default function ConfirmDialog() {
               cursor: "pointer",
             }}
           >
-            Cancel
+            {cancelLabel}
           </button>
           <button
             onClick={() => {
@@ -97,7 +101,7 @@ export default function ConfirmDialog() {
               fontWeight: 500,
             }}
           >
-            Confirm
+            {confirmLabel}
           </button>
         </div>
       </div>

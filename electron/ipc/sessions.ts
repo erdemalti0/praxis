@@ -34,8 +34,16 @@ export function registerSessionsHandlers() {
         if (!stat.isDirectory()) continue;
 
         // Decode slug back to path: "-home-user-projects-myapp" -> "/home/user/projects/myapp"
-        const decodedPath = "/" + dirName.replace(/^-/, "").replace(/-/g, "/");
-        const name = decodedPath.split("/").filter(Boolean).pop() || dirName;
+        // Detect if slug is from a Windows path (starts with drive letter followed by -)
+        const isWindowsSlug = /^[A-Za-z]-/.test(dirName);
+        let decodedPath: string;
+        if (isWindowsSlug) {
+          // "C-Users-erdem-projects" -> "C:\Users\erdem\projects"
+          decodedPath = dirName[0] + ":\\" + dirName.slice(2).replace(/-/g, "\\");
+        } else {
+          decodedPath = "/" + dirName.replace(/^-/, "").replace(/-/g, "/");
+        }
+        const name = decodedPath.split(/[/\\]/).filter(Boolean).pop() || dirName;
         const lastModified = Math.floor(stat.mtimeMs / 1000);
 
         projects.push({ name, path: decodedPath, lastModified });

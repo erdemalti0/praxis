@@ -5,6 +5,7 @@ import AgentCard from "./AgentCard";
 import { Bot, Layout, Plus } from "lucide-react";
 import type { Agent } from "../../types/agent";
 import { getSessionIds } from "../../lib/layout/layoutUtils";
+import { getBaseName } from "../../lib/pathUtils";
 
 interface WorkspaceGroup {
   workspace: Workspace;
@@ -30,7 +31,7 @@ export default function AgentList() {
         type: "unknown" as const,
         status: "active" as const,
         projectPath: session.projectPath || "~",
-        projectName: (session.projectPath || "~").split("/").filter(Boolean).pop() || "~",
+        projectName: getBaseName(session.projectPath || "~") || "~",
         sessionId: session.id,
         cwd: session.projectPath || "~",
       }));
@@ -147,15 +148,16 @@ export default function AgentList() {
             {/* Agents */}
             {(() => {
               // Pre-compute type counts and running indices in a single pass
+              const sessionMap = new Map(sessions.map((s) => [s.id, s]));
               const typeCount = new Map<string, number>();
               const typeRunning = new Map<string, number>();
               for (const a of group.agents) {
-                const t = sessions.find((s) => s.id === a.sessionId)?.agentType || "shell";
+                const t = sessionMap.get(a.sessionId || "")?.agentType || "shell";
                 typeCount.set(t, (typeCount.get(t) || 0) + 1);
               }
 
               return group.agents.map((agent) => {
-                const agentType = sessions.find((s) => s.id === agent.sessionId)?.agentType || "shell";
+                const agentType = sessionMap.get(agent.sessionId || "")?.agentType || "shell";
                 const running = (typeRunning.get(agentType) || 0) + 1;
                 typeRunning.set(agentType, running);
                 const total = typeCount.get(agentType) || 1;

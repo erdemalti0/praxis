@@ -78,6 +78,8 @@ export function createWindow(projectName?: string, projectPath?: string) {
     icon: path.join(__dirname, "../resources/logo.png"),
     ...(process.platform === "darwin"
       ? { titleBarStyle: "hiddenInset" as const, trafficLightPosition: { x: 14, y: 18 } }
+      : process.platform === "win32"
+      ? { titleBarStyle: "hidden" as const, titleBarOverlay: { color: "#0a0a0c", symbolColor: "#e0e0e0", height: 40 } }
       : {}),
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),

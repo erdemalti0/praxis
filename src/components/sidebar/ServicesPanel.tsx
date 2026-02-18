@@ -3,6 +3,7 @@ import { Globe, Square, RefreshCw, Activity } from "lucide-react";
 import { useServicesStore } from "../../stores/servicesStore";
 import { useUIStore } from "../../stores/uiStore";
 import { useBrowserStore } from "../../stores/browserStore";
+import { useConfirmStore } from "../../stores/confirmStore";
 
 export default function ServicesPanel() {
   const services = useServicesStore((s) => s.services);
@@ -42,7 +43,17 @@ export default function ServicesPanel() {
         <div className="flex items-center gap-1">
           {services.length > 0 && (
             <button
-              onClick={() => services.forEach((svc) => openInBrowser(svc.port))}
+              onClick={() => {
+                if (services.length > 3) {
+                  useConfirmStore.getState().showConfirm(
+                    "Open All Services",
+                    `Open ${services.length} services in browser?`,
+                    () => services.forEach((svc) => openInBrowser(svc.port))
+                  );
+                } else {
+                  services.forEach((svc) => openInBrowser(svc.port));
+                }
+              }}
               title="Open all in browser"
               style={{
                 height: 20, borderRadius: "var(--vp-radius-sm)", padding: "0 6px",
@@ -98,7 +109,7 @@ export default function ServicesPanel() {
               borderRadius: "var(--vp-radius-sm)", padding: "1px 6px",
               fontFamily: "monospace", flexShrink: 0,
             }}>
-              :{svc.port}
+              localhost:{svc.port}
             </span>
 
             {/* Process info */}

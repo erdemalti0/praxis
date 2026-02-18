@@ -13,6 +13,7 @@ import markdown from "highlight.js/lib/languages/markdown";
 import yaml from "highlight.js/lib/languages/yaml";
 import sql from "highlight.js/lib/languages/sql";
 import rust from "highlight.js/lib/languages/rust";
+import { getBaseName } from "../../../lib/pathUtils";
 import go from "highlight.js/lib/languages/go";
 import java from "highlight.js/lib/languages/java";
 import diff from "highlight.js/lib/languages/diff";
@@ -137,8 +138,8 @@ export default function MarkdownPreviewWidget({
       const files = await invoke<string[]>("glob_files", { pattern: "*.md", cwd: selectedProject.path });
       // Sort: README.md first, then alphabetically
       const sorted = files.sort((a, b) => {
-        const nameA = a.split("/").pop()?.toLowerCase() ?? "";
-        const nameB = b.split("/").pop()?.toLowerCase() ?? "";
+        const nameA = getBaseName(a).toLowerCase();
+        const nameB = getBaseName(b).toLowerCase();
         if (nameA === "readme.md") return -1;
         if (nameB === "readme.md") return 1;
         return nameA.localeCompare(nameB);
@@ -207,7 +208,7 @@ export default function MarkdownPreviewWidget({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${(selectedFile?.split("/").pop() ?? "markdown")}.html`;
+    a.download = `${selectedFile ? getBaseName(selectedFile) : "markdown"}.html`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -224,7 +225,7 @@ export default function MarkdownPreviewWidget({
     return () => { clearTimeout(id); document.removeEventListener("mousedown", close); };
   }, [showFilePicker]);
 
-  const fileName = selectedFile?.split("/").pop() ?? "No file";
+  const fileName = selectedFile ? getBaseName(selectedFile) : "No file";
   const relativePath = (f: string) => {
     if (!selectedProject?.path) return f;
     return f.startsWith(selectedProject.path) ? f.slice(selectedProject.path.length + 1) : f;

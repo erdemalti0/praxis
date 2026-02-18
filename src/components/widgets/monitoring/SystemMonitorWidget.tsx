@@ -261,6 +261,8 @@ export default function SystemMonitorWidget({
   useEffect(() => {
     let mounted = true;
     const poll = async () => {
+      // Skip polling when window is hidden (e.g. app in background)
+      if (document.visibilityState === "hidden") return;
       try {
         const data = await invoke<SystemStats>("get_system_stats");
         if (mounted) {
@@ -280,9 +282,13 @@ export default function SystemMonitorWidget({
     };
     poll();
     const interval = setInterval(poll, config.refreshInterval ?? 3000);
+    // Resume polling immediately when window becomes visible again
+    const onVisibility = () => { if (document.visibilityState === "visible") poll(); };
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
       mounted = false;
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [config.refreshInterval, historyLength]);
 

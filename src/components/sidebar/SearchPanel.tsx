@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useMemo } from "react";
 import { Search, X, Copy, ChevronDown, ChevronRight } from "lucide-react";
 import { useSearchStore } from "../../stores/searchStore";
 import { useUIStore } from "../../stores/uiStore";
+import { useEditorStore } from "../../stores/editorStore";
 
 export default function SearchPanel() {
   const query = useSearchStore((s) => s.query);
@@ -106,7 +107,7 @@ export default function SearchPanel() {
           </button>
           <div style={{ flex: 1 }} />
           {results.length > 0 && (
-            <span style={{ fontSize: 9, color: "var(--vp-text-faint)" }}>
+            <span style={{ fontSize: 11, color: "var(--vp-text-faint)" }}>
               {results.length} result{results.length !== 1 ? "s" : ""} in {fileKeys.length} file{fileKeys.length !== 1 ? "s" : ""}
             </span>
           )}
@@ -147,15 +148,23 @@ export default function SearchPanel() {
                 <span style={{ fontSize: 9, color: "var(--vp-text-faint)", flexShrink: 0 }}>{items.length}</span>
               </button>
               {!isCollapsed && items.map((r, idx) => (
-                <div
+                <button
                   key={idx}
                   className="flex items-center gap-2"
                   style={{
                     padding: "2px 8px 2px 22px", cursor: "pointer",
                     transition: "background 0.1s",
+                    background: "transparent",
+                    border: "none",
+                    textAlign: "left",
+                    width: "100%",
                   }}
-                  onClick={() => copyToClipboard(`${file}:${r.line}`)}
-                  title={`Click to copy: ${file}:${r.line}`}
+                  onClick={() => {
+                    const editorStore = useEditorStore.getState();
+                    editorStore.openFile(file);
+                    useUIStore.getState().setViewMode("editor");
+                  }}
+                  title={`Open ${file}:${r.line}`}
                   onMouseEnter={(e) => e.currentTarget.style.background = "var(--vp-bg-surface)"}
                   onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                 >
@@ -168,8 +177,19 @@ export default function SearchPanel() {
                   }}>
                     {r.content.trim()}
                   </span>
-                  <Copy size={9} style={{ color: "var(--vp-text-subtle)", flexShrink: 0 }} />
-                </div>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    title={`Copy ${file}:${r.line}`}
+                    style={{ flexShrink: 0, cursor: "pointer", display: "flex", alignItems: "center" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      copyToClipboard(`${file}:${r.line}`);
+                    }}
+                  >
+                    <Copy size={9} style={{ color: "var(--vp-text-subtle)" }} />
+                  </span>
+                </button>
               ))}
             </div>
           );

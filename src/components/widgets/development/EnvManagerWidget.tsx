@@ -116,16 +116,46 @@ export default function EnvManagerWidget({
     setLoading(true);
     const newMap = new Map<string, ParsedEnvFile>();
 
-    for (const filename of ENV_FILES) {
-      try {
-        const content = await invoke<string>("read_file", {
-          path: projectPath + "/" + filename,
-        });
-        if (content) {
-          newMap.set(filename, parseEnvContent(content));
+    // Search recursively for .env* files using glob_files
+    try {
+      const foundPaths = await invoke<string[]>("glob_files", {
+        pattern: ".env*",
+        cwd: projectPath,
+      });
+
+      for (const fullPath of foundPaths) {
+        // Get relative path from project root
+        const sep = fullPath.includes("\\") ? "\\" : "/";
+        const relativePath = fullPath
+          .replace(projectPath + sep, "")
+          .replace(projectPath, "");
+        // Only include known env file names
+        const basename = relativePath.split(/[/\\]/).pop() || "";
+        if (!ENV_FILES.includes(basename)) continue;
+
+        try {
+          const content = await invoke<string>("read_file", { path: fullPath });
+          if (content) {
+            // Use relative path as key (e.g., "mobile/.env" or just ".env")
+            newMap.set(relativePath, parseEnvContent(content));
+          }
+        } catch {
+          // Can't read — skip
         }
-      } catch {
-        // File doesn't exist or can't be read — skip
+      }
+    } catch {
+      // glob_files failed — fallback to root-only check
+      for (const filename of ENV_FILES) {
+        try {
+          const content = await invoke<string>("read_file", {
+            path: projectPath + "/" + filename,
+          });
+          if (content) {
+            newMap.set(filename, parseEnvContent(content));
+          }
+        } catch {
+          // skip
+        }
       }
     }
 
@@ -164,9 +194,10 @@ export default function EnvManagerWidget({
       deletedKeys: Set<string>
     ) => {
       const content = rebuildContent(originalLines, vars, deletedKeys);
-      const filePath = projectPath + "/" + filename;
+      const sep = projectPath.includes("\\") ? "\\" : "/";
+      const filePath = projectPath + sep + filename.replace(/[/\\]/g, sep);
       await invoke("write_file", { path: filePath, content });
-      // Reload
+      // Reload — use the relative filename key (e.g., "mobile/.env")
       const freshContent = await invoke<string>("read_file", { path: filePath });
       if (freshContent) {
         setEnvFiles((prev) => {

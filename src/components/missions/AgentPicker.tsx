@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTerminalStore, isSessionWorking, getOutputActivity } from "../../stores/terminalStore";
 import { useUIStore } from "../../stores/uiStore";
+import { useShallow } from "zustand/shallow";
 import { getSessionIds } from "../../lib/layout/layoutUtils";
 import { getAgentConfig } from "../../lib/agentTypes";
 import { Terminal } from "lucide-react";
+import { getBaseName } from "../../lib/pathUtils";
 
 interface AgentPickerProps {
   onSelect: (sessionId: string, workspaceId: string) => void;
@@ -11,9 +13,13 @@ interface AgentPickerProps {
 
 export default function AgentPicker({ onSelect }: AgentPickerProps) {
   const sessions = useTerminalStore((s) => s.sessions);
-  const workspaces = useUIStore((s) => s.workspaces);
-  const terminalGroups = useUIStore((s) => s.terminalGroups);
-  const workspaceLayouts = useUIStore((s) => s.workspaceLayouts);
+  const { workspaces, terminalGroups, workspaceLayouts } = useUIStore(
+    useShallow((s) => ({
+      workspaces: s.workspaces,
+      terminalGroups: s.terminalGroups,
+      workspaceLayouts: s.workspaceLayouts,
+    }))
+  );
   const [, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -21,17 +27,20 @@ export default function AgentPicker({ onSelect }: AgentPickerProps) {
     return () => clearInterval(t);
   }, []);
 
-  const sessionGroupLabel: Record<string, string> = {};
-  for (const ws of workspaces) {
-    const groupIds = terminalGroups[ws.id] || [];
-    for (let i = 0; i < groupIds.length; i++) {
-      const layout = workspaceLayouts[groupIds[i]];
-      if (!layout) continue;
-      for (const sid of getSessionIds(layout)) {
-        sessionGroupLabel[sid] = `Terminal ${i + 1}`;
+  const sessionGroupLabel = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const ws of workspaces) {
+      const groupIds = terminalGroups[ws.id] || [];
+      for (let i = 0; i < groupIds.length; i++) {
+        const layout = workspaceLayouts[groupIds[i]];
+        if (!layout) continue;
+        for (const sid of getSessionIds(layout)) {
+          map[sid] = `Terminal ${i + 1}`;
+        }
       }
     }
-  }
+    return map;
+  }, [workspaces, terminalGroups, workspaceLayouts]);
 
   const grouped = workspaces
     .map((ws) => ({
@@ -129,7 +138,7 @@ export default function AgentPicker({ onSelect }: AgentPickerProps) {
                     {idx !== undefined && <span style={{ color: "var(--vp-text-faint)", fontWeight: 400, marginLeft: 3 }}>#{idx}</span>}
                   </div>
                   <div style={{ fontSize: 9, color: "var(--vp-text-faint)", lineHeight: "12px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {groupLabel}{groupLabel && " · "}{(session.projectPath || "~").split("/").filter(Boolean).pop() || "~"}
+                    {groupLabel}{groupLabel && " · "}{getBaseName(session.projectPath || "~") || "~"}
                   </div>
                 </div>
                 <span style={{ fontSize: 9, fontWeight: 500, color: isWorking ? "var(--vp-accent-green)" : "var(--vp-text-faint)", flexShrink: 0 }}>

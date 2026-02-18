@@ -5,15 +5,20 @@ import { useUIStore } from "../../stores/uiStore";
 import type { LayoutNode } from "../../types/layout";
 import { refitAllTerminals, setActiveScrollback, setBackgroundScrollback } from "../../lib/terminal/terminalCache";
 import { useTerminalStore } from "../../stores/terminalStore";
+import { useShallow } from "zustand/shallow";
 
 const EMPTY_LEAF: LayoutNode = { type: "leaf", sessionId: null };
 
 export default memo(function MainPanel() {
-  const activeWorkspaceId = useUIStore((s) => s.activeWorkspaceId);
-  const workspaceLayouts = useUIStore((s) => s.workspaceLayouts);
-  const activeTerminalGroup = useUIStore((s) => s.activeTerminalGroup);
-  const terminalMaximized = useUIStore((s) => s.terminalMaximized);
-  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
+  const { activeWorkspaceId, workspaceLayouts, activeTerminalGroup, terminalMaximized, sidebarCollapsed } = useUIStore(
+    useShallow((s) => ({
+      activeWorkspaceId: s.activeWorkspaceId,
+      workspaceLayouts: s.workspaceLayouts,
+      activeTerminalGroup: s.activeTerminalGroup,
+      terminalMaximized: s.terminalMaximized,
+      sidebarCollapsed: s.sidebarCollapsed,
+    }))
+  );
 
   const activeGroupId = activeWorkspaceId ? activeTerminalGroup[activeWorkspaceId] : undefined;
 

@@ -10,6 +10,7 @@
  */
 import type { Terminal } from "@xterm/xterm";
 import { invoke, send, listen } from "../ipc";
+import { getBaseName } from "../pathUtils";
 import { getDefaultShell } from "../platform";
 import { useTerminalStore, markOutput, markUserInput } from "../../stores/terminalStore";
 
@@ -115,7 +116,7 @@ export function setupPtyConnection({ sessionId, terminal, fallbackCwd = "~" }: P
           store.updateSession(sessionId, {
             agentType: "shell",
             originalAgentType: "shell",
-            title: `Shell@${actualCwd.split("/").pop() || actualCwd}`,
+            title: `Shell@${getBaseName(actualCwd)}`,
             projectPath: actualCwd,
             pid: res?.pid,
           });

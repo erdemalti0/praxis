@@ -37,8 +37,22 @@ export default memo(function WidgetCard({ widgetId, widgetType, workspaceId, con
 
   if (!def || !Component) {
     return (
-      <div className="h-full flex items-center justify-center" style={{ color: "var(--vp-text-faint)", fontSize: 12 }}>
-        Unknown widget: {widgetType}
+      <div className="h-full flex flex-col items-center justify-center gap-2" style={{ color: "var(--vp-text-faint)", fontSize: 12 }}>
+        <span>This widget is no longer available</span>
+        <button
+          onClick={handleRemove}
+          style={{
+            fontSize: 10,
+            color: "var(--vp-accent-red)",
+            background: "none",
+            border: "1px solid var(--vp-accent-red-border, var(--vp-border-light))",
+            borderRadius: "var(--vp-radius-sm)",
+            padding: "2px 8px",
+            cursor: "pointer",
+          }}
+        >
+          Remove
+        </button>
       </div>
     );
   }
@@ -69,7 +83,7 @@ export default memo(function WidgetCard({ widgetId, widgetType, workspaceId, con
           className="widget-drag-handle flex items-center gap-2"
           style={{ flex: 1, minWidth: 0, cursor: "grab", height: "100%" }}
         >
-          <GripVertical size={12} style={{ color: "var(--vp-text-subtle)", flexShrink: 0 }} />
+          <GripVertical size={12} className="grip-icon" style={{ color: "var(--vp-text-subtle)", flexShrink: 0 }} />
           <span
             style={{
               fontSize: 11,
@@ -110,7 +124,7 @@ export default memo(function WidgetCard({ widgetId, widgetType, workspaceId, con
           >
             <X size={13} />
           </button>
-        ) : topPaneContent === "widgets" ? (
+        ) : (topPaneContent === "widgets" || isFullscreen) ? (
           /* Widget pane is on top (main view) — show fullscreen button */
           <button
             onClick={(e) => {

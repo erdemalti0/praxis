@@ -131,14 +131,14 @@ export function registerGitHandlers() {
     const cwd = args.cwd || projectPath;
     if (!cwd) return { branches: [] };
     try {
-      const result = await execAsync("git branch --format='%(refname:short)' -a", {
+      const result = await execAsync("git branch --format=%(refname:short) -a", {
         cwd,
         encoding: "utf-8",
         timeout: 5000,
       });
       const branches = result.stdout
         .split("\n")
-        .map((b) => b.trim().replace(/^'|'$/g, ""))
+        .map((b) => b.trim())
         .filter(Boolean)
         .map((b) => b.replace(/^remotes\/origin\//, ""))
         .filter((v, i, arr) => arr.indexOf(v) === i); // deduplicate

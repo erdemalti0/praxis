@@ -76,7 +76,7 @@ export default function RunnerPanel() {
               pidPorts.set(inst.pid, [...existing, ...childPorts]);
             }
           }
-        } catch {}
+        } catch (err) { console.warn("[RunnerPanel] IPC error:", err); }
       }
 
       updatePorts(pidPorts);
@@ -93,15 +93,6 @@ export default function RunnerPanel() {
       clearInterval(interval);
     };
   }, [updatePorts, refreshEmulators]);
-
-  // Uptime ticker — force re-render every second when there's a running instance
-  const [, setTick] = useState(0);
-  const hasRunning = instances.some((i) => i.status === "running");
-  useEffect(() => {
-    if (!hasRunning) return;
-    const timer = setInterval(() => setTick((t) => t + 1), 1000);
-    return () => clearInterval(timer);
-  }, [hasRunning]);
 
   const workspaceId = activeWorkspaceId || "ws-default";
 

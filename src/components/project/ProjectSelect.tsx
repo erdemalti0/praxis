@@ -4,12 +4,8 @@ import { invoke } from "../../lib/ipc";
 import { useUIStore } from "../../stores/uiStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import type { ProjectInfo } from "../../types/session";
-
-function truncatePath(fullPath: string): string {
-  const segments = fullPath.split("/").filter(Boolean);
-  if (segments.length <= 3) return fullPath;
-  return ".../" + segments.slice(-3).join("/");
-}
+import { useToastStore } from "../../stores/toastStore";
+import { truncatePath, getBaseName } from "../../lib/pathUtils";
 
 function CloneModal({ onClose, onCloned }: { onClose: () => void; onCloned: (path: string) => void }) {
   const [repoUrl, setRepoUrl] = useState("");
@@ -205,6 +201,7 @@ export default function ProjectSelect() {
   const addRecentProject = useSettingsStore((s) => s.addRecentProject);
   const removeRecentProject = useSettingsStore((s) => s.removeRecentProject);
   const [showCloneModal, setShowCloneModal] = useState(false);
+  const [isOpening, setIsOpening] = useState(false);
 
   // Listen for menu-triggered clone modal
   useEffect(() => {
@@ -214,20 +211,24 @@ export default function ProjectSelect() {
   }, []);
 
   const handleOpenFolder = async () => {
+    setIsOpening(true);
     try {
       const selectedPath = await invoke<string | null>("open_directory_dialog");
       if (!selectedPath) return;
-      const name = selectedPath.split("/").filter(Boolean).pop() || selectedPath;
+      const name = getBaseName(selectedPath);
       const project: ProjectInfo = { name, path: selectedPath, lastModified: Date.now() / 1000 };
       setSelectedProject(project);
       addRecentProject(project);
     } catch (err) {
       console.error("Failed to open directory dialog:", err);
+      useToastStore.getState().addToast("Failed to open project folder", "error");
+    } finally {
+      setIsOpening(false);
     }
   };
 
   const handleCloned = (clonedPath: string) => {
-    const name = clonedPath.split("/").filter(Boolean).pop() || clonedPath;
+    const name = getBaseName(clonedPath);
     const project: ProjectInfo = { name, path: clonedPath, lastModified: Date.now() / 1000 };
     setSelectedProject(project);
     addRecentProject(project);
@@ -463,6 +464,7 @@ export default function ProjectSelect() {
       >
         <button
           onClick={handleOpenFolder}
+          disabled={isOpening}
           style={{
             display: "flex",
             alignItems: "center",
@@ -474,15 +476,16 @@ export default function ProjectSelect() {
             borderRadius: "var(--vp-radius-3xl)",
             fontSize: 15,
             fontWeight: 600,
-            cursor: "pointer",
+            cursor: isOpening ? "not-allowed" : "pointer",
             transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
             letterSpacing: "-0.01em",
+            opacity: isOpening ? 0.6 : 1,
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+          onMouseEnter={(e) => { if (!isOpening) e.currentTarget.style.opacity = "0.85"; }}
+          onMouseLeave={(e) => { if (!isOpening) e.currentTarget.style.opacity = "1"; }}
         >
-          <FolderOpen size={18} />
-          Open Project
+          {isOpening ? <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} /> : <FolderOpen size={18} />}
+          {isOpening ? "Opening..." : "Open Project"}
         </button>
 
         <button

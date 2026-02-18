@@ -1,5 +1,6 @@
 import { MessageSquare, Bot, User } from "lucide-react";
 import type { HistoryEntry } from "../../types/session";
+import { getBaseName } from "../../lib/pathUtils";
 
 function formatTime(ts: number): string {
   const d = new Date(ts);
@@ -23,7 +24,7 @@ const typeIcons = {
 
 export default function TimelineEntry({ entry }: { entry: HistoryEntry }) {
   const Icon = typeIcons[entry.type] || MessageSquare;
-  const projectName = entry.project?.split("/").pop() || "unknown";
+  const projectName = entry.project ? getBaseName(entry.project) : "unknown";
 
   return (
     <div

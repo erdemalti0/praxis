@@ -4,6 +4,7 @@ import { useUIStore } from "../../../stores/uiStore";
 import { getAgentConfig } from "../../../lib/agentTypes";
 import type { AgentMonitorConfig } from "../../../types/widget";
 import { Bot, Terminal } from "lucide-react";
+import { getBaseName } from "../../../lib/pathUtils";
 
 export default function AgentMonitorWidget({
   widgetId: _widgetId,
@@ -87,7 +88,7 @@ export default function AgentMonitorWidget({
             {group.sessions.map((session) => {
               const agentConfig = getAgentConfig(session.agentType);
               const isWorking = isSessionWorking(getOutputActivity(session.id));
-              const dirName = (session.projectPath || "~").split("/").filter(Boolean).pop() || "~";
+              const dirName = getBaseName(session.projectPath || "~") || "~";
 
               return (
                 <div

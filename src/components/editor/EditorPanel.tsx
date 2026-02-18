@@ -1,5 +1,6 @@
 import { useEditorStore } from "../../stores/editorStore";
 import { useUIStore } from "../../stores/uiStore";
+import { useConfirmStore } from "../../stores/confirmStore";
 import { X, FileCode2 } from "lucide-react";
 import CodeEditor from "./CodeEditor";
 
@@ -13,22 +14,34 @@ export default function EditorPanel() {
 
   const activeTab = tabs.find((t) => t.filePath === activeFilePath);
 
-  const handleClose = (filePath: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const tab = tabs.find((t) => t.filePath === filePath);
-    if (tab && tab.content !== tab.savedContent) {
-      if (!window.confirm(`Save changes to ${tab.fileName}?`)) {
-        // discard
-      } else {
-        useEditorStore.getState().saveFile(filePath);
-      }
-    }
+  const doClose = (filePath: string) => {
     closeFile(filePath);
-    // If no tabs left, go back to previous view
     const remaining = tabs.filter((t) => t.filePath !== filePath);
     if (remaining.length === 0) {
       setViewMode((previousViewMode as any) || "terminal");
     }
+  };
+
+  const handleClose = (filePath: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const tab = tabs.find((t) => t.filePath === filePath);
+    if (tab && tab.content !== tab.savedContent) {
+      useConfirmStore.getState().showConfirm(
+        "Unsaved Changes",
+        `Save changes to ${tab.fileName}?`,
+        () => {
+          useEditorStore.getState().saveFile(filePath);
+          doClose(filePath);
+        },
+        {
+          confirmLabel: "Save",
+          cancelLabel: "Discard",
+          onCancel: () => doClose(filePath),
+        }
+      );
+      return;
+    }
+    doClose(filePath);
   };
 
   if (tabs.length === 0) {
@@ -119,7 +132,8 @@ export default function EditorPanel() {
                     }}
                   />
                 )}
-                <div
+                <button
+                  aria-label="Close tab"
                   onClick={(e) => handleClose(tab.filePath, e)}
                   style={{
                     width: 16,
@@ -132,6 +146,9 @@ export default function EditorPanel() {
                     cursor: "pointer",
                     opacity: isActive ? 0.6 : 0,
                     transition: "opacity 0.1s, background 0.1s",
+                    background: "transparent",
+                    border: "none",
+                    padding: 0,
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.opacity = "1";
@@ -143,7 +160,7 @@ export default function EditorPanel() {
                   }}
                 >
                   <X size={10} style={{ color: "var(--vp-text-muted)" }} />
-                </div>
+                </button>
               </button>
             );
           })}

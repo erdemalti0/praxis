@@ -25,7 +25,7 @@
   #root {
     height: 100%;
     overflow: hidden;
-    font-family: "JetBrains Mono", "SF Mono", Monaco, Menlo, monospace;
+    font-family: "JetBrains Mono", "Cascadia Code", "SF Mono", Consolas, Monaco, Menlo, monospace;
     background: var(--vp-bg-primary, #000000);
     color: var(--vp-text-primary, #e0e0e0);
   }
@@ -73,6 +73,12 @@ button, a, input, [class*="transition"] {
 /* Pane divider */
 .pane-divider:hover {
   background: var(--vp-accent-blue) !important;
+}
+
+/* Accent yellow (used by toast warnings, etc.) */
+:root {
+  --vp-accent-yellow: #f59e0b;
+  --vp-accent-purple: #c9b8fa;
 }
 
 /* Tag palette colors */
@@ -176,4 +182,29 @@ button, a, input, [class*="transition"] {
   0% { transform: scale(1.02); }
   50% { transform: scale(0.98); }
   100% { transform: scale(1); }
+}
+
+@keyframes fsOverlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fsContentIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes agentPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes workingPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

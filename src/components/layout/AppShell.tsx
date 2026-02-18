@@ -15,7 +15,10 @@ import { refitAllTerminals } from "../../lib/terminal/terminalCache";
 import BrowserPanel from "../browser/BrowserPanel";
 import EditorPanel from "../editor/EditorPanel";
 import RunnerPanel from "../runner/RunnerPanel";
+import WorkspaceContent from "../widgets/WorkspaceContent";
+import WidgetCard from "../widgets/WidgetCard";
 import OnboardingOverlay from "../ui/OnboardingOverlay";
+import { Minimize2 } from "lucide-react";
 
 const SIDEBAR_COLLAPSED_WIDTH = 48;
 const TASK_PANEL_WIDTH = 340;
@@ -23,6 +26,7 @@ const TASK_PANEL_WIDTH = 340;
 export default function AppShell() {
   const {
     sidebarWidth, sidebarCollapsed, viewMode, draggingTab, terminalMaximized,
+    maximizedContent,
     selectedProject, addWorkspace, workspaces, activeWorkspaceId,
     showCustomizePanel, showMissionPanel,
     topPaneContent, widgetDividerRatio,
@@ -32,6 +36,7 @@ export default function AppShell() {
     viewMode: s.viewMode,
     draggingTab: s.draggingTab,
     terminalMaximized: s.terminalMaximized,
+    maximizedContent: s.maximizedContent,
     selectedProject: s.selectedProject,
     addWorkspace: s.addWorkspace,
     workspaces: s.workspaces,
@@ -46,10 +51,31 @@ export default function AppShell() {
   const hasWidgets = activeWorkspaceId
     ? (widgetStoreWidgets[activeWorkspaceId]?.length ?? 0) > 0
     : false;
+  const fullscreenWidgetId = useUIStore((s) => s.fullscreenWidgetId);
+  const setFullscreenWidgetId = useUIStore((s) => s.setFullscreenWidgetId);
   const onboardingDone = useSettingsStore((s) => s.onboardingDone);
+
+  // ESC to exit widget fullscreen
+  useEffect(() => {
+    if (!fullscreenWidgetId) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFullscreenWidgetId(null);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [fullscreenWidgetId, setFullscreenWidgetId]);
 
   const initRef = useRef(false);
   const currentSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth;
+
+  // Deferred mount: don't pay the cost of heavy panels until the user first opens them.
+  // After first open, keep mounted (keep-alive) to preserve state.
+  const hasOpenedEditor = useRef(viewMode === "editor");
+  const hasOpenedRunner = useRef(viewMode === "runner");
+  const hasOpenedBrowser = useRef(viewMode === "browser");
+  if (viewMode === "editor") hasOpenedEditor.current = true;
+  if (viewMode === "runner") hasOpenedRunner.current = true;
+  if (viewMode === "browser") hasOpenedBrowser.current = true;
 
   // Auto-create or restore workspaces when project is selected
   useEffect(() => {
@@ -131,6 +157,53 @@ export default function AppShell() {
 
   const browserMaximized = useBrowserStore((s) => s.browserMaximized);
 
+  // Fullscreen single widget — takes over the entire screen like terminal/browser maximize
+  if (fullscreenWidgetId && activeWorkspaceId) {
+    const allWidgets = widgetStoreWidgets[activeWorkspaceId] ?? [];
+    const fsWidget = allWidgets.find((w) => w.id === fullscreenWidgetId);
+    if (fsWidget) {
+      return (
+        <div
+          className="h-screen w-screen flex flex-col"
+          style={{
+            background: "var(--vp-bg-primary)",
+            color: "var(--vp-text-primary)",
+            fontFamily:
+              '-apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", "Segoe UI", sans-serif',
+            position: "relative",
+          }}
+        >
+          <div className="flex-1 min-h-0" style={{ padding: 8 }}>
+            <WidgetCard
+              widgetId={fsWidget.id}
+              widgetType={fsWidget.type}
+              workspaceId={activeWorkspaceId}
+              config={fsWidget.config}
+            />
+          </div>
+          {/* Restore button */}
+          <button
+            onClick={() => setFullscreenWidgetId(null)}
+            title="Exit fullscreen (ESC)"
+            style={{
+              position: "absolute", top: 12, right: 12, zIndex: 50,
+              background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-medium)",
+              borderRadius: "var(--vp-radius-md)", padding: "4px 8px",
+              cursor: "pointer", color: "var(--vp-text-muted)", fontSize: 10,
+              display: "flex", alignItems: "center", gap: 4, opacity: 0.7,
+              transition: "opacity 0.2s",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.7"; }}
+          >
+            <Minimize2 size={12} />
+            <span>ESC</span>
+          </button>
+        </div>
+      );
+    }
+  }
+
   // Maximized browser — hide everything else
   if (browserMaximized && viewMode === "browser") {
     return (
@@ -141,6 +214,7 @@ export default function AppShell() {
           color: "var(--vp-text-primary)",
           fontFamily:
             '-apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", "Segoe UI", sans-serif',
+          position: "relative",
         }}
       >
         <div className="flex-1 min-h-0" style={{ padding: 8 }}>
@@ -151,12 +225,37 @@ export default function AppShell() {
             <BrowserPanel />
           </div>
         </div>
+        {/* Restore button */}
+        <button
+          onClick={() => useBrowserStore.getState().setBrowserMaximized(false)}
+          title="Exit fullscreen (ESC)"
+          style={{
+            position: "absolute", top: 12, right: 12, zIndex: 50,
+            background: "var(--vp-bg-surface-hover)", border: "1px solid var(--vp-border-medium)",
+            borderRadius: "var(--vp-radius-md)", padding: "4px 8px",
+            cursor: "pointer", color: "var(--vp-text-muted)", fontSize: 10,
+            display: "flex", alignItems: "center", gap: 4, opacity: 0.7,
+            transition: "opacity 0.2s",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.7"; }}
+        >
+          <Minimize2 size={12} />
+          <span>ESC</span>
+        </button>
+        <SpawnDialog />
       </div>
     );
   }
 
   // Maximized terminal — hide everything else
+  // MainPanel (TerminalTabs + terminal content) is always rendered so the tab bar stays visible.
+  // Other panels overlay the terminal content area (below the 40px header) when active.
   if (terminalMaximized) {
+    // Ensure deferred-mount refs are set when opening panels in maximized mode
+    if (maximizedContent === "browser") hasOpenedBrowser.current = true;
+    if (maximizedContent === "runner") hasOpenedRunner.current = true;
+
     return (
       <div
         className="h-screen w-screen flex flex-col"
@@ -170,9 +269,49 @@ export default function AppShell() {
         <div className="flex-1 min-h-0" style={{ padding: 8 }}>
           <div
             className="h-full"
-            style={{ ...panelStyle, background: "var(--vp-bg-surface)" }}
+            style={{ ...panelStyle, background: "var(--vp-bg-surface)", position: "relative" }}
           >
+            {/* MainPanel always rendered — provides TerminalTabs header + terminal content */}
             <MainPanel />
+
+            {/* Browser overlay — positioned below the 40px TerminalTabs header */}
+            {hasOpenedBrowser.current && (
+              <div style={{
+                position: "absolute", top: 40, left: 0, right: 0, bottom: 0,
+                background: "var(--vp-bg-primary)", zIndex: 10,
+                overflow: "hidden",
+                display: maximizedContent === "browser" ? undefined : "none",
+              }}>
+                <BrowserPanel />
+              </div>
+            )}
+
+            {/* Runner overlay */}
+            {hasOpenedRunner.current && (
+              <div style={{
+                position: "absolute", top: 40, left: 0, right: 0, bottom: 0,
+                background: "var(--vp-bg-primary)", zIndex: 10,
+                overflow: "hidden",
+                display: maximizedContent === "runner" ? undefined : "none",
+              }}>
+                <RunnerPanel />
+              </div>
+            )}
+
+            {/* Widgets overlay */}
+            {maximizedContent === "widgets" && activeWorkspaceId && (
+              <div style={{
+                position: "absolute", top: 40, left: 0, right: 0, bottom: 0,
+                background: "var(--vp-bg-primary)", zIndex: 10,
+                overflow: "hidden",
+              }}>
+                <WorkspaceContent workspaceId={activeWorkspaceId} />
+              </div>
+            )}
+
+            {showCustomizePanel && activeWorkspaceId && (
+              <CustomizePanel workspaceId={activeWorkspaceId} />
+            )}
           </div>
         </div>
         <SpawnDialog />
@@ -284,43 +423,49 @@ export default function AppShell() {
           </>
         )}
 
-        {/* Editor view — kept mounted, hidden via CSS to preserve state */}
-        <div
-          className="flex-1 min-w-0 min-h-0"
-          style={{
-            ...panelStyle,
-            background: "var(--vp-bg-surface)",
-            display: viewMode === "editor" ? undefined : "none",
-          }}
-        >
-          <EditorPanel />
-        </div>
+        {/* Editor view — lazily mounted on first open, then kept alive via CSS */}
+        {hasOpenedEditor.current && (
+          <div
+            className="flex-1 min-w-0 min-h-0"
+            style={{
+              ...panelStyle,
+              background: "var(--vp-bg-surface)",
+              display: viewMode === "editor" ? undefined : "none",
+            }}
+          >
+            <EditorPanel />
+          </div>
+        )}
 
-        {/* Runner view — kept mounted, hidden via CSS to preserve state */}
-        <div
-          className="flex-1 min-w-0 min-h-0"
-          style={{
-            ...panelStyle,
-            background: "var(--vp-bg-surface)",
-            position: "relative",
-            display: viewMode === "runner" ? undefined : "none",
-          }}
-        >
-          <RunnerPanel />
-        </div>
+        {/* Runner view — lazily mounted on first open, then kept alive via CSS */}
+        {hasOpenedRunner.current && (
+          <div
+            className="flex-1 min-w-0 min-h-0"
+            style={{
+              ...panelStyle,
+              background: "var(--vp-bg-surface)",
+              position: "relative",
+              display: viewMode === "runner" ? undefined : "none",
+            }}
+          >
+            <RunnerPanel />
+          </div>
+        )}
 
-        {/* Browser view — kept mounted to preserve webview state, hidden via CSS */}
-        <div
-          className="flex-1 min-w-0 min-h-0"
-          style={{
-            ...panelStyle,
-            background: "var(--vp-bg-surface)",
-            position: "relative",
-            display: viewMode === "browser" ? undefined : "none",
-          }}
-        >
-          <BrowserPanel />
-        </div>
+        {/* Browser view — lazily mounted on first open, then kept alive via CSS (webview is very heavy) */}
+        {hasOpenedBrowser.current && (
+          <div
+            className="flex-1 min-w-0 min-h-0"
+            style={{
+              ...panelStyle,
+              background: "var(--vp-bg-surface)",
+              position: "relative",
+              display: viewMode === "browser" ? undefined : "none",
+            }}
+          >
+            <BrowserPanel />
+          </div>
+        )}
 
         {/* Widget catalog is now inside CustomizePanel */}
       </div>

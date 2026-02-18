@@ -317,52 +317,6 @@ export default function WorkspaceContent({ workspaceId, isCustomizeMode = false 
         </button>
       )}
 
-      {/* Fullscreen overlay */}
-      {fullscreenWidgetId && (() => {
-        const fsWidget = widgets.find((w) => w.id === fullscreenWidgetId);
-        if (!fsWidget) return null;
-        return (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 200,
-              background: "var(--vp-bg-overlay)",
-              backdropFilter: "blur(8px)",
-              display: "flex",
-              alignItems: "stretch",
-              justifyContent: "stretch",
-              padding: 16,
-              animation: "fsOverlayIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-            }}
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setFullscreenWidgetId(null);
-            }}
-          >
-            <div style={{
-              flex: 1, minWidth: 0, minHeight: 0,
-              animation: "fsContentIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-            }}>
-              <WidgetCard
-                widgetId={fsWidget.id}
-                widgetType={fsWidget.type}
-                workspaceId={workspaceId}
-                config={fsWidget.config}
-              />
-            </div>
-            <style>{`
-              @keyframes fsOverlayIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
-              }
-              @keyframes fsContentIn {
-                from { opacity: 0; transform: scale(0.92); }
-                to { opacity: 1; transform: scale(1); }
-              }
-            `}</style>
-          </div>
-        );
-      })()}
     </div>
   );
 }

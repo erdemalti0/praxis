@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { X, Palette, Bot, Layout, Plus, Trash2, Edit3, Check, Settings, Keyboard, RotateCcw, Download, Upload } from "lucide-react";
 import { useSettingsStore, type UserAgent } from "../../stores/settingsStore";
+import { useConfirmStore } from "../../stores/confirmStore";
 import { BUILTIN_THEMES, createDefaultThemeColors, type ThemeDefinition, type ThemeColors } from "../../lib/themes";
 import {
   BUILTIN_TERMINAL_THEMES,
@@ -857,10 +858,29 @@ export default function SettingsPanel() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              removeCustomTheme(theme.id);
-              if (activeThemeId === theme.id) {
-                setActiveTheme("dark");
-              }
+              useConfirmStore.getState().showConfirm(
+                "Delete Theme",
+                `Permanently delete "${theme.name}"?`,
+                () => {
+                  removeCustomTheme(theme.id);
+                  if (activeThemeId === theme.id) {
+                    setActiveTheme("dark");
+                  }
+                  setEditingTheme(null);
+                },
+                { danger: true, confirmLabel: "Delete" }
+              );
+            }}
+            style={{
+              padding: "4px 12px", borderRadius: "var(--vp-radius-md)",
+              background: "transparent", border: "1px solid var(--vp-accent-red-border, var(--vp-border-light))",
+              color: "var(--vp-accent-red)", fontSize: 11, cursor: "pointer", fontWeight: 500,
+            }}
+          >
+            Delete
+          </button>
+          <button
+            onClick={() => {
               setEditingTheme(null);
             }}
             style={{
@@ -948,10 +968,29 @@ export default function SettingsPanel() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              removeCustomTerminalTheme(tt.id);
-              if (terminalThemeId === tt.id) {
-                setTerminalTheme("default-dark");
-              }
+              useConfirmStore.getState().showConfirm(
+                "Delete Terminal Theme",
+                `Permanently delete "${tt.name}"?`,
+                () => {
+                  removeCustomTerminalTheme(tt.id);
+                  if (terminalThemeId === tt.id) {
+                    setTerminalTheme("default-dark");
+                  }
+                  setEditingTerminalTheme(null);
+                },
+                { danger: true, confirmLabel: "Delete" }
+              );
+            }}
+            style={{
+              padding: "4px 12px", borderRadius: "var(--vp-radius-md)",
+              background: "transparent", border: "1px solid var(--vp-accent-red-border, var(--vp-border-light))",
+              color: "var(--vp-accent-red)", fontSize: 11, cursor: "pointer", fontWeight: 500,
+            }}
+          >
+            Delete
+          </button>
+          <button
+            onClick={() => {
               setEditingTerminalTheme(null);
             }}
             style={{

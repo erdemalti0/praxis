@@ -164,7 +164,7 @@ export default function MissionStepDialog({ open, onClose, onSubmit, editStep }:
                 rows={4}
                 style={{
                   ...inputStyle,
-                  color: "#c9b8fa",
+                  color: "var(--vp-accent-purple, #c9b8fa)",
                   fontFamily: "monospace",
                   fontSize: 11,
                   resize: "vertical",

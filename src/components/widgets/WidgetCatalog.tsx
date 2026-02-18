@@ -314,17 +314,23 @@ export default function WidgetCatalog({ workspaceId, onClose }: WidgetCatalogPro
                     }}
                   />
                 ) : (
-                  <span
+                  <button
                     onClick={() => {
-                      clearWidgets(workspaceId);
-                      loadTemplate(workspaceId, tpl);
+                      useConfirmStore.getState().showConfirm(
+                        "Load Template",
+                        `Replace current layout with "${tpl.name}"?`,
+                        () => {
+                          clearWidgets(workspaceId);
+                          loadTemplate(workspaceId, tpl);
+                        }
+                      );
                     }}
-                    style={{ flex: 1, fontSize: 10, color: "var(--vp-text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                    style={{ flex: 1, fontSize: 10, color: "var(--vp-text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}
                   >
                     {tpl.name}
-                  </span>
+                  </button>
                 )}
-                <span style={{ fontSize: 8, color: "var(--vp-text-subtle)", flexShrink: 0 }}>
+                <span style={{ fontSize: 10, color: "var(--vp-text-subtle)", flexShrink: 0 }}>
                   {tpl.mode === "widget" ? `${tpl.widgets.length}w` : "term"}
                 </span>
                 <button

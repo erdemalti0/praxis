@@ -5,6 +5,7 @@ import { useUIStore } from "../../stores/uiStore";
 import { useEditorStore } from "../../stores/editorStore";
 import { useConfirmStore } from "../../stores/confirmStore";
 import type { FileEntry } from "../../types/session";
+import { getBaseName, splitPath, getParentPath } from "../../lib/pathUtils";
 
 function formatSize(bytes: number): string {
   if (bytes === 0) return "";
@@ -60,7 +61,7 @@ export default memo(function FileExplorer({ showHidden: _showHidden = false }: {
   };
 
   const handleFileClick = useCallback((filePath: string) => {
-    const fileName = filePath.split("/").pop() || "";
+    const fileName = getBaseName(filePath);
     const isSensitive = fileName.startsWith(".env");
 
     const openInEditor = () => {
@@ -127,7 +128,7 @@ export default memo(function FileExplorer({ showHidden: _showHidden = false }: {
     const relative = currentPath.startsWith(rootPath)
       ? currentPath.slice(rootPath.length)
       : currentPath;
-    const parts = relative.split("/").filter(Boolean);
+    const parts = splitPath(relative);
     const segments = [
       { name: selectedProject?.name ?? "root", path: rootPath },
     ];
@@ -205,7 +206,7 @@ export default memo(function FileExplorer({ showHidden: _showHidden = false }: {
         {error && !loading && (
           <div
             className="flex items-center gap-2 px-3 py-4"
-            style={{ color: "#aa4444", fontSize: 12 }}
+            style={{ color: "var(--vp-accent-red)", fontSize: 12 }}
           >
             <AlertCircle size={14} />
             <span>Cannot read directory</span>
@@ -218,7 +219,7 @@ export default memo(function FileExplorer({ showHidden: _showHidden = false }: {
             {currentPath !== rootPath && (
               <button
                 onClick={() => {
-                  const parent = currentPath.split("/").slice(0, -1).join("/");
+                  const parent = getParentPath(currentPath);
                   navigateTo(parent || rootPath);
                 }}
                 className="w-full flex items-center gap-2 px-3"

@@ -6,6 +6,7 @@ import SearchPanel from "../sidebar/SearchPanel";
 import GitPanel from "../sidebar/GitPanel";
 import ServicesPanel from "../sidebar/ServicesPanel";
 import { useUIStore, type SidebarTab } from "../../stores/uiStore";
+import { useShallow } from "zustand/shallow";
 
 const tabs: { key: SidebarTab; label: string; icon: typeof Cpu }[] = [
   { key: "agents", label: "Agents", icon: Cpu },
@@ -16,10 +17,14 @@ const tabs: { key: SidebarTab; label: string; icon: typeof Cpu }[] = [
 ];
 
 export default function Sidebar() {
-  const activeTab = useUIStore((s) => s.activeSidebarTab);
-  const setActiveTab = useUIStore((s) => s.setActiveSidebarTab);
-  const collapsed = useUIStore((s) => s.sidebarCollapsed);
-  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const { activeTab, setActiveTab, collapsed, toggleSidebar } = useUIStore(
+    useShallow((s) => ({
+      activeTab: s.activeSidebarTab,
+      setActiveTab: s.setActiveSidebarTab,
+      collapsed: s.sidebarCollapsed,
+      toggleSidebar: s.toggleSidebar,
+    }))
+  );
 
   // Collapsed: thin icon rail
   if (collapsed) {
@@ -80,7 +85,7 @@ export default function Sidebar() {
                 color: isActive ? "var(--vp-text-primary)" : "var(--vp-text-dim)",
                 transition: "all 0.2s",
                 borderLeft: isActive
-                  ? "2px solid var(--vp-border-panel)"
+                  ? "2px solid var(--vp-accent-blue)"
                   : "2px solid transparent",
               }}
               onMouseEnter={(e) => {
@@ -128,7 +133,7 @@ export default function Sidebar() {
                   : "transparent",
                 border: "none",
                 borderBottom: isActive
-                  ? "2px solid var(--vp-border-panel)"
+                  ? "2px solid var(--vp-accent-blue)"
                   : "2px solid transparent",
                 cursor: "pointer",
                 transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -136,7 +141,7 @@ export default function Sidebar() {
               }}
             >
               <Icon
-                size={13}
+                size={14}
                 style={{
                   color: isActive ? "var(--vp-text-primary)" : "var(--vp-text-dim)",
                   transition: "color 0.25s cubic-bezier(0.16, 1, 0.3, 1)",

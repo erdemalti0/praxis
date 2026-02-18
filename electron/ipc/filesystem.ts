@@ -90,9 +90,9 @@ export function registerFilesystemHandlers() {
         const entries = await fs.promises.readdir(dir, { withFileTypes: true });
         for (const entry of entries) {
           if (results.length >= 100) return;
-          if (HIDDEN_ENTRIES.has(entry.name) || entry.name.startsWith(".")) continue;
           const fullPath = path.join(dir, entry.name);
           if (entry.isDirectory()) {
+            if (HIDDEN_ENTRIES.has(entry.name)) continue;
             await walk(fullPath, depth + 1);
           } else if (regex.test(entry.name)) {
             results.push(fullPath);

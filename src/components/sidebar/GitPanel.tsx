@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { GitBranch, GitCommitHorizontal, Plus, Minus, ChevronDown, ChevronRight, ArrowUp, ArrowDown, RefreshCw, AlertCircle } from "lucide-react";
 import { useGitStore } from "../../stores/gitStore";
 import { useUIStore } from "../../stores/uiStore";
+import { useToastStore } from "../../stores/toastStore";
 
 export default function GitPanel() {
   const status = useGitStore((s) => s.status);
@@ -20,9 +21,11 @@ export default function GitPanel() {
   const loadBranches = useGitStore((s) => s.loadBranches);
   const setCommitMessage = useGitStore((s) => s.setCommitMessage);
   const selectedProject = useUIStore((s) => s.selectedProject);
+  const addToast = useToastStore((s) => s.addToast);
   const [showBranches, setShowBranches] = useState(false);
   const [sections, setSections] = useState({ staged: true, unstaged: true, untracked: true });
   const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -36,19 +39,58 @@ export default function GitPanel() {
   const projectPath = selectedProject?.path || "";
 
   useEffect(() => {
-    if (projectPath) {
-      refresh(projectPath);
-      loadBranches(projectPath);
-      const interval = setInterval(() => refresh(projectPath), 1000);
-      return () => clearInterval(interval);
-    }
+    if (!projectPath) return;
+    refresh(projectPath);
+    loadBranches(projectPath);
+    let interval: ReturnType<typeof setInterval>;
+    const startPolling = () => { interval = setInterval(() => refresh(projectPath), 5000); };
+    const stopPolling = () => { clearInterval(interval); };
+    const handleVisibility = () => { document.hidden ? stopPolling() : startPolling(); };
+    startPolling();
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => { stopPolling(); document.removeEventListener("visibilitychange", handleVisibility); };
   }, [projectPath, refresh, loadBranches]);
 
-  const handleCommit = useCallback(() => {
-    if (commitMessage.trim() && projectPath) {
-      commit(projectPath, commitMessage.trim());
+  const handleCommitAction = useCallback(async (action: "commit" | "commitAndPush") => {
+    if (!projectPath || !commitMessage.trim() || !status || status.staged.length === 0) return;
+    setIsLoading(true);
+    try {
+      await commit(projectPath, commitMessage.trim());
+      setCommitMessage("");
+      if (action === "commitAndPush") await push(projectPath);
+      addToast(action === "commitAndPush" ? "Committed and pushed" : "Changes committed", "success");
+    } catch (err) {
+      addToast(`Git ${action} failed: ${err}`, "error");
+    } finally {
+      setIsLoading(false);
     }
-  }, [commitMessage, projectPath, commit]);
+  }, [commitMessage, projectPath, commit, push, status, setCommitMessage, addToast]);
+
+  const handlePull = useCallback(async () => {
+    if (!projectPath) return;
+    setIsLoading(true);
+    try {
+      await pull(projectPath);
+      addToast("Pulled latest changes", "success");
+    } catch (err) {
+      addToast(`Git pull failed: ${err}`, "error");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [projectPath, pull, addToast]);
+
+  const handlePush = useCallback(async () => {
+    if (!projectPath) return;
+    setIsLoading(true);
+    try {
+      await push(projectPath);
+      addToast("Changes pushed", "success");
+    } catch (err) {
+      addToast(`Git push failed: ${err}`, "error");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [projectPath, push, addToast]);
 
   const toggleSection = (key: keyof typeof sections) => {
     setSections((s) => ({ ...s, [key]: !s[key] }));
@@ -183,7 +225,7 @@ export default function GitPanel() {
 
         {/* Ahead/Behind */}
         {(status.ahead > 0 || status.behind > 0) && (
-          <div className="flex items-center gap-3" style={{ marginTop: 4, fontSize: 9, color: "var(--vp-text-dim)" }}>
+          <div className="flex items-center gap-3" style={{ marginTop: 4, fontSize: 11, color: "var(--vp-text-dim)" }}>
             {status.ahead > 0 && (
               <span className="flex items-center gap-1">
                 <ArrowUp size={9} /> {status.ahead} ahead
@@ -210,6 +252,7 @@ export default function GitPanel() {
           actionIcon={<Minus size={9} />}
           actionTitle="Unstage"
           onAction={(f) => unstage(projectPath, f)}
+          statusCode="A"
         />
 
         {/* Unstaged */}
@@ -223,6 +266,7 @@ export default function GitPanel() {
           actionTitle="Stage"
           onAction={(f) => stage(projectPath, f)}
           onStageAll={() => stageAll(projectPath)}
+          statusCode="M"
         />
 
         {/* Untracked */}
@@ -235,6 +279,7 @@ export default function GitPanel() {
           actionIcon={<Plus size={9} />}
           actionTitle="Stage"
           onAction={(f) => stage(projectPath, f)}
+          statusCode="?"
         />
       </div>
 
@@ -274,15 +319,16 @@ export default function GitPanel() {
         />
         <div className="flex gap-2" style={{ marginTop: 8 }}>
           <button
-            onClick={handleCommit}
-            disabled={!commitMessage.trim() || status.staged.length === 0}
+            onClick={() => handleCommitAction("commit")}
+            disabled={isLoading || !commitMessage.trim() || status.staged.length === 0}
             className="flex items-center justify-center gap-1"
             style={{
               flex: 1, padding: "7px 0", borderRadius: "var(--vp-radius-lg)", fontSize: 11, fontWeight: 700,
               background: commitMessage.trim() && status.staged.length > 0 ? "var(--vp-accent-green-bg)" : "var(--vp-bg-surface)",
               border: `1px solid ${commitMessage.trim() && status.staged.length > 0 ? "var(--vp-accent-green)" : "var(--vp-bg-surface-hover)"}`,
               color: commitMessage.trim() && status.staged.length > 0 ? "var(--vp-accent-green)" : "var(--vp-text-subtle)",
-              cursor: commitMessage.trim() && status.staged.length > 0 ? "pointer" : "not-allowed",
+              cursor: commitMessage.trim() && status.staged.length > 0 && !isLoading ? "pointer" : "not-allowed",
+              opacity: isLoading ? 0.6 : 1,
               transition: "all 0.15s",
             }}
           >
@@ -290,13 +336,16 @@ export default function GitPanel() {
             Commit
           </button>
           <button
-            onClick={() => projectPath && pull(projectPath)}
+            onClick={handlePull}
+            disabled={isLoading}
             title="Pull from remote"
             className="flex items-center justify-center gap-1"
             style={{
               padding: "7px 12px", borderRadius: "var(--vp-radius-lg)",
               background: "var(--vp-accent-blue-bg)", border: "1px solid var(--vp-accent-blue-border)",
-              color: "var(--vp-accent-blue)", fontSize: 10, fontWeight: 600, cursor: "pointer",
+              color: "var(--vp-accent-blue)", fontSize: 10, fontWeight: 600,
+              cursor: isLoading ? "not-allowed" : "pointer",
+              opacity: isLoading ? 0.6 : 1,
               transition: "all 0.15s",
             }}
           >
@@ -304,13 +353,16 @@ export default function GitPanel() {
             Pull
           </button>
           <button
-            onClick={() => projectPath && push(projectPath)}
+            onClick={handlePush}
+            disabled={isLoading}
             title="Push to remote"
             className="flex items-center justify-center gap-1"
             style={{
               padding: "7px 12px", borderRadius: "var(--vp-radius-lg)",
               background: "var(--vp-accent-green-bg)", border: "1px solid var(--vp-accent-green)",
-              color: "var(--vp-accent-green)", fontSize: 10, fontWeight: 600, cursor: "pointer",
+              color: "var(--vp-accent-green)", fontSize: 10, fontWeight: 600,
+              cursor: isLoading ? "not-allowed" : "pointer",
+              opacity: isLoading ? 0.6 : 1,
               transition: "all 0.15s",
             }}
           >
@@ -320,25 +372,21 @@ export default function GitPanel() {
         </div>
         {/* Quick action: Commit & Push */}
         <button
-          onClick={async () => {
-            if (commitMessage.trim() && projectPath && status.staged.length > 0) {
-              await commit(projectPath, commitMessage.trim());
-              await push(projectPath);
-            }
-          }}
-          disabled={!commitMessage.trim() || status.staged.length === 0}
+          onClick={() => handleCommitAction("commitAndPush")}
+          disabled={isLoading || !commitMessage.trim() || status.staged.length === 0}
           className="flex items-center justify-center gap-1"
           style={{
             width: "100%", marginTop: 6, padding: "6px 0", borderRadius: "var(--vp-radius-lg)", fontSize: 10, fontWeight: 600,
             background: commitMessage.trim() && status.staged.length > 0 ? "var(--vp-accent-blue-bg)" : "var(--vp-bg-surface)",
             border: `1px solid ${commitMessage.trim() && status.staged.length > 0 ? "var(--vp-accent-blue-border)" : "var(--vp-bg-surface-hover)"}`,
             color: commitMessage.trim() && status.staged.length > 0 ? "var(--vp-accent-blue)" : "var(--vp-text-subtle)",
-            cursor: commitMessage.trim() && status.staged.length > 0 ? "pointer" : "not-allowed",
+            cursor: commitMessage.trim() && status.staged.length > 0 && !isLoading ? "pointer" : "not-allowed",
+            opacity: isLoading ? 0.6 : 1,
             transition: "all 0.15s",
           }}
         >
           <GitCommitHorizontal size={11} />
-          Commit & Push
+          {isLoading ? "Working..." : "Commit & Push"}
           <ArrowUp size={11} />
         </button>
       </div>
@@ -346,8 +394,32 @@ export default function GitPanel() {
   );
 }
 
+const STATUS_BADGE_COLORS: Record<string, string> = {
+  M: "var(--vp-accent-amber)",
+  A: "var(--vp-accent-green)",
+  D: "var(--vp-accent-red)",
+  "?": "var(--vp-text-dim)",
+  R: "var(--vp-accent-blue)",
+};
+
+function StatusBadge({ code }: { code: string }) {
+  return (
+    <span style={{
+      fontFamily: "monospace",
+      fontSize: 10,
+      fontWeight: 700,
+      width: 16,
+      textAlign: "center",
+      flexShrink: 0,
+      color: STATUS_BADGE_COLORS[code] || "var(--vp-text-dim)",
+    }}>
+      {code}
+    </span>
+  );
+}
+
 function FileSection({
-  title, files, color, collapsed, onToggle, actionIcon, actionTitle, onAction, onStageAll,
+  title, files, color, collapsed, onToggle, actionIcon, actionTitle, onAction, onStageAll, statusCode,
 }: {
   title: string;
   files: string[];
@@ -358,6 +430,7 @@ function FileSection({
   actionTitle: string;
   onAction: (file: string) => void;
   onStageAll?: () => void;
+  statusCode: string;
 }) {
   if (files.length === 0) return null;
 
@@ -392,8 +465,9 @@ function FileSection({
         <div
           key={file}
           className="flex items-center gap-1"
-          style={{ padding: "2px 8px 2px 20px" }}
+          style={{ padding: "2px 8px 2px 20px", minWidth: 0, overflow: "hidden" }}
         >
+          <StatusBadge code={statusCode} />
           <span style={{
             fontSize: 10, color: "var(--vp-text-secondary)", flex: 1,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",

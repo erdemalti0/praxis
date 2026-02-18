@@ -115,6 +115,7 @@ Praxis is a desktop application that lets you orchestrate multiple AI coding age
 | Platform | Status | Package Format |
 |----------|--------|---------------|
 | macOS    | Supported | `.dmg` |
+| Windows  | Supported | `.exe` |
 
 ## Tech Stack
 

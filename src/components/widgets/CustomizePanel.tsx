@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import WorkspaceContent from "./WorkspaceContent";
 import { useUIStore } from "../../stores/uiStore";
 import { LayoutGrid } from "lucide-react";
@@ -12,12 +12,12 @@ export default function CustomizePanel({ workspaceId }: CustomizePanelProps) {
   const setShowCustomizePanel = useUIStore((s) => s.setShowCustomizePanel);
   const [isClosing, setIsClosing] = useState(false);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setIsClosing(true);
     setTimeout(() => {
       setShowCustomizePanel(false);
     }, 250);
-  };
+  }, [setShowCustomizePanel]);
 
   // ESC to close
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function CustomizePanel({ workspaceId }: CustomizePanelProps) {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [handleClose]);
 
   return (
     <div

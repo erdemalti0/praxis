@@ -37,6 +37,7 @@ export function getUserShellEnv(): Record<string, string> {
       env: {
         ...process.env,
         HOME: os.homedir(),
+        USERPROFILE: os.homedir(),
       },
     });
 

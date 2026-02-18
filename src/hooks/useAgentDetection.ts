@@ -8,6 +8,7 @@
  */
 import { useEffect, useRef } from "react";
 import { useTerminalStore } from "../stores/terminalStore";
+import { getBaseName } from "../lib/pathUtils";
 import { invoke } from "../lib/ipc";
 import { getAgentConfig } from "../lib/agentTypes";
 
@@ -53,14 +54,14 @@ export function useAgentDetection() {
           if (detectedType && detectedType !== "shell" && currentType !== detectedType) {
             // Agent detected inside shell — update session type and title
             const config = getAgentConfig(detectedType);
-            const dirName = s.projectPath?.split("/").pop() || s.projectPath || "";
+            const dirName = s.projectPath ? getBaseName(s.projectPath) : "";
             updateSession(s.id, {
               agentType: detectedType,
               title: `${config.label}@${dirName}`,
             });
           } else if (!detectedType && currentType !== "shell") {
             // Agent exited — revert to shell
-            const dirName = s.projectPath?.split("/").pop() || s.projectPath || "";
+            const dirName = s.projectPath ? getBaseName(s.projectPath) : "";
             updateSession(s.id, {
               agentType: "shell",
               title: `Shell@${dirName}`,

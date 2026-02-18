@@ -23,13 +23,18 @@ interface RunnerDetailProps {
   onDuplicate: (config: RunConfig) => void;
 }
 
-function formatUptime(startedAt: number): string {
-  const seconds = Math.floor((Date.now() - startedAt) / 1000);
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
-  const hours = Math.floor(minutes / 60);
-  return `${hours}h ${minutes % 60}m`;
+function UptimeTicker({ startedAt }: { startedAt: number }) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+  if (elapsed < 60) return <span>{elapsed}s</span>;
+  const mins = Math.floor(elapsed / 60);
+  if (mins < 60) return <span>{mins}m {elapsed % 60}s</span>;
+  const hours = Math.floor(mins / 60);
+  return <span>{hours}h {mins % 60}m</span>;
 }
 
 // Regex to match URLs in log output
@@ -196,7 +201,7 @@ export default function RunnerDetail({
               fontSize: 10, color: "var(--vp-text-faint)",
               fontFamily: "'JetBrains Mono', monospace",
             }}>
-              PID {instance.pid} | {formatUptime(instance.startedAt)}
+              PID {instance.pid} | <UptimeTicker startedAt={instance.startedAt} />
             </span>
           )}
           {instance?.status === "error" && instance.exitCode !== undefined && (

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { invoke } from "../lib/ipc";
+import { getBaseName } from "../lib/pathUtils";
 
 const EXT_LANG: Record<string, string> = {
   ts: "typescript", tsx: "typescript", js: "javascript", jsx: "javascript",
@@ -98,7 +99,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       }
       return;
     }
-    const fileName = filePath.split("/").pop() || filePath;
+    const fileName = getBaseName(filePath);
     // Create tab immediately with loading state
     const tab: EditorTab = {
       filePath,

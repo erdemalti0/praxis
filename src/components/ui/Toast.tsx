@@ -12,7 +12,7 @@ const ICON_MAP = {
 const COLOR_MAP: Record<string, string> = {
   success: "var(--vp-accent-green)",
   error: "var(--vp-accent-red)",
-  warning: "#f59e0b",
+  warning: "var(--vp-accent-yellow, #f59e0b)",
   info: "var(--vp-accent-blue)",
 };
 
