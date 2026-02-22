@@ -18,6 +18,7 @@ import RunnerPanel from "../runner/RunnerPanel";
 import WorkspaceContent from "../widgets/WorkspaceContent";
 import WidgetCard from "../widgets/WidgetCard";
 import OnboardingOverlay from "../ui/OnboardingOverlay";
+import AgentChatPanel from "../agentPanel/AgentChatPanel";
 import { Minimize2 } from "lucide-react";
 
 const SIDEBAR_COLLAPSED_WIDTH = 48;
@@ -73,9 +74,11 @@ export default function AppShell() {
   const hasOpenedEditor = useRef(viewMode === "editor");
   const hasOpenedRunner = useRef(viewMode === "runner");
   const hasOpenedBrowser = useRef(viewMode === "browser");
+  const hasOpenedAgent = useRef(viewMode === "agent");
   if (viewMode === "editor") hasOpenedEditor.current = true;
   if (viewMode === "runner") hasOpenedRunner.current = true;
   if (viewMode === "browser") hasOpenedBrowser.current = true;
+  if (viewMode === "agent") hasOpenedAgent.current = true;
 
   // Auto-create or restore workspaces when project is selected
   useEffect(() => {
@@ -255,6 +258,7 @@ export default function AppShell() {
     // Ensure deferred-mount refs are set when opening panels in maximized mode
     if (maximizedContent === "browser") hasOpenedBrowser.current = true;
     if (maximizedContent === "runner") hasOpenedRunner.current = true;
+    if (maximizedContent === "agent") hasOpenedAgent.current = true;
 
     return (
       <div
@@ -295,6 +299,18 @@ export default function AppShell() {
                 display: maximizedContent === "runner" ? undefined : "none",
               }}>
                 <RunnerPanel />
+              </div>
+            )}
+
+            {/* Agent overlay */}
+            {hasOpenedAgent.current && (
+              <div style={{
+                position: "absolute", top: 40, left: 0, right: 0, bottom: 0,
+                background: "var(--vp-bg-surface)", zIndex: 10,
+                overflow: "hidden",
+                display: maximizedContent === "agent" ? undefined : "none",
+              }}>
+                <AgentChatPanel />
               </div>
             )}
 
@@ -464,6 +480,21 @@ export default function AppShell() {
             }}
           >
             <BrowserPanel />
+          </div>
+        )}
+
+        {/* Agent Chat Panel — lazily mounted on first open, then kept alive via CSS */}
+        {hasOpenedAgent.current && (
+          <div
+            className="flex-1 min-w-0 min-h-0"
+            style={{
+              ...panelStyle,
+              background: "var(--vp-bg-surface)",
+              position: "relative",
+              display: viewMode === "agent" ? undefined : "none",
+            }}
+          >
+            <AgentChatPanel />
           </div>
         )}
 

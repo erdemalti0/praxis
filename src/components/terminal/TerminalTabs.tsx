@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { createPortal } from "react-dom";
-import { Plus, X, Columns2, Maximize2, Minimize2, ArrowUpDown, Pencil, Copy, Terminal, Globe, Play, ArrowLeftRight } from "lucide-react";
+import { Plus, X, Columns2, Maximize2, Minimize2, ArrowUpDown, Pencil, Copy, Terminal, Globe, Play, Bot, ArrowLeftRight } from "lucide-react";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useUIStore } from "../../stores/uiStore";
 import { useShallow } from "zustand/shallow";
@@ -228,6 +228,14 @@ export default memo(function TerminalTabs() {
         return;
       }
 
+      // Cmd+Shift+A = Agent (maximized only)
+      if (terminalMaximized && e.shiftKey && (e.key === "a" || e.key === "A")) {
+        e.preventDefault();
+        e.stopPropagation();
+        setMaximizedContent(maximizedContent === "agent" ? "terminal" : "agent");
+        return;
+      }
+
       // Cmd+1-9 = terminal groups (always available)
       if (e.shiftKey) return;
       const num = parseInt(e.key, 10);
@@ -407,6 +415,38 @@ export default memo(function TerminalTabs() {
           >
             <Play size={12} />
             <span>Run</span>
+          </button>
+          <button
+            onClick={() => {
+              setMaximizedContent(maximizedContent === "agent" ? "terminal" : "agent");
+            }}
+            title="Agent (⌘⇧A)"
+            className="flex items-center gap-1.5 px-2.5 py-1"
+            style={{
+              color: maximizedContent === "agent" ? "var(--vp-accent-purple, #a78bfa)" : "var(--vp-text-dim)",
+              fontSize: 11,
+              borderRadius: "var(--vp-radius-lg)",
+              border: `1px solid ${maximizedContent === "agent" ? "rgba(167,139,250,0.3)" : "var(--vp-border-light)"}`,
+              background: maximizedContent === "agent" ? "rgba(167,139,250,0.12)" : "transparent",
+              transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+            onMouseEnter={(e) => {
+              if (maximizedContent !== "agent") {
+                e.currentTarget.style.color = "var(--vp-accent-purple, #a78bfa)";
+                e.currentTarget.style.background = "rgba(167,139,250,0.12)";
+                e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (maximizedContent !== "agent") {
+                e.currentTarget.style.color = "var(--vp-text-dim)";
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.borderColor = "var(--vp-border-light)";
+              }
+            }}
+          >
+            <Bot size={12} />
+            <span>Agent</span>
           </button>
 
           {/* Separator */}

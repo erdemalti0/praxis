@@ -6,7 +6,7 @@ import type { LayoutNode } from "../types/layout";
 import { loadJsonFile } from "../lib/persistence";
 import { removePaneAndCollapse, addSessionToLayout } from "../lib/layout/layoutUtils";
 
-export type ViewMode = "missions" | "terminal" | "split" | "browser" | "editor" | "runner";
+export type ViewMode = "missions" | "terminal" | "split" | "browser" | "editor" | "runner" | "agent";
 export type SidebarTab = "agents" | "explorer" | "search" | "git" | "services";
 
 /** Walk a LayoutNode tree and null out all sessionIds (PTY sessions are ephemeral) */
@@ -51,7 +51,7 @@ interface UIState {
   sidebarCollapsed: boolean;
   draggingTab: string | null;
   terminalMaximized: boolean;
-  maximizedContent: "terminal" | "browser" | "runner" | "widgets";
+  maximizedContent: "terminal" | "browser" | "runner" | "widgets" | "agent";
   selectedProject: ProjectInfo | null;
   workspaces: Workspace[];
   activeWorkspaceId: string | null;
@@ -73,7 +73,7 @@ interface UIState {
   setViewMode: (mode: ViewMode) => void;
   setSplitEnabled: (enabled: boolean) => void;
   setTerminalMaximized: (maximized: boolean) => void;
-  setMaximizedContent: (content: "terminal" | "browser" | "runner" | "widgets") => void;
+  setMaximizedContent: (content: "terminal" | "browser" | "runner" | "widgets" | "agent") => void;
   setDraggingTab: (tab: string | null) => void;
   setSidebarWidth: (w: number) => void;
   setBottomPanelHeight: (h: number) => void;

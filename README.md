@@ -6,7 +6,7 @@
 
 **AI-Powered Development Workspace**
 
-Praxis is a desktop application that lets you orchestrate multiple AI coding agents side-by-side. Spawn Claude Code, OpenCode, Aider, Gemini CLI, AMP, and more — all in a unified workspace with split terminals, a process runner, widgets, a built-in browser, and mission planning.
+Praxis is a desktop application that lets you orchestrate multiple AI coding agents side-by-side. Spawn Claude Code, OpenCode, Codex, Gemini CLI, AMP, and more — all in a unified workspace with split terminals, a built-in agent chat panel, a process runner, widgets, a built-in browser, and mission planning.
 
 ## Features
 
@@ -20,6 +20,22 @@ Praxis is a desktop application that lets you orchestrate multiple AI coding age
 - Terminal search (Ctrl+F / Cmd+F)
 - 8 built-in terminal color themes (Dracula, Monokai, Solarized, Nord, One Dark, Gruvbox, and more)
 - Full custom terminal theme editor with per-color control
+- Fullscreen workspace mode with quick-access tabs for Browser, Run, and Agent (Cmd+Shift+B/R/A)
+
+### Agent Chat Panel
+- Native chat interface for Claude Code, OpenCode, Gemini CLI, and Codex CLI
+- Dynamic model discovery — auto-detects installed CLIs and available models
+- Disk-cached model lists with stale-while-revalidate for instant startup
+- Per-agent model selection with auto-reconciliation when models change
+- Debate mode: pit two agents against each other (side-by-side, sequential, or multi-round)
+- Context Bridge: automatic cross-agent knowledge sharing within sessions
+- Persistent memory system with BM25 search indexing and session finalization
+- Session management: create, restore, and switch between named sessions
+- Input modes: chat, plan, and build
+- Slash command support with autocomplete
+- Rich content blocks: markdown, code diffs, file reads, bash output, thinking blocks, tool use
+- Budget tracking with per-session cost alerts
+- Accessible from fullscreen workspace via dedicated Agent tab
 
 ### Process Runner
 - Create and manage run configurations for dev servers and build commands
@@ -96,6 +112,8 @@ Praxis is a desktop application that lets you orchestrate multiple AI coding age
 
 ### Security
 - Filesystem access restricted from renderer — sensitive directories (`.ssh`, `.gnupg`, `.aws`, `.kube`) are blocked
+- IPC channel allowlist — only explicitly registered channels are exposed to the renderer
+- CLI model discovery uses `execFile` (no shell) to prevent command injection
 - Webview security enforcement — all embedded webviews run with `contextIsolation: true` and `nodeIntegration: false`
 - Cryptographically secure session IDs via `crypto.randomUUID()`
 - HTTP Client blocks SSRF attempts to cloud metadata endpoints
@@ -109,6 +127,14 @@ Praxis is a desktop application that lets you orchestrate multiple AI coding age
 - Toast notifications
 - Session persistence across restarts
 - Keep-alive panel architecture for instant tab switching
+
+## Platforms
+
+| Platform | Status | Package Format |
+|----------|--------|---------------|
+| macOS    | Supported | `.dmg` |
+| Windows  | Supported | `.exe` |
+| Linux    | Supported | `.AppImage` |
 
 ## Tech Stack
 
@@ -183,6 +209,7 @@ npm run dist:mac
   browser-favorites.json # Browser bookmarks
   prompt-library.json    # Saved prompts
   quick-commands.json    # Saved commands
+  cache/models.json      # Cached model discovery results
 
 {project}/.praxis/
   missions.json          # Mission workflows
@@ -194,6 +221,7 @@ npm run dist:mac
   run-configs.json       # Process runner configurations
   clipboard-history.json # Clipboard snippets
   http-requests.json     # HTTP client history
+  sessions/              # Agent chat session history
 ```
 
 ## License
