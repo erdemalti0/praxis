@@ -197,6 +197,12 @@ npm run dist
 
 # Package for macOS
 npm run dist:mac
+
+# Package for Windows
+npm run dist:win
+
+# Package for Linux
+npm run dist:linux
 ```
 
 ## Data Storage
@@ -211,7 +217,7 @@ npm run dist:mac
   quick-commands.json    # Saved commands
   cache/models.json      # Cached model discovery results
 
-{project}/.praxis/
+~/.praxis/projects/{slug}/
   missions.json          # Mission workflows
   tasks.json             # Task board
   widgets.json           # Widget layouts
@@ -221,7 +227,7 @@ npm run dist:mac
   run-configs.json       # Process runner configurations
   clipboard-history.json # Clipboard snippets
   http-requests.json     # HTTP client history
-  sessions/              # Agent chat session history
+  agent-sessions/        # Agent chat session history
 ```
 
 ## License
