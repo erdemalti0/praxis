@@ -21,7 +21,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src/ electron/",
-    "postinstall": "electron-rebuild -f -w node-pty && node scripts/patch-electron-name.js"
+    "postinstall": "electron-rebuild -f -w node-pty && node scripts/patch-electron-name.cjs"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.18",
@@ -35,6 +35,7 @@
     "highlight.js": "^11.11.1",
     "lucide-react": "^0.400.0",
     "marked": "^17.0.2",
+    "minisearch": "^7.2.0",
     "node-pty": "^1.0.0",
     "pidusage": "^3.0.0",
     "react": "^19.0.0",
@@ -43,7 +44,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@eslint/js": "^9.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",
@@ -51,7 +52,7 @@
     "electron": "^33.0.0",
     "electron-builder": "^25.0.0",
     "electron-vite": "^5.0.0",
-    "eslint": "^10.0.0",
+    "eslint": "^9.0.0",
     "eslint-plugin-react-hooks": "^7.0.1",
     "postcss": "^8.4.0",
     "rollup-plugin-visualizer": "^6.0.5",
@@ -79,13 +80,15 @@
         {
           "target": "dmg",
           "arch": [
-            "arm64"
+            "arm64",
+            "x64"
           ]
         },
         {
           "target": "zip",
           "arch": [
-            "arm64"
+            "arm64",
+            "x64"
           ]
         }
       ],
