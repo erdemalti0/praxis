@@ -1,5 +1,5 @@
 import { ipcMain } from "electron";
-import { exec, execSync } from "child_process";
+import { exec, execFileSync } from "child_process";
 import { promisify } from "util";
 import fs from "fs";
 
@@ -30,7 +30,7 @@ export function registerPortsHandlers() {
     if (!Number.isInteger(pid) || pid <= 0) return false;
     try {
       if (isWin) {
-        execSync(`taskkill /PID ${pid} /F`, { timeout: 5000 });
+        execFileSync("taskkill", ["/PID", String(pid), "/F"], { timeout: 5000 });
       } else {
         process.kill(pid, "SIGTERM");
       }
@@ -45,7 +45,7 @@ export function registerPortsHandlers() {
     if (!Number.isInteger(pid) || pid <= 0) return false;
     try {
       if (isWin) {
-        execSync(`taskkill /PID ${pid} /F`, { timeout: 5000 });
+        execFileSync("taskkill", ["/PID", String(pid), "/F"], { timeout: 5000 });
       } else {
         process.kill(pid, "SIGTERM");
       }
@@ -212,7 +212,7 @@ async function getSystemStatsWindows() {
       { encoding: "utf-8", timeout: 5000 }
     ).catch(() => ({ stdout: "" })),
     execAsync(
-      'powershell -NoProfile -Command "Get-CimInstance Win32_LogicalDisk -Filter \\"DeviceID=\'C:\'\\" | ForEach-Object { \\"FreeSpace=$($_.FreeSpace)`nSize=$($_.Size)\\" }"',
+      `powershell -NoProfile -Command "Get-CimInstance Win32_LogicalDisk -Filter \\"DeviceID='${process.env.SystemDrive || "C:"}'\\" | ForEach-Object { \\"FreeSpace=$($_.FreeSpace)\`nSize=$($_.Size)\\" }"`,
       { encoding: "utf-8", timeout: 5000 }
     ).catch(() => ({ stdout: "" })),
   ]);

@@ -18,6 +18,9 @@ interface WidgetState {
   loadTemplate: (workspaceId: string, template: WorkspaceTemplate) => void;
   clearWidgets: (workspaceId: string) => void;
   loadWidgets: (projectPath: string) => void;
+  renameWidget: (workspaceId: string, widgetId: string, name: string) => void;
+  toggleWidgetLock: (workspaceId: string, widgetId: string) => void;
+  duplicateWidget: (workspaceId: string, widgetId: string) => void;
   _widgetsLoaded: boolean;
 }
 
@@ -150,5 +153,63 @@ export const useWidgetStore = create<WidgetState>((set, get) => ({
       workspaceLayouts: data.workspaceLayouts,
       _widgetsLoaded: true,
     });
+  },
+
+  renameWidget: (workspaceId, widgetId, name) => {
+    set((s) => ({
+      workspaceWidgets: {
+        ...s.workspaceWidgets,
+        [workspaceId]: (s.workspaceWidgets[workspaceId] || []).map((w) =>
+          w.id === widgetId ? { ...w, customName: name || undefined } : w
+        ),
+      },
+    }));
+  },
+
+  toggleWidgetLock: (workspaceId, widgetId) => {
+    set((s) => ({
+      workspaceWidgets: {
+        ...s.workspaceWidgets,
+        [workspaceId]: (s.workspaceWidgets[workspaceId] || []).map((w) =>
+          w.id === widgetId ? { ...w, locked: !w.locked } : w
+        ),
+      },
+    }));
+  },
+
+  duplicateWidget: (workspaceId, widgetId) => {
+    const s = get();
+    const widgets = s.workspaceWidgets[workspaceId] || [];
+    const layout = s.workspaceLayouts[workspaceId] || [];
+    const widget = widgets.find((w) => w.id === widgetId);
+    const layoutItem = layout.find((l) => l.i === widgetId);
+    if (!widget || !layoutItem) return;
+
+    const newId = `widget-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const newWidget: WidgetInstance = {
+      id: newId,
+      type: widget.type,
+      config: widget.config ? { ...widget.config } : undefined,
+      customName: widget.customName ? `${widget.customName} (copy)` : undefined,
+    };
+    const pos = findNextPosition(layout, layoutItem.w, layoutItem.h);
+    const newLayoutItem: WidgetLayoutItem = {
+      i: newId,
+      x: pos.x,
+      y: pos.y,
+      w: layoutItem.w,
+      h: layoutItem.h,
+    };
+
+    set((s) => ({
+      workspaceWidgets: {
+        ...s.workspaceWidgets,
+        [workspaceId]: [...(s.workspaceWidgets[workspaceId] || []), newWidget],
+      },
+      workspaceLayouts: {
+        ...s.workspaceLayouts,
+        [workspaceId]: [...(s.workspaceLayouts[workspaceId] || []), newLayoutItem],
+      },
+    }));
   },
 }));

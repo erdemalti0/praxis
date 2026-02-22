@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { X, Palette, Bot, Layout, Plus, Trash2, Edit3, Check, Settings, Keyboard, RotateCcw, Download, Upload } from "lucide-react";
-import { useSettingsStore, type UserAgent } from "../../stores/settingsStore";
+import { useSettingsStore, type UserAgent, type CursorStyle, type DensityMode, type ThemeMode } from "../../stores/settingsStore";
 import { useConfirmStore } from "../../stores/confirmStore";
 import { BUILTIN_THEMES, createDefaultThemeColors, type ThemeDefinition, type ThemeColors } from "../../lib/themes";
 import {
@@ -30,12 +30,12 @@ import {
   findConflict,
 } from "../../lib/shortcuts";
 
-type SettingsTab = "general" | "themes" | "agents" | "workspaces" | "shortcuts";
+type SettingsTab = "general" | "appearance" | "agents" | "workspaces" | "shortcuts";
 
 const TABS: { id: SettingsTab; label: string; icon: typeof Palette }[] = [
   { id: "general", label: "General", icon: Settings },
+  { id: "appearance", label: "Appearance", icon: Palette },
   { id: "shortcuts", label: "Shortcuts", icon: Keyboard },
-  { id: "themes", label: "Themes", icon: Palette },
   { id: "agents", label: "Agents", icon: Bot },
   { id: "workspaces", label: "Workspaces", icon: Layout },
 ];
@@ -98,6 +98,29 @@ export default function SettingsPanel() {
   const setCliEnabled = useSettingsStore((s) => s.setCliEnabled);
   const [cliToggling, setCliToggling] = useState(false);
   const [cliError, setCliError] = useState<string | null>(null);
+
+  const terminalFontSize = useSettingsStore((s) => s.terminalFontSize);
+  const setTerminalFontSize = useSettingsStore((s) => s.setTerminalFontSize);
+  const terminalFontFamily = useSettingsStore((s) => s.terminalFontFamily);
+  const setTerminalFontFamily = useSettingsStore((s) => s.setTerminalFontFamily);
+  const terminalLineHeight = useSettingsStore((s) => s.terminalLineHeight);
+  const setTerminalLineHeight = useSettingsStore((s) => s.setTerminalLineHeight);
+  const terminalCursorStyle = useSettingsStore((s) => s.terminalCursorStyle);
+  const setTerminalCursorStyle = useSettingsStore((s) => s.setTerminalCursorStyle);
+  const terminalCursorBlink = useSettingsStore((s) => s.terminalCursorBlink);
+  const setTerminalCursorBlink = useSettingsStore((s) => s.setTerminalCursorBlink);
+  const terminalScrollback = useSettingsStore((s) => s.terminalScrollback);
+  const setTerminalScrollback = useSettingsStore((s) => s.setTerminalScrollback);
+
+  const densityMode = useSettingsStore((s) => s.densityMode);
+  const setDensityMode = useSettingsStore((s) => s.setDensityMode);
+  const startupBehavior = useSettingsStore((s) => s.startupBehavior);
+  const setStartupBehavior = useSettingsStore((s) => s.setStartupBehavior);
+
+  const themeMode = useSettingsStore((s) => s.themeMode);
+  const setThemeMode = useSettingsStore((s) => s.setThemeMode);
+  const accentColor = useSettingsStore((s) => s.accentColor);
+  const setAccentColor = useSettingsStore((s) => s.setAccentColor);
 
   const customShortcuts = useSettingsStore((s) => s.customShortcuts);
   const setCustomShortcut = useSettingsStore((s) => s.setCustomShortcut);
@@ -325,8 +348,20 @@ export default function SettingsPanel() {
     }
   };
 
+  const FONT_FAMILY_OPTIONS: { label: string; value: string }[] = [
+    { label: "JetBrains Mono", value: "'JetBrains Mono', 'SF Mono', Monaco, Menlo, monospace" },
+    { label: "Fira Code", value: "'Fira Code', 'SF Mono', Monaco, Menlo, monospace" },
+    { label: "SF Mono", value: "'SF Mono', Monaco, Menlo, monospace" },
+    { label: "Cascadia Code", value: "'Cascadia Code', 'SF Mono', Monaco, Menlo, monospace" },
+    { label: "Menlo", value: "Menlo, Monaco, 'SF Mono', monospace" },
+    { label: "Monaco", value: "Monaco, Menlo, 'SF Mono', monospace" },
+    { label: "Consolas", value: "Consolas, 'SF Mono', Monaco, Menlo, monospace" },
+    { label: "monospace", value: "monospace" },
+  ];
+
   const renderGeneralTab = () => (
     <div className="space-y-5">
+      {/* CLI Toggle */}
       <div>
         <label style={{ color: "var(--vp-text-muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>
           Terminal Integration
@@ -374,12 +409,192 @@ export default function SettingsPanel() {
           </div>
         )}
       </div>
+
+      {/* Startup Behavior */}
+      <div>
+        <label style={{ color: "var(--vp-text-muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          Startup
+        </label>
+        <div
+          className="flex items-center justify-between"
+          style={{ padding: "12px 16px", borderRadius: "var(--vp-radius-xl)", marginTop: 10, border: "1px solid var(--vp-border-subtle)" }}
+        >
+          <div>
+            <div style={{ fontSize: 13, color: "var(--vp-text-primary)", fontWeight: 500 }}>Auto-open last project</div>
+            <div style={{ fontSize: 11, color: "var(--vp-text-dim)", marginTop: 2 }}>
+              {startupBehavior === "last-project" ? "Opens your last project on startup" : "Shows project selector on startup"}
+            </div>
+          </div>
+          <button
+            onClick={() => setStartupBehavior(startupBehavior === "last-project" ? "project-select" : "last-project")}
+            style={{
+              width: 44, height: 24, borderRadius: "var(--vp-radius-2xl)", border: "none",
+              background: startupBehavior === "last-project" ? "var(--vp-accent-blue)" : "var(--vp-bg-surface-hover)",
+              cursor: "pointer", position: "relative", transition: "background 0.2s",
+            }}
+          >
+            <div
+              style={{
+                width: 18, height: 18, borderRadius: "50%", background: "#fff",
+                position: "absolute", top: 3,
+                left: startupBehavior === "last-project" ? 23 : 3,
+                transition: "left 0.2s",
+              }}
+            />
+          </button>
+        </div>
+      </div>
     </div>
   );
 
-  /* ── Theme Tab ── */
-  const renderThemesTab = () => (
+  const ACCENT_PRESETS: { color: string; label: string }[] = [
+    { color: "#3b82f6", label: "Blue" },
+    { color: "#22c55e", label: "Green" },
+    { color: "#a855f7", label: "Purple" },
+    { color: "#f97316", label: "Orange" },
+    { color: "#06b6d4", label: "Cyan" },
+    { color: "#ec4899", label: "Pink" },
+    { color: "#ef4444", label: "Red" },
+    { color: "#f59e0b", label: "Amber" },
+  ];
+
+  /* ── Appearance Tab ── */
+  const renderAppearanceTab = () => (
     <div className="space-y-5">
+      {/* Theme Mode */}
+      <div>
+        <label style={{ color: "var(--vp-text-muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          Theme Mode
+        </label>
+        <div className="flex gap-3 mt-3">
+          {(["manual", "system"] as ThemeMode[]).map((mode) => {
+            const isActive = themeMode === mode;
+            return (
+              <button
+                key={mode}
+                onClick={() => setThemeMode(mode)}
+                style={{
+                  padding: "10px 20px",
+                  border: `2px solid ${isActive ? "var(--vp-accent-blue)" : "var(--vp-border-subtle)"}`,
+                  borderRadius: "var(--vp-radius-xl)",
+                  background: isActive ? "var(--vp-accent-blue-bg)" : "transparent",
+                  cursor: "pointer", transition: "all 0.2s", flex: 1,
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                }}
+              >
+                <span style={{ fontSize: 12, color: "var(--vp-text-primary)", fontWeight: isActive ? 600 : 400 }}>
+                  {mode === "manual" ? "Manual" : "System (Auto)"}
+                </span>
+                {isActive && (
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--vp-accent-blue)" }} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+        {themeMode === "system" && (
+          <div style={{ fontSize: 11, color: "var(--vp-text-dim)", marginTop: 8, padding: "0 4px" }}>
+            Theme follows your system preference.
+          </div>
+        )}
+      </div>
+
+      {/* Accent Color */}
+      <div>
+        <label style={{ color: "var(--vp-text-muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          Accent Color
+        </label>
+        <div className="flex items-center gap-2 mt-3" style={{ flexWrap: "wrap" }}>
+          {ACCENT_PRESETS.map((preset) => {
+            const isActive = accentColor === preset.color;
+            return (
+              <button
+                key={preset.color}
+                onClick={() => setAccentColor(preset.color)}
+                title={preset.label}
+                style={{
+                  width: 28, height: 28, borderRadius: "50%", background: preset.color,
+                  border: isActive ? "3px solid var(--vp-text-primary)" : "3px solid transparent",
+                  cursor: "pointer", transition: "all 0.15s",
+                  outline: isActive ? "2px solid var(--vp-accent-blue)" : "none",
+                  outlineOffset: 2,
+                }}
+              />
+            );
+          })}
+          <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+            <label
+              title="Custom color"
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 28, height: 28, borderRadius: "50%",
+                background: accentColor && !ACCENT_PRESETS.some((p) => p.color === accentColor) ? accentColor : "var(--vp-bg-surface-hover)",
+                border: accentColor && !ACCENT_PRESETS.some((p) => p.color === accentColor) ? "3px solid var(--vp-text-primary)" : "2px dashed var(--vp-border-medium)",
+                cursor: "pointer", transition: "all 0.15s", overflow: "hidden",
+                fontSize: 11, color: "var(--vp-text-dim)", fontWeight: 500,
+              }}
+            >
+              <input
+                type="color"
+                value={accentColor || "#3b82f6"}
+                onChange={(e) => setAccentColor(e.target.value)}
+                style={{
+                  position: "absolute", width: 28, height: 28, opacity: 0, cursor: "pointer",
+                }}
+              />
+              +
+            </label>
+          </div>
+          {accentColor && (
+            <button
+              onClick={() => setAccentColor(null)}
+              style={{
+                padding: "4px 10px", borderRadius: "var(--vp-radius-md)",
+                background: "transparent", border: "1px solid var(--vp-border-light)",
+                color: "var(--vp-text-dim)", fontSize: 10, cursor: "pointer",
+                transition: "all 0.15s", fontWeight: 500,
+              }}
+            >
+              Reset
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Density Mode */}
+      <div>
+        <label style={{ color: "var(--vp-text-muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          Density
+        </label>
+        <div
+          className="flex items-center justify-between"
+          style={{ padding: "12px 16px", borderRadius: "var(--vp-radius-xl)", marginTop: 10, border: "1px solid var(--vp-border-subtle)" }}
+        >
+          <div style={{ fontSize: 13, color: "var(--vp-text-primary)", fontWeight: 500 }}>UI Density</div>
+          <div className="flex gap-1">
+            {(["compact", "comfortable", "spacious"] as DensityMode[]).map((mode) => {
+              const isActive = densityMode === mode;
+              return (
+                <button
+                  key={mode}
+                  onClick={() => setDensityMode(mode)}
+                  style={{
+                    padding: "4px 12px", borderRadius: "var(--vp-radius-md)",
+                    background: isActive ? "var(--vp-accent-blue)" : "var(--vp-bg-surface)",
+                    border: `1px solid ${isActive ? "var(--vp-accent-blue)" : "var(--vp-border-subtle)"}`,
+                    color: isActive ? "#fff" : "var(--vp-text-secondary)",
+                    fontSize: 11, fontWeight: isActive ? 600 : 400, cursor: "pointer",
+                    transition: "all 0.15s", textTransform: "capitalize",
+                  }}
+                >
+                  {mode}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* Border Style */}
       <div>
         <label style={{ color: "var(--vp-text-muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>
@@ -566,6 +781,158 @@ export default function SettingsPanel() {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Terminal Settings */}
+      <div>
+        <label style={{ color: "var(--vp-text-muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          Terminal
+        </label>
+
+        {/* Font Size */}
+        <div
+          className="flex items-center justify-between"
+          style={{ padding: "12px 16px", borderRadius: "var(--vp-radius-xl)", marginTop: 10, border: "1px solid var(--vp-border-subtle)" }}
+        >
+          <div>
+            <div style={{ fontSize: 13, color: "var(--vp-text-primary)", fontWeight: 500 }}>Font Size</div>
+            <div style={{ fontSize: 11, color: "var(--vp-text-dim)", marginTop: 2 }}>{terminalFontSize}px</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span style={{ fontSize: 10, color: "var(--vp-text-dim)" }}>10</span>
+            <input
+              type="range"
+              min={10}
+              max={24}
+              step={1}
+              value={terminalFontSize}
+              onChange={(e) => setTerminalFontSize(Number(e.target.value))}
+              style={{ width: 100, accentColor: "var(--vp-accent-blue)" }}
+            />
+            <span style={{ fontSize: 10, color: "var(--vp-text-dim)" }}>24</span>
+          </div>
+        </div>
+
+        {/* Font Family */}
+        <div
+          className="flex items-center justify-between"
+          style={{ padding: "12px 16px", borderRadius: "var(--vp-radius-xl)", marginTop: 6, border: "1px solid var(--vp-border-subtle)" }}
+        >
+          <div style={{ fontSize: 13, color: "var(--vp-text-primary)", fontWeight: 500 }}>Font Family</div>
+          <select
+            value={terminalFontFamily}
+            onChange={(e) => setTerminalFontFamily(e.target.value)}
+            style={{
+              padding: "4px 8px", borderRadius: "var(--vp-radius-md)",
+              background: "var(--vp-input-bg)", border: "1px solid var(--vp-input-border)",
+              color: "var(--vp-text-primary)", fontSize: 11, outline: "none", cursor: "pointer",
+              maxWidth: 160,
+            }}
+          >
+            {FONT_FAMILY_OPTIONS.map((opt) => (
+              <option key={opt.label} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Line Height */}
+        <div
+          className="flex items-center justify-between"
+          style={{ padding: "12px 16px", borderRadius: "var(--vp-radius-xl)", marginTop: 6, border: "1px solid var(--vp-border-subtle)" }}
+        >
+          <div>
+            <div style={{ fontSize: 13, color: "var(--vp-text-primary)", fontWeight: 500 }}>Line Height</div>
+            <div style={{ fontSize: 11, color: "var(--vp-text-dim)", marginTop: 2 }}>{terminalLineHeight.toFixed(1)}</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span style={{ fontSize: 10, color: "var(--vp-text-dim)" }}>1.0</span>
+            <input
+              type="range"
+              min={1.0}
+              max={2.0}
+              step={0.1}
+              value={terminalLineHeight}
+              onChange={(e) => setTerminalLineHeight(Number(e.target.value))}
+              style={{ width: 100, accentColor: "var(--vp-accent-blue)" }}
+            />
+            <span style={{ fontSize: 10, color: "var(--vp-text-dim)" }}>2.0</span>
+          </div>
+        </div>
+
+        {/* Cursor Style + Blink */}
+        <div
+          className="flex items-center justify-between"
+          style={{ padding: "12px 16px", borderRadius: "var(--vp-radius-xl)", marginTop: 6, border: "1px solid var(--vp-border-subtle)" }}
+        >
+          <div style={{ fontSize: 13, color: "var(--vp-text-primary)", fontWeight: 500 }}>Cursor Style</div>
+          <div className="flex items-center gap-3">
+            <div className="flex gap-1">
+              {(["block", "underline", "bar"] as CursorStyle[]).map((style) => {
+                const isActive = terminalCursorStyle === style;
+                return (
+                  <button
+                    key={style}
+                    onClick={() => setTerminalCursorStyle(style)}
+                    style={{
+                      padding: "4px 10px", borderRadius: "var(--vp-radius-md)",
+                      background: isActive ? "var(--vp-accent-blue)" : "var(--vp-bg-surface)",
+                      border: `1px solid ${isActive ? "var(--vp-accent-blue)" : "var(--vp-border-subtle)"}`,
+                      color: isActive ? "#fff" : "var(--vp-text-secondary)",
+                      fontSize: 10, fontWeight: isActive ? 600 : 400, cursor: "pointer",
+                      transition: "all 0.15s", textTransform: "capitalize",
+                    }}
+                  >
+                    {style}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-1" title="Cursor blink">
+              <span style={{ fontSize: 10, color: "var(--vp-text-dim)" }}>Blink</span>
+              <button
+                onClick={() => setTerminalCursorBlink(!terminalCursorBlink)}
+                style={{
+                  width: 36, height: 20, borderRadius: "var(--vp-radius-2xl)", border: "none",
+                  background: terminalCursorBlink ? "var(--vp-accent-blue)" : "var(--vp-bg-surface-hover)",
+                  cursor: "pointer", position: "relative", transition: "background 0.2s",
+                }}
+              >
+                <div
+                  style={{
+                    width: 14, height: 14, borderRadius: "50%", background: "#fff",
+                    position: "absolute", top: 3,
+                    left: terminalCursorBlink ? 19 : 3,
+                    transition: "left 0.2s",
+                  }}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollback */}
+        <div
+          className="flex items-center justify-between"
+          style={{ padding: "12px 16px", borderRadius: "var(--vp-radius-xl)", marginTop: 6, border: "1px solid var(--vp-border-subtle)" }}
+        >
+          <div>
+            <div style={{ fontSize: 13, color: "var(--vp-text-primary)", fontWeight: 500 }}>Scrollback</div>
+            <div style={{ fontSize: 11, color: "var(--vp-text-dim)", marginTop: 2 }}>{terminalScrollback.toLocaleString()} lines</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span style={{ fontSize: 10, color: "var(--vp-text-dim)" }}>500</span>
+            <input
+              type="range"
+              min={500}
+              max={50000}
+              step={500}
+              value={terminalScrollback}
+              onChange={(e) => setTerminalScrollback(Number(e.target.value))}
+              style={{ width: 100, accentColor: "var(--vp-accent-blue)" }}
+            />
+            <span style={{ fontSize: 10, color: "var(--vp-text-dim)" }}>50k</span>
+          </div>
         </div>
       </div>
 
@@ -1075,7 +1442,7 @@ export default function SettingsPanel() {
           Built-in Agents
         </label>
         <div className="space-y-2 mt-3">
-          {["Claude Code", "OpenCode", "Aider", "Gemini CLI", "AMP", "Shell"].map((name) => (
+          {["Claude Code", "OpenCode", "Codex", "Gemini CLI", "AMP", "Shell"].map((name) => (
             <div
               key={name}
               className="flex items-center gap-3"
@@ -1391,8 +1758,8 @@ export default function SettingsPanel() {
 
           <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
             {activeTab === "general" && renderGeneralTab()}
+            {activeTab === "appearance" && renderAppearanceTab()}
             {activeTab === "shortcuts" && renderShortcutsTab()}
-            {activeTab === "themes" && renderThemesTab()}
             {activeTab === "agents" && renderAgentsTab()}
             {activeTab === "workspaces" && renderWorkspacesTab()}
           </div>

@@ -7,6 +7,7 @@ import type { TerminalThemeDefinition } from "../lib/terminal/terminalThemes";
 import type { ProjectInfo } from "../types/session";
 import { registerUserAgentGetter } from "../lib/agentTypes";
 import { registerCustomAgentCmds } from "../lib/agents/detector";
+import type { FlagOption } from "../types/flags";
 
 export interface UserAgent {
   id: string;
@@ -43,6 +44,11 @@ export interface WorkspaceTemplate {
   terminalGroupCount?: number;
 }
 
+export type CursorStyle = "block" | "underline" | "bar";
+export type ThemeMode = "manual" | "system";
+export type DensityMode = "compact" | "comfortable" | "spacious";
+export type StartupBehavior = "last-project" | "project-select";
+
 interface PersistedSettings {
   activeThemeId: string;
   terminalThemeId: string;
@@ -57,6 +63,26 @@ interface PersistedSettings {
   workspaceTemplates: WorkspaceTemplate[];
   customShortcuts: Record<string, string>;
   borderStyle: BorderStyle;
+  flagFavorites: Record<string, string[]>;
+  customFlags: Record<string, FlagOption[]>;
+
+  // Font & Terminal settings
+  terminalFontSize: number;
+  terminalFontFamily: string;
+  terminalLineHeight: number;
+  terminalCursorStyle: CursorStyle;
+  terminalCursorBlink: boolean;
+  terminalScrollback: number;
+
+  // Accent & Auto-Theme
+  accentColor: string | null;
+  themeMode: ThemeMode;
+
+  // UI Polish
+  densityMode: DensityMode;
+  sidebarTabOrder: string[];
+  hiddenSidebarTabs: string[];
+  startupBehavior: StartupBehavior;
 }
 
 interface SettingsState extends PersistedSettings {
@@ -101,6 +127,28 @@ interface SettingsState extends PersistedSettings {
   setCustomShortcut: (id: string, key: string) => void;
   resetShortcut: (id: string) => void;
   resetAllShortcuts: () => void;
+
+  toggleFlagFavorite: (agentType: string, flag: string) => void;
+  addCustomFlag: (agentType: string, flag: FlagOption) => void;
+  removeCustomFlag: (agentType: string, flagStr: string) => void;
+
+  // Font & Terminal
+  setTerminalFontSize: (size: number) => void;
+  setTerminalFontFamily: (family: string) => void;
+  setTerminalLineHeight: (height: number) => void;
+  setTerminalCursorStyle: (style: CursorStyle) => void;
+  setTerminalCursorBlink: (blink: boolean) => void;
+  setTerminalScrollback: (lines: number) => void;
+
+  // Accent & Auto-Theme
+  setAccentColor: (color: string | null) => void;
+  setThemeMode: (mode: ThemeMode) => void;
+
+  // UI Polish
+  setDensityMode: (mode: DensityMode) => void;
+  setSidebarTabOrder: (order: string[]) => void;
+  setHiddenSidebarTabs: (tabs: string[]) => void;
+  setStartupBehavior: (behavior: StartupBehavior) => void;
 }
 
 const DEFAULT_SETTINGS: PersistedSettings = {
@@ -117,6 +165,26 @@ const DEFAULT_SETTINGS: PersistedSettings = {
   workspaceTemplates: [],
   customShortcuts: {},
   borderStyle: "rounded" as BorderStyle,
+  flagFavorites: {},
+  customFlags: {},
+
+  // Font & Terminal
+  terminalFontSize: 13,
+  terminalFontFamily: "'JetBrains Mono', 'SF Mono', Monaco, Menlo, monospace",
+  terminalLineHeight: 1.4,
+  terminalCursorStyle: "block" as CursorStyle,
+  terminalCursorBlink: false,
+  terminalScrollback: 5000,
+
+  // Accent & Auto-Theme
+  accentColor: null,
+  themeMode: "manual" as ThemeMode,
+
+  // UI Polish
+  densityMode: "comfortable" as DensityMode,
+  sidebarTabOrder: ["agents", "explorer", "search", "git", "services"],
+  hiddenSidebarTabs: [],
+  startupBehavior: "project-select" as StartupBehavior,
 };
 
 function getSettingsPath(homeDir: string): string {
@@ -166,15 +234,51 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const homeDir = await invoke<string>("get_home_dir");
       const settings = readSettingsFile(homeDir);
       set({ ...settings, homeDir, loaded: true });
-      const theme = getThemeById(settings.activeThemeId, settings.customThemes);
-      applyTheme(theme);
+      // Apply theme (with accent color if set)
+      const resolvedThemeId = settings.themeMode === "system"
+        ? await invoke<string>("get_system_theme").then(
+            (sys) => (sys === "dark" ? "dark" : "light")
+          ).catch(() => settings.activeThemeId)
+        : settings.activeThemeId;
+      const theme = getThemeById(resolvedThemeId, settings.customThemes);
+      applyTheme(theme, settings.accentColor || null);
+      if (resolvedThemeId !== settings.activeThemeId) {
+        set({ activeThemeId: resolvedThemeId });
+      }
       // Apply border style
       applyBorderStyle(settings.borderStyle || "rounded");
       // Apply terminal theme
       updateAllTerminalThemes(settings.terminalThemeId || "default-dark", settings.customTerminalThemes || []);
+      // Apply terminal font/cursor settings
+      import("../lib/terminal/terminalCache").then(({ updateAllTerminalOptions }) => {
+        updateAllTerminalOptions({
+          fontSize: settings.terminalFontSize,
+          fontFamily: settings.terminalFontFamily,
+          lineHeight: settings.terminalLineHeight,
+          cursorStyle: settings.terminalCursorStyle,
+          cursorBlink: settings.terminalCursorBlink,
+          scrollback: settings.terminalScrollback,
+        });
+      }).catch(() => {});
+      // Apply density mode
+      import("../lib/themes").then(({ applyDensityMode }) => {
+        applyDensityMode(settings.densityMode || "comfortable");
+      }).catch(() => {});
       // Apply custom shortcuts to menu
       if (settings.customShortcuts && Object.keys(settings.customShortcuts).length > 0) {
         invoke("rebuild_menu", { customShortcuts: settings.customShortcuts }).catch(() => {});
+      }
+      // Listen for system theme changes
+      if (settings.themeMode === "system" && typeof window.electronAPI?.on === "function") {
+        window.electronAPI.on("system-theme-changed", (mode: string) => {
+          const s = get();
+          if (s.themeMode === "system") {
+            const newThemeId = mode === "dark" ? "dark" : "light";
+            const newTheme = getThemeById(newThemeId, s.customThemes);
+            applyTheme(newTheme, s.accentColor);
+            set({ activeThemeId: newThemeId });
+          }
+        });
       }
     } catch (err) {
       console.error("Failed to load settings:", err);
@@ -205,14 +309,33 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       workspaceTemplates: s.workspaceTemplates,
       customShortcuts: s.customShortcuts,
       borderStyle: s.borderStyle,
+      flagFavorites: s.flagFavorites,
+      customFlags: s.customFlags,
+      terminalFontSize: s.terminalFontSize,
+      terminalFontFamily: s.terminalFontFamily,
+      terminalLineHeight: s.terminalLineHeight,
+      terminalCursorStyle: s.terminalCursorStyle,
+      terminalCursorBlink: s.terminalCursorBlink,
+      terminalScrollback: s.terminalScrollback,
+      accentColor: s.accentColor,
+      themeMode: s.themeMode,
+      densityMode: s.densityMode,
+      sidebarTabOrder: s.sidebarTabOrder,
+      hiddenSidebarTabs: s.hiddenSidebarTabs,
+      startupBehavior: s.startupBehavior,
     });
   },
 
   setActiveTheme: (id: string) => {
     const s = get();
     const theme = getThemeById(id, s.customThemes);
-    applyTheme(theme);
+    applyTheme(theme, s.accentColor);
     set({ activeThemeId: id });
+    // Update Windows titlebar to match theme
+    invoke("update_titlebar_overlay", {
+      color: theme.colors.bgSecondary,
+      symbolColor: theme.colors.textPrimary,
+    }).catch(() => {});
     debouncedSave(get);
   },
 
@@ -378,6 +501,140 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     set({ customShortcuts: {} });
     debouncedSave(get);
     invoke("rebuild_menu", { customShortcuts: {} }).catch(() => {});
+  },
+
+  toggleFlagFavorite: (agentType, flag) => {
+    set((s) => {
+      const current = s.flagFavorites[agentType] || [];
+      const isFav = current.includes(flag);
+      return {
+        flagFavorites: {
+          ...s.flagFavorites,
+          [agentType]: isFav ? current.filter((f) => f !== flag) : [...current, flag],
+        },
+      };
+    });
+    debouncedSave(get);
+  },
+
+  addCustomFlag: (agentType, flag) => {
+    set((s) => {
+      const current = s.customFlags[agentType] || [];
+      if (current.some((f) => f.flag === flag.flag)) return s;
+      return {
+        customFlags: {
+          ...s.customFlags,
+          [agentType]: [...current, { ...flag, isCustom: true }],
+        },
+      };
+    });
+    debouncedSave(get);
+  },
+
+  removeCustomFlag: (agentType, flagStr) => {
+    set((s) => ({
+      customFlags: {
+        ...s.customFlags,
+        [agentType]: (s.customFlags[agentType] || []).filter((f) => f.flag !== flagStr),
+      },
+    }));
+    debouncedSave(get);
+  },
+
+  // --- Font & Terminal setters ---
+  setTerminalFontSize: (size: number) => {
+    set({ terminalFontSize: Math.max(10, Math.min(24, size)) });
+    import("../lib/terminal/terminalCache").then(({ updateAllTerminalOptions }) => {
+      updateAllTerminalOptions({ fontSize: Math.max(10, Math.min(24, size)) });
+    }).catch(() => {});
+    debouncedSave(get);
+  },
+
+  setTerminalFontFamily: (family: string) => {
+    set({ terminalFontFamily: family });
+    import("../lib/terminal/terminalCache").then(({ updateAllTerminalOptions }) => {
+      updateAllTerminalOptions({ fontFamily: family });
+    }).catch(() => {});
+    debouncedSave(get);
+  },
+
+  setTerminalLineHeight: (height: number) => {
+    set({ terminalLineHeight: height });
+    import("../lib/terminal/terminalCache").then(({ updateAllTerminalOptions }) => {
+      updateAllTerminalOptions({ lineHeight: height });
+    }).catch(() => {});
+    debouncedSave(get);
+  },
+
+  setTerminalCursorStyle: (style: CursorStyle) => {
+    set({ terminalCursorStyle: style });
+    import("../lib/terminal/terminalCache").then(({ updateAllTerminalOptions }) => {
+      updateAllTerminalOptions({ cursorStyle: style });
+    }).catch(() => {});
+    debouncedSave(get);
+  },
+
+  setTerminalCursorBlink: (blink: boolean) => {
+    set({ terminalCursorBlink: blink });
+    import("../lib/terminal/terminalCache").then(({ updateAllTerminalOptions }) => {
+      updateAllTerminalOptions({ cursorBlink: blink });
+    }).catch(() => {});
+    debouncedSave(get);
+  },
+
+  setTerminalScrollback: (lines: number) => {
+    set({ terminalScrollback: Math.max(500, Math.min(50000, lines)) });
+    import("../lib/terminal/terminalCache").then(({ updateAllTerminalOptions }) => {
+      updateAllTerminalOptions({ scrollback: Math.max(500, Math.min(50000, lines)) });
+    }).catch(() => {});
+    debouncedSave(get);
+  },
+
+  // --- Accent & Auto-Theme setters ---
+  setAccentColor: (color: string | null) => {
+    set({ accentColor: color });
+    const s = get();
+    const theme = getThemeById(s.activeThemeId, s.customThemes);
+    applyTheme(theme, color);
+    debouncedSave(get);
+  },
+
+  setThemeMode: (mode: ThemeMode) => {
+    set({ themeMode: mode });
+    if (mode === "system") {
+      invoke<string>("get_system_theme").then((sysTheme) => {
+        const themeId = sysTheme === "dark" ? "dark" : "light";
+        const s = get();
+        const theme = getThemeById(themeId, s.customThemes);
+        applyTheme(theme, s.accentColor);
+        set({ activeThemeId: themeId });
+      }).catch(() => {});
+    }
+    debouncedSave(get);
+  },
+
+  // --- UI Polish setters ---
+  setDensityMode: (mode: DensityMode) => {
+    set({ densityMode: mode });
+    import("../lib/themes").then(({ applyDensityMode }) => {
+      applyDensityMode(mode);
+    }).catch(() => {});
+    debouncedSave(get);
+  },
+
+  setSidebarTabOrder: (order: string[]) => {
+    set({ sidebarTabOrder: order });
+    debouncedSave(get);
+  },
+
+  setHiddenSidebarTabs: (tabs: string[]) => {
+    set({ hiddenSidebarTabs: tabs });
+    debouncedSave(get);
+  },
+
+  setStartupBehavior: (behavior: StartupBehavior) => {
+    set({ startupBehavior: behavior });
+    debouncedSave(get);
   },
 }));
 

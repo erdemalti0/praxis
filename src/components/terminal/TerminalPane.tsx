@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Columns2, Rows2, Plus, Hand, Terminal } from "lucide-react";
+import { Columns2, Rows2, Plus, Hand, Terminal, ChevronUp, ChevronDown, X } from "lucide-react";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useUIStore } from "../../stores/uiStore";
 import { invoke, send } from "../../lib/ipc";
-import { getOrCreateTerminal, activateWebGL } from "../../lib/terminal/terminalCache";
+import { getOrCreateTerminal, getCachedTerminal, activateWebGL, reactivateWebGL } from "../../lib/terminal/terminalCache";
 import { setupPtyConnection } from "../../lib/terminal/ptyConnection";
 import { swapPanes, replaceSession } from "../../lib/layout/layoutUtils";
 import { LAYOUT_PRESETS } from "../../lib/layout/layoutPresets";
@@ -94,18 +94,182 @@ function PresetIconSmall({ grid }: { grid: string[][] }) {
   );
 }
 
+/** Search bar overlay for in-terminal find (Cmd/Ctrl+F) */
+function TerminalSearchBar({
+  sessionId,
+  onClose,
+}: {
+  sessionId: string;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Auto-focus when mounted
+    inputRef.current?.focus();
+  }, []);
+
+  const getSearchAddon = useCallback(() => {
+    const cached = getCachedTerminal(sessionId);
+    return cached?.searchAddon ?? null;
+  }, [sessionId]);
+
+  const handleChange = (value: string) => {
+    setQuery(value);
+    const addon = getSearchAddon();
+    if (addon && value) {
+      addon.findNext(value);
+    }
+  };
+
+  const handleNext = () => {
+    const addon = getSearchAddon();
+    if (addon && query) addon.findNext(query);
+  };
+
+  const handlePrev = () => {
+    const addon = getSearchAddon();
+    if (addon && query) addon.findPrevious(query);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      const addon = getSearchAddon();
+      addon?.clearDecorations();
+      onClose();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (e.shiftKey) {
+        handlePrev();
+      } else {
+        handleNext();
+      }
+    }
+  };
+
+  const btnStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 26,
+    height: 26,
+    border: "none",
+    borderRadius: "var(--vp-radius-md)",
+    background: "transparent",
+    color: "var(--vp-text-secondary)",
+    cursor: "pointer",
+    padding: 0,
+    transition: "background 0.15s, color 0.15s",
+  };
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 8,
+        right: 8,
+        zIndex: 20,
+        display: "flex",
+        alignItems: "center",
+        gap: 2,
+        background: "var(--vp-bg-secondary)",
+        border: "1px solid var(--vp-border-medium)",
+        borderRadius: "var(--vp-radius-md)",
+        padding: "4px 6px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+      }}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <input
+        ref={inputRef}
+        type="text"
+        value={query}
+        onChange={(e) => handleChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="Find..."
+        style={{
+          width: 160,
+          height: 26,
+          padding: "0 8px",
+          border: "1px solid var(--vp-border-medium)",
+          borderRadius: "var(--vp-radius-md)",
+          background: "var(--vp-input-bg)",
+          color: "var(--vp-text-primary)",
+          fontSize: 12,
+          outline: "none",
+        }}
+      />
+      <button
+        onClick={handlePrev}
+        title="Previous match (Shift+Enter)"
+        style={btnStyle}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "var(--vp-bg-surface-hover)";
+          e.currentTarget.style.color = "var(--vp-text-primary)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "transparent";
+          e.currentTarget.style.color = "var(--vp-text-secondary)";
+        }}
+      >
+        <ChevronUp size={14} />
+      </button>
+      <button
+        onClick={handleNext}
+        title="Next match (Enter)"
+        style={btnStyle}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "var(--vp-bg-surface-hover)";
+          e.currentTarget.style.color = "var(--vp-text-primary)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "transparent";
+          e.currentTarget.style.color = "var(--vp-text-secondary)";
+        }}
+      >
+        <ChevronDown size={14} />
+      </button>
+      <button
+        onClick={() => {
+          const addon = getSearchAddon();
+          addon?.clearDecorations();
+          onClose();
+        }}
+        title="Close (Esc)"
+        style={btnStyle}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "var(--vp-bg-surface-hover)";
+          e.currentTarget.style.color = "var(--vp-text-primary)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "transparent";
+          e.currentTarget.style.color = "var(--vp-text-secondary)";
+        }}
+      >
+        <X size={14} />
+      </button>
+    </div>
+  );
+}
+
 interface TerminalPaneProps {
   sessionId: string | null;
+  groupId: string;
   isFocused: boolean;
 }
 
-export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps) {
+export default function TerminalPane({ sessionId, groupId, isFocused }: TerminalPaneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<ReturnType<typeof getOrCreateTerminal> | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const [hovered, setHovered] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [fileDragOver, setFileDragOver] = useState(false);
+  const [searchVisible, setSearchVisible] = useState(false);
 
   const setActiveSession = useTerminalStore((s) => s.setActiveSession);
   const setFocusedPane = useUIStore((s) => s.setFocusedPane);
@@ -113,8 +277,6 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
   const setShowSpawnDialog = useUIStore((s) => s.setShowSpawnDialog);
   const draggingPaneSessionId = useUIStore((s) => s.draggingPaneSessionId);
   const setDraggingPaneSessionId = useUIStore((s) => s.setDraggingPaneSessionId);
-  const activeWorkspaceId = useUIStore((s) => s.activeWorkspaceId);
-  const activeTerminalGroup = useUIStore((s) => s.activeTerminalGroup);
   const workspaceLayouts = useUIStore((s) => s.workspaceLayouts);
 
   const someoneIsDragging = draggingPaneSessionId !== null;
@@ -140,12 +302,10 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
       const ui = useUIStore.getState();
       const wsId = ui.activeWorkspaceId;
       if (!wsId) return;
-      const groups = ui.terminalGroups[wsId] || [];
-      const groupId = ui.activeTerminalGroup[wsId] || groups[0];
 
       const data: PaneDragData = {
         sessionId,
-        sourceGroupId: groupId || "",
+        sourceGroupId: groupId,
         sourceWorkspaceId: wsId,
       };
       e.dataTransfer.setData(PANE_DRAG_MIME, JSON.stringify(data));
@@ -163,7 +323,7 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
 
       setTimeout(() => setDraggingPaneSessionId(sessionId), 0);
     },
-    [sessionId, setDraggingPaneSessionId]
+    [sessionId, groupId, setDraggingPaneSessionId]
   );
 
   const handleDragEnd = useCallback(() => {
@@ -175,9 +335,15 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
     (e: React.DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      if (draggingPaneSessionId && draggingPaneSessionId !== sessionId) {
+      if (!draggingPaneSessionId || draggingPaneSessionId === sessionId) return;
+
+      // Verify cursor is actually over THIS pane (xterm canvas can misroute events)
+      const rect = outerRef.current?.getBoundingClientRect();
+      if (rect && e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
         e.dataTransfer.dropEffect = "move";
         setDragOver(true);
+      } else {
+        setDragOver(false);
       }
     },
     [draggingPaneSessionId, sessionId]
@@ -202,33 +368,41 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
       try { data = JSON.parse(raw); } catch { return; }
       if (data.sessionId === sessionId) return;
 
-      const ui = useUIStore.getState();
-      const wsId = ui.activeWorkspaceId;
-      if (!wsId) return;
-      const groups = ui.terminalGroups[wsId] || [];
-      const activeGroupId = ui.activeTerminalGroup[wsId] || groups[0];
-      if (!activeGroupId) return;
+      // Resolve actual drop target via coordinates.
+      // The xterm canvas is non-React DOM so event delegation can misroute.
+      let targetSessionId = sessionId;
+      const els = document.elementsFromPoint(e.clientX, e.clientY);
+      for (const el of els) {
+        const paneSession = (el as HTMLElement).dataset?.paneSession;
+        if (paneSession && paneSession !== data.sessionId) {
+          targetSessionId = paneSession;
+          break;
+        }
+      }
+      if (data.sessionId === targetSessionId) return;
 
-      if (data.sourceGroupId === activeGroupId) {
+      const ui = useUIStore.getState();
+
+      if (data.sourceGroupId === groupId) {
         // Same group: simple swap
-        const layout = ui.workspaceLayouts[activeGroupId];
+        const layout = ui.workspaceLayouts[groupId];
         if (layout) {
-          ui.setWorkspaceLayout(activeGroupId, swapPanes(layout, data.sessionId, sessionId));
+          ui.setWorkspaceLayout(groupId, swapPanes(layout, data.sessionId, targetSessionId));
         }
       } else {
         // Cross-group: swap session IDs between the two layout trees
         const sourceLayout = ui.workspaceLayouts[data.sourceGroupId];
-        const targetLayout = ui.workspaceLayouts[activeGroupId];
+        const targetLayout = ui.workspaceLayouts[groupId];
         if (sourceLayout && targetLayout) {
-          const newSource = replaceSession(sourceLayout, data.sessionId, sessionId);
-          const newTarget = replaceSession(targetLayout, sessionId, data.sessionId);
+          const newSource = replaceSession(sourceLayout, data.sessionId, targetSessionId);
+          const newTarget = replaceSession(targetLayout, targetSessionId, data.sessionId);
           ui.setWorkspaceLayout(data.sourceGroupId, newSource);
-          ui.setWorkspaceLayout(activeGroupId, newTarget);
+          ui.setWorkspaceLayout(groupId, newTarget);
         }
       }
       setDraggingPaneSessionId(null);
     },
-    [sessionId, setDraggingPaneSessionId]
+    [sessionId, groupId, setDraggingPaneSessionId]
   );
 
   // ── File drag detection: only on THIS pane via native listeners on outer div ──
@@ -272,6 +446,45 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
     };
   }, [sessionId, draggingPaneSessionId]);
 
+  // Cmd/Ctrl+F to open search overlay
+  useEffect(() => {
+    const el = outerRef.current;
+    if (!el || !sessionId) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      const isMod = e.metaKey || e.ctrlKey;
+      if (isMod && e.key === "f") {
+        e.preventDefault();
+        e.stopPropagation();
+        setSearchVisible(true);
+      }
+    };
+
+    el.addEventListener("keydown", onKeyDown, true);
+    return () => el.removeEventListener("keydown", onKeyDown, true);
+  }, [sessionId]);
+
+  // Also listen on xterm's internal textarea for Cmd/Ctrl+F
+  useEffect(() => {
+    if (!sessionId) return;
+    const cached = getCachedTerminal(sessionId);
+    if (!cached) return;
+    const textarea = cached.terminal.element?.querySelector("textarea");
+    if (!textarea) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      const isMod = e.metaKey || e.ctrlKey;
+      if (isMod && e.key === "f") {
+        e.preventDefault();
+        e.stopPropagation();
+        setSearchVisible(true);
+      }
+    };
+
+    textarea.addEventListener("keydown", onKeyDown, true);
+    return () => textarea.removeEventListener("keydown", onKeyDown, true);
+  }, [sessionId]);
+
   // Re-fit terminal when focus changes (switching between terminals)
   useEffect(() => {
     if (isFocused && terminalRef.current) {
@@ -293,6 +506,7 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
     terminalRef.current = { terminal, fitAddon, searchAddon };
 
     // Mount terminal to DOM
+    let reattached = false;
     if (!terminal.element) {
       terminal.open(container);
     } else if (!container.contains(terminal.element)) {
@@ -301,6 +515,7 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
         container.removeChild(container.firstChild);
       }
       container.appendChild(terminal.element);
+      reattached = true;
     }
 
     // Fit terminal + activate WebGL after mount.
@@ -312,7 +527,12 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
     };
     requestAnimationFrame(() => {
       fitWithRetry();
-      activateWebGL(sessionId);
+      if (reattached) {
+        // DOM re-attachment invalidates the WebGL context — force-recreate it
+        reactivateWebGL(sessionId);
+      } else {
+        activateWebGL(sessionId);
+      }
     });
     // Retry fits to handle cases where container dimensions aren't ready yet
     const retryTimers = [
@@ -394,25 +614,16 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
       try { data = JSON.parse(raw); } catch { return; }
 
       const ui = useUIStore.getState();
-      const wsId = ui.activeWorkspaceId;
-      if (!wsId) return;
-      const groups = ui.terminalGroups[wsId] || [];
-      const activeGroupId = ui.activeTerminalGroup[wsId] || groups[0];
-      if (!activeGroupId) return;
 
-      if (data.sourceGroupId === activeGroupId) {
+      if (data.sourceGroupId === groupId) {
         // Same group: swap the dragged session with null (move to empty slot)
-        const layout = ui.workspaceLayouts[activeGroupId];
+        const layout = ui.workspaceLayouts[groupId];
         if (layout) {
-          // Use replaceSession to put the dragged session into the null slot
-          // and null out the source — effectively swapPanes but with null support
           const temp = `__temp_${Date.now()}`;
           let newLayout = replaceSession(layout, data.sessionId, temp);
-          // Find first null leaf and fill it with the dragged session
           if (newLayout.type === "leaf" && !newLayout.sessionId) {
             newLayout = { type: "leaf", sessionId: data.sessionId };
           } else {
-            // Walk the tree: replace first null with data.sessionId, then replace temp with null
             const fillNull = (node: typeof newLayout): typeof newLayout => {
               if (node.type === "leaf") {
                 if (!node.sessionId) return { type: "leaf", sessionId: data.sessionId };
@@ -427,28 +638,24 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
             newLayout = fillNull(newLayout);
           }
           newLayout = replaceSession(newLayout, temp, null);
-          ui.setWorkspaceLayout(activeGroupId, newLayout);
+          ui.setWorkspaceLayout(groupId, newLayout);
         }
       } else {
         // Cross-group: move session from source group to this empty slot
-        ui.moveSessionToGroup(data.sessionId, data.sourceGroupId, activeGroupId);
+        ui.moveSessionToGroup(data.sessionId, data.sourceGroupId, groupId);
       }
       ui.setDraggingPaneSessionId(null);
     },
-    []
+    [groupId]
   );
 
   if (!sessionId) {
     // Check if this is the initial empty state (single empty leaf, no splits)
-    const groupId = activeWorkspaceId ? activeTerminalGroup[activeWorkspaceId] : undefined;
-    const layout = groupId ? workspaceLayouts[groupId] : undefined;
+    const layout = workspaceLayouts[groupId];
     const isInitialEmpty = layout?.type === "leaf" && !layout.sessionId;
 
     const handlePresetSelect = (preset: typeof LAYOUT_PRESETS[number]) => {
-      if (!activeWorkspaceId) return;
-      const gid = activeTerminalGroup[activeWorkspaceId];
-      if (!gid) return;
-      useUIStore.getState().setWorkspaceLayout(gid, preset.createLayout());
+      useUIStore.getState().setWorkspaceLayout(groupId, preset.createLayout());
     };
 
     return (
@@ -606,6 +813,7 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
     <div
       ref={outerRef}
       className="relative w-full h-full"
+      data-pane-session={sessionId ?? undefined}
       style={{
         border: `2px solid ${borderColor}`,
         transition: "border-color 0.15s, opacity 0.15s",
@@ -644,6 +852,14 @@ export default function TerminalPane({ sessionId, isFocused }: TerminalPaneProps
         <DropOverlay
           sessionId={sessionId}
           onDone={() => setFileDragOver(false)}
+        />
+      )}
+
+      {/* Find in terminal search bar overlay (Cmd/Ctrl+F) */}
+      {searchVisible && sessionId && (
+        <TerminalSearchBar
+          sessionId={sessionId}
+          onClose={() => setSearchVisible(false)}
         />
       )}
 

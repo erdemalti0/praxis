@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage } from "electron";
+import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage, nativeTheme } from "electron";
 import path from "path";
 import fs from "fs";
 import os from "os";
@@ -19,6 +19,8 @@ import { registerUsageHandlers } from "./ipc/usage";
 import { registerNpmHandlers } from "./ipc/npm";
 import { registerHttpHandlers } from "./ipc/http";
 import { registerRunnerHandlers } from "./ipc/runner";
+import { registerModelsHandlers } from "./ipc/models";
+
 import { startFileWatchers } from "./ipc/filesystem";
 import { buildMenu } from "./menu";
 import { closeAllPty } from "./utils/pty-manager";
@@ -126,6 +128,7 @@ export function createWindow(projectName?: string, projectPath?: string) {
     registerNpmHandlers();
     registerHttpHandlers();
     registerRunnerHandlers();
+    registerModelsHandlers();
 
     ipcMain.handle("get_default_shell", () => getDefaultShell());
 
@@ -270,6 +273,30 @@ export function createWindow(projectName?: string, projectPath?: string) {
       } else {
         const target = getCliSymlinkPath();
         return fs.existsSync(target);
+      }
+    });
+
+    // ── Theme system IPC ──
+    ipcMain.handle("get_system_theme", () => {
+      return nativeTheme.shouldUseDarkColors ? "dark" : "light";
+    });
+
+    ipcMain.handle("update_titlebar_overlay", (_event, args: { color: string; symbolColor: string }) => {
+      const win = BrowserWindow.fromWebContents(_event.sender);
+      if (win && process.platform === "win32") {
+        try {
+          win.setTitleBarOverlay({ color: args.color, symbolColor: args.symbolColor, height: 40 });
+        } catch {}
+      }
+    });
+
+    // Notify all renderer windows when system theme changes
+    nativeTheme.on("updated", () => {
+      const mode = nativeTheme.shouldUseDarkColors ? "dark" : "light";
+      for (const win of allWindows) {
+        if (!win.isDestroyed()) {
+          win.webContents.send("system-theme-changed", mode);
+        }
       }
     });
 

@@ -1,10 +1,83 @@
 import { ipcMain } from "electron";
-import { exec } from "child_process";
+import { exec, execFile } from "child_process";
 import { promisify } from "util";
 import fs from "fs";
 import path from "path";
 
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+
+// Git subcommands allowed via run_quick_command
+const ALLOWED_GIT_SUBCOMMANDS = new Set([
+  "add", "restore", "commit", "pull", "push", "checkout", "branch",
+  "status", "diff", "log", "stash", "merge", "rebase", "fetch",
+  "reset", "clean", "rm", "mv", "tag", "show", "rev-parse", "config",
+]);
+
+// Shell metacharacters that must not appear in unquoted git arguments
+const SHELL_METACHARS = /[;&|`$(){}!<>]/;
+
+/**
+ * Parse a "git ..." command string into an array of arguments.
+ * Handles double-quoted arguments. Rejects shell metacharacters in unquoted args.
+ * Returns null if the command is invalid or contains dangerous characters.
+ */
+function parseGitCommand(cmd: string): string[] | null {
+  if (!cmd.startsWith("git ")) return null;
+  const rest = cmd.slice(4);
+
+  const args: string[] = [];
+  let i = 0;
+  while (i < rest.length) {
+    // Skip whitespace
+    while (i < rest.length && rest[i] === " ") i++;
+    if (i >= rest.length) break;
+
+    if (rest[i] === '"') {
+      // Quoted argument — content is taken literally
+      i++; // skip opening quote
+      let arg = "";
+      while (i < rest.length && rest[i] !== '"') {
+        if (rest[i] === "\\" && i + 1 < rest.length && rest[i + 1] === '"') {
+          arg += '"';
+          i += 2;
+        } else {
+          arg += rest[i];
+          i++;
+        }
+      }
+      if (i >= rest.length) return null; // unclosed quote
+      i++; // skip closing quote
+      args.push(arg);
+    } else if (rest[i] === "'") {
+      // Single-quoted argument — content is taken literally
+      i++; // skip opening quote
+      let arg = "";
+      while (i < rest.length && rest[i] !== "'") {
+        arg += rest[i];
+        i++;
+      }
+      if (i >= rest.length) return null; // unclosed quote
+      i++; // skip closing quote
+      args.push(arg);
+    } else {
+      // Unquoted argument
+      let arg = "";
+      while (i < rest.length && rest[i] !== " ") {
+        arg += rest[i];
+        i++;
+      }
+      // Reject shell metacharacters in unquoted args
+      if (SHELL_METACHARS.test(arg)) {
+        console.warn(`[git] Rejected command with shell metachar: ${arg}`);
+        return null;
+      }
+      args.push(arg);
+    }
+  }
+
+  return args.length > 0 ? args : null;
+}
 
 // Global projectPath kept for backward compatibility with set_project_path.
 // Each handler also accepts an optional projectPath arg to avoid race conditions.
@@ -73,14 +146,29 @@ export function registerGitHandlers() {
     const cwd = args?.projectPath || projectPath;
     if (!cwd) return "No project path set";
 
-    // Whitelist: only allow git commands to prevent command injection
     const cmd = args.command.trim();
     if (!cmd.startsWith("git ")) {
       return "Only git commands are allowed";
     }
 
+    // Parse command into safe args array — rejects shell metacharacters
+    const gitArgs = parseGitCommand(cmd);
+    if (!gitArgs) {
+      return "Invalid git command format";
+    }
+
+    // Validate the subcommand against allowlist
+    const subcommand = gitArgs[0];
+    if (!ALLOWED_GIT_SUBCOMMANDS.has(subcommand)) {
+      return `Git subcommand not allowed: ${subcommand}`;
+    }
+
     try {
-      const result = await execAsync(cmd, { cwd, encoding: "utf-8", timeout: 15000 });
+      const result = await execFileAsync("git", gitArgs, {
+        cwd,
+        encoding: "utf-8",
+        timeout: 15000,
+      });
       return result.stdout;
     } catch (e: any) {
       return e.stderr || e.message || "Command failed";
@@ -97,7 +185,7 @@ export function registerGitHandlers() {
     }
 
     try {
-      await execAsync(`git clone "${repoUrl}"`, {
+      await execFileAsync("git", ["clone", repoUrl], {
         cwd: targetDir,
         encoding: "utf-8",
         timeout: 120000,

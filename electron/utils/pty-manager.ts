@@ -49,22 +49,27 @@ export function spawnPty(
 
   const isWindows = process.platform === "win32";
 
-  // Use the user's full shell environment so agent CLIs (claude, aider, etc.)
+  // Use the user's full shell environment so agent CLIs (claude, codex, etc.)
   // are found in PATH even in packaged builds
   const userEnv = getUserShellEnv();
+
+  // Build env: strip CLAUDECODE to allow spawning agent CLIs from within
+  // a Claude Code session (prevents "nested session" error)
+  const spawnEnv: Record<string, string> = {
+    ...userEnv,
+    ...(isWindows ? {} : { TERM: "xterm-256color" }),
+    PWD: safeCwd,
+    HOME: os.homedir(),
+    USERPROFILE: os.homedir(),
+  };
+  delete spawnEnv.CLAUDECODE;
 
   const shell = pty.spawn(cmd, args, {
     name: isWindows ? undefined : "xterm-256color",
     cols: cols || 80,
     rows: rows || 24,
     cwd: safeCwd,
-    env: {
-      ...userEnv,
-      ...(isWindows ? {} : { TERM: "xterm-256color" }),
-      PWD: safeCwd,
-      HOME: os.homedir(),
-      USERPROFILE: os.homedir(),
-    },
+    env: spawnEnv,
   });
 
   sessions.set(id, { pty: shell, cols: cols || 80, rows: rows || 24 });

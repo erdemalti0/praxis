@@ -21,7 +21,7 @@ function detectAgentType(name: string, cmd: string[]): string {
   const cmdStr = cmd.join(" ").toLowerCase();
   if (cmdStr.includes("claude") || name.includes("claude")) return "claude-code";
   if (cmdStr.includes("opencode") || name.includes("opencode")) return "opencode";
-  if (cmdStr.includes("aider") || name.includes("aider")) return "aider";
+  if (cmdStr.includes("codex") || name.includes("codex")) return "codex";
   if (cmdStr.includes("gemini") || name.includes("gemini")) return "gemini";
   if (cmdStr.includes("amp") || name.includes("amp")) return "amp";
 

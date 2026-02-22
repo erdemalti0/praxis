@@ -128,7 +128,7 @@ export default function RunConfigDialog({ open, onClose, onSubmit, editConfig, d
               background: "rgba(251,146,60,0.12)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <Play size={14} style={{ color: "#fb923c" }} />
+              <Play size={14} style={{ color: "var(--vp-accent-orange)" }} />
             </div>
             <span style={{ fontSize: 14, fontWeight: 600, color: "var(--vp-text-primary)" }}>
               {editConfig ? "Edit Run Config" : "New Run Config"}
@@ -167,7 +167,7 @@ export default function RunConfigDialog({ open, onClose, onSubmit, editConfig, d
                       color: "var(--vp-text-muted)", fontSize: 11, cursor: "pointer",
                       transition: "all 0.15s",
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(251,146,60,0.5)"; e.currentTarget.style.color = "#fb923c"; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(251,146,60,0.5)"; e.currentTarget.style.color = "var(--vp-accent-orange)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--vp-border-light)"; e.currentTarget.style.color = "var(--vp-text-muted)"; }}
                   >
                     {p.label}
@@ -299,7 +299,7 @@ export default function RunConfigDialog({ open, onClose, onSubmit, editConfig, d
               type="checkbox"
               checked={autoRestart}
               onChange={(e) => setAutoRestart(e.target.checked)}
-              style={{ accentColor: "#fb923c" }}
+              style={{ accentColor: "var(--vp-accent-orange)" }}
             />
             <span style={{ fontSize: 12, color: "var(--vp-text-muted)" }}>
               Auto-restart on crash
@@ -331,9 +331,9 @@ export default function RunConfigDialog({ open, onClose, onSubmit, editConfig, d
             disabled={!isValid}
             style={{
               padding: "8px 18px", borderRadius: "var(--vp-radius-lg)",
-              background: isValid ? "rgba(251,146,60,0.12)" : "var(--vp-bg-surface)",
-              border: `1px solid ${isValid ? "rgba(251,146,60,0.35)" : "var(--vp-bg-surface-hover)"}`,
-              color: isValid ? "#fb923c" : "var(--vp-text-subtle)",
+              background: isValid ? "var(--vp-accent-orange-bg, rgba(251,146,60,0.12))" : "var(--vp-bg-surface)",
+              border: `1px solid ${isValid ? "var(--vp-accent-orange-border, rgba(251,146,60,0.35))" : "var(--vp-bg-surface-hover)"}`,
+              color: isValid ? "var(--vp-accent-orange)" : "var(--vp-text-subtle)",
               fontSize: 12, fontWeight: 600, cursor: isValid ? "pointer" : "not-allowed",
               transition: "all 0.15s",
             }}

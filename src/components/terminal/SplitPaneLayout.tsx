@@ -40,6 +40,7 @@ export default memo(function SplitPaneLayout({
     return (
       <TerminalPane
         sessionId={layout.sessionId}
+        groupId={groupId}
         isFocused={layout.sessionId === focusedPaneSessionId}
       />
     );

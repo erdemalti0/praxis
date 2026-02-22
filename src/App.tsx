@@ -48,6 +48,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   // On mount, check if this window was opened with project params
+  // or auto-open last project based on startup behavior setting
   useEffect(() => {
     const projectFromURL = getProjectFromURL();
     if (projectFromURL && !selectedProject) {
@@ -58,6 +59,12 @@ function App() {
       };
       setSelectedProject(project);
       useSettingsStore.getState().addRecentProject(project);
+    } else if (!selectedProject) {
+      // Auto-open last project if startup behavior is set to 'last-project'
+      const settings = useSettingsStore.getState();
+      if (settings.startupBehavior === "last-project" && settings.recentProjects.length > 0) {
+        setSelectedProject(settings.recentProjects[0]);
+      }
     }
   }, []);
 

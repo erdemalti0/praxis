@@ -131,8 +131,8 @@ export default function MissionStepDialog({ open, onClose, onSubmit, editStep }:
               style={{
                 display: "flex", alignItems: "center", gap: 6,
                 padding: "8px 12px", borderRadius: "var(--vp-radius-lg)",
-                background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.15)",
-                color: "#a78bfa", fontSize: 11, cursor: "pointer",
+                background: "var(--vp-accent-purple-bg, rgba(167,139,250,0.06))", border: "1px solid var(--vp-accent-purple-border, rgba(167,139,250,0.15))",
+                color: "var(--vp-accent-purple)", fontSize: 11, cursor: "pointer",
                 transition: "all 0.15s", width: "100%",
               }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(167,139,250,0.1)"; }}
@@ -144,7 +144,7 @@ export default function MissionStepDialog({ open, onClose, onSubmit, editStep }:
           ) : (
             <div>
               <div className="flex items-center justify-between" style={{ marginBottom: 6 }}>
-                <label className="flex items-center gap-1.5" style={{ fontSize: 10, fontWeight: 600, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <label className="flex items-center gap-1.5" style={{ fontSize: 10, fontWeight: 600, color: "var(--vp-accent-purple)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   <Zap size={10} /> AI Prompt
                 </label>
                 <button

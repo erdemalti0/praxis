@@ -3,7 +3,7 @@ import { useUIStore } from "../../stores/uiStore";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useBrowserStore } from "../../stores/browserStore";
 import { useEditorStore } from "../../stores/editorStore";
-import { Map, Plus, X, Globe, LayoutGrid, Activity, FileCode2, Settings, Play } from "lucide-react";
+import { Map, Plus, X, Globe, LayoutGrid, Activity, FileCode2, Settings, Play, Bot } from "lucide-react";
 import { PANE_DRAG_MIME, type PaneDragData } from "../../types/layout";
 import { invoke } from "../../lib/ipc";
 import { cleanupTerminal } from "../../lib/terminal/terminalCache";
@@ -82,7 +82,7 @@ export default function StatsBar() {
   /* ── Workspace tab click ── */
   const handleWorkspaceClick = (wsId: string) => {
     setActiveWorkspaceId(wsId);
-    if (viewMode === "missions" || viewMode === "browser" || viewMode === "editor" || viewMode === "runner") {
+    if (viewMode === "missions" || viewMode === "browser" || viewMode === "editor" || viewMode === "runner" || viewMode === "agent") {
       if (splitEnabled) {
         setViewMode("split");
       } else {
@@ -344,9 +344,9 @@ export default function StatsBar() {
           onClick={() => setViewMode("runner")}
           className="flex items-center gap-2 px-4 py-2"
           style={{
-            background: viewMode === "runner" ? "rgba(251,146,60,0.12)" : "transparent",
+            background: viewMode === "runner" ? "var(--vp-accent-orange-bg, rgba(251,146,60,0.12))" : "transparent",
             border: viewMode === "runner"
-              ? "1px solid rgba(251,146,60,0.35)"
+              ? "1px solid var(--vp-accent-orange-border, rgba(251,146,60,0.35))"
               : "1px solid var(--vp-bg-surface-hover)",
             borderRadius: "var(--vp-radius-lg)",
             cursor: "pointer",
@@ -370,7 +370,7 @@ export default function StatsBar() {
           <Play
             size={13}
             style={{
-              color: viewMode === "runner" ? "#fb923c" : "var(--vp-text-dim)",
+              color: viewMode === "runner" ? "var(--vp-accent-orange)" : "var(--vp-text-dim)",
               transition: "color 0.2s",
               pointerEvents: "none",
             }}
@@ -379,12 +379,70 @@ export default function StatsBar() {
             style={{
               fontSize: 12,
               fontWeight: viewMode === "runner" ? 500 : 400,
-              color: viewMode === "runner" ? "#fb923c" : "var(--vp-text-dim)",
+              color: viewMode === "runner" ? "var(--vp-accent-orange)" : "var(--vp-text-dim)",
               transition: "color 0.2s",
               pointerEvents: "none",
             }}
           >
             Runner
+          </span>
+        </button>
+
+        {/* Agent tab */}
+        <div
+          style={{
+            width: 1,
+            height: 20,
+            background: "var(--vp-border-subtle)",
+            margin: "0 2px",
+            flexShrink: 0,
+          }}
+        />
+        <button
+          onClick={() => setViewMode("agent")}
+          className="flex items-center gap-2 px-4 py-2"
+          style={{
+            background: viewMode === "agent" ? "var(--vp-accent-purple-bg, rgba(167,139,250,0.12))" : "transparent",
+            border: viewMode === "agent"
+              ? "1px solid var(--vp-accent-purple-border, rgba(167,139,250,0.35))"
+              : "1px solid var(--vp-bg-surface-hover)",
+            borderRadius: "var(--vp-radius-lg)",
+            cursor: "pointer",
+            transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+            userSelect: "none",
+            minWidth: 80,
+          }}
+          onMouseEnter={(e) => {
+            if (viewMode !== "agent") {
+              e.currentTarget.style.background = "var(--vp-bg-surface-hover)";
+              e.currentTarget.style.borderColor = "var(--vp-border-medium)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (viewMode !== "agent") {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.borderColor = "var(--vp-bg-surface-hover)";
+            }
+          }}
+        >
+          <Bot
+            size={13}
+            style={{
+              color: viewMode === "agent" ? "var(--vp-accent-purple)" : "var(--vp-text-dim)",
+              transition: "color 0.2s",
+              pointerEvents: "none",
+            }}
+          />
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: viewMode === "agent" ? 500 : 400,
+              color: viewMode === "agent" ? "var(--vp-accent-purple)" : "var(--vp-text-dim)",
+              transition: "color 0.2s",
+              pointerEvents: "none",
+            }}
+          >
+            Agent
           </span>
         </button>
 

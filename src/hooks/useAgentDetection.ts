@@ -1,6 +1,6 @@
 /**
  * Polls PTY child processes to detect when a user launches an agent
- * (e.g. `claude`, `aider`) from inside a shell terminal session.
+ * (e.g. `claude`, `codex`) from inside a shell terminal session.
  *
  * When detected, dynamically updates the session's `agentType` so the UI
  * (AgentMonitorWidget, AgentCard, sidebar) reflects the actual running agent.

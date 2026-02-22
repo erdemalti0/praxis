@@ -24,7 +24,7 @@ Thumbs.db
 *.crt
 
 # App data
-.vibepilot/
+.praxis/
 
 # Test files
 erdem.txt

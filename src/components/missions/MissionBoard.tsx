@@ -23,10 +23,10 @@ const STATUS_ICONS: Record<MissionStepStatus, typeof Circle> = {
 };
 
 const STATUS_COLORS: Record<MissionStepStatus, string> = {
-  pending: "#6b7280",
-  in_progress: "#60a5fa",
-  done: "#4ade80",
-  blocked: "#f59e0b",
+  pending: "var(--vp-text-muted)",
+  in_progress: "var(--vp-accent-blue)",
+  done: "var(--vp-accent-green)",
+  blocked: "var(--vp-accent-amber)",
 };
 
 export default function MissionBoard({ variant }: MissionBoardProps) {
@@ -266,8 +266,8 @@ function PanelVariant({
                   <div style={{
                     width: `${pct}%`, height: "100%",
                     background: pct === 100
-                      ? "linear-gradient(90deg, var(--vp-accent-green), #22c55e)"
-                      : "linear-gradient(90deg, var(--vp-accent-blue), #3b82f6)",
+                      ? "linear-gradient(90deg, var(--vp-accent-green), var(--vp-accent-green-bright))"
+                      : "linear-gradient(90deg, var(--vp-accent-blue), var(--vp-accent-blue))",
                     borderRadius: "var(--vp-radius-xs)", transition: "width 0.3s ease",
                   }} />
                 </div>
@@ -493,8 +493,8 @@ function StepRow({
               title="Run — send prompt to agent"
               style={{
                 width: 18, height: 18, borderRadius: "var(--vp-radius-sm)",
-                background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)",
-                color: "#a78bfa", cursor: "pointer",
+                background: "var(--vp-accent-purple-bg, rgba(167,139,250,0.08))", border: "1px solid var(--vp-accent-purple-border, rgba(167,139,250,0.2))",
+                color: "var(--vp-accent-purple)", cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0, transition: "all 0.15s", padding: 0,
               }}
@@ -505,7 +505,7 @@ function StepRow({
             </button>
           )}
           {step.prompt && (
-            <span style={{ fontSize: 10, color: "#a78bfa", flexShrink: 0, fontWeight: 600 }}>AI</span>
+            <span style={{ fontSize: 10, color: "var(--vp-accent-purple)", flexShrink: 0, fontWeight: 600 }}>AI</span>
           )}
         </div>
         {/* Dependency indicator */}

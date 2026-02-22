@@ -22,7 +22,7 @@ const STEPS: StepDef[] = [
   },
   {
     title: "Launch AI Agents",
-    description: "Spawn Claude Code, OpenCode, Aider and more",
+    description: "Spawn Claude Code, OpenCode, Codex and more",
     icon: Terminal,
     actionLabel: "Next",
   },

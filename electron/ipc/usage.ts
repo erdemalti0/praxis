@@ -27,7 +27,7 @@ export function registerUsageHandlers() {
 }
 
 // Read Claude OAuth token from OS credential store or fallback to credentials file
-function getClaudeAccessToken(): string | null {
+export function getClaudeAccessToken(): string | null {
   // Try macOS keychain (where Claude Code stores credentials on macOS)
   if (process.platform === "darwin") {
     try {
@@ -147,7 +147,16 @@ async function fetchClaudeCost(): Promise<ProviderUsage | null> {
       return costCacheResult;
     }
 
-    const projectsDir = path.join(os.homedir(), ".config", "claude", "projects");
+    // Platform-aware Claude config directory
+    const projectsDir = (() => {
+      if (process.platform === "win32") {
+        const appData = process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming");
+        return path.join(appData, "claude", "projects");
+      }
+      // macOS + Linux: Claude CLI uses ~/.config/claude (respects XDG on Linux)
+      const configHome = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config");
+      return path.join(configHome, "claude", "projects");
+    })();
     if (!fs.existsSync(projectsDir)) {
       return null;
     }

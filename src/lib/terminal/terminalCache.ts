@@ -17,8 +17,14 @@ const cache = new Map<string, CachedTerminal>();
 /** Current terminal theme — updated via updateAllTerminalThemes() */
 let _currentTheme: ITheme = getTerminalThemeById("default-dark").theme;
 
-/** Default scrollback for active (visible) terminals */
-const SCROLLBACK_ACTIVE = 5000;
+/** Configurable terminal defaults — updated via updateAllTerminalOptions() */
+let _fontFamily = "'JetBrains Mono', 'SF Mono', Monaco, Menlo, monospace";
+let _fontSize = 13;
+let _lineHeight = 1.4;
+let _cursorStyle: "block" | "underline" | "bar" = "block";
+let _cursorBlink = false;
+let _scrollbackActive = 5000;
+
 /** Reduced scrollback for background (offscreen) terminals — saves ~30MB per terminal */
 const SCROLLBACK_BACKGROUND = 500;
 
@@ -27,13 +33,14 @@ export function getOrCreateTerminal(sessionId: string): CachedTerminal {
   if (existing) return existing;
 
   const terminal = new Terminal({
-    fontFamily: "'JetBrains Mono', 'SF Mono', Monaco, Menlo, monospace",
-    fontSize: 13,
-    lineHeight: 1.4,
+    fontFamily: _fontFamily,
+    fontSize: _fontSize,
+    lineHeight: _lineHeight,
     theme: _currentTheme,
-    cursorBlink: false,
+    cursorStyle: _cursorStyle,
+    cursorBlink: _cursorBlink,
     allowProposedApi: true,
-    scrollback: SCROLLBACK_ACTIVE,
+    scrollback: _scrollbackActive,
     fastScrollModifier: "alt",
     fastScrollSensitivity: 5,
   });
@@ -68,12 +75,12 @@ export function activateWebGL(sessionId: string): void {
     const webgl = new WebglAddon();
     webgl.onContextLoss(() => {
       webgl.dispose();
-      (entry.terminal as any).__webgl = false;
+      (entry.terminal as any).__webgl = null;
       // Attempt recovery after a short delay
       setTimeout(() => activateWebGL(sessionId), 1000);
     });
     entry.terminal.loadAddon(webgl);
-    (entry.terminal as any).__webgl = true;
+    (entry.terminal as any).__webgl = webgl;
   } catch {
     // WebGL not available — canvas/DOM renderer used automatically
   }
@@ -81,6 +88,28 @@ export function activateWebGL(sessionId: string): void {
 
 export function getCachedTerminal(sessionId: string): CachedTerminal | undefined {
   return cache.get(sessionId);
+}
+
+/**
+ * Force-dispose and re-create the WebGL addon for a terminal.
+ * Required after DOM re-attachment (e.g., moving a terminal between panes)
+ * because the WebGL context becomes invalid when the canvas is moved.
+ */
+export function reactivateWebGL(sessionId: string): void {
+  const entry = cache.get(sessionId);
+  if (!entry) return;
+
+  // Dispose existing WebGL addon
+  const existing = (entry.terminal as any).__webgl;
+  if (existing && typeof existing.dispose === "function") {
+    try { existing.dispose(); } catch {}
+  }
+  (entry.terminal as any).__webgl = null;
+
+  // Re-activate after DOM settles
+  requestAnimationFrame(() => {
+    activateWebGL(sessionId);
+  });
 }
 
 /**
@@ -154,8 +183,8 @@ export function setBackgroundScrollback(sessionId: string): void {
  */
 export function setActiveScrollback(sessionId: string): void {
   const entry = cache.get(sessionId);
-  if (entry && entry.terminal.options.scrollback !== SCROLLBACK_ACTIVE) {
-    entry.terminal.options.scrollback = SCROLLBACK_ACTIVE;
+  if (entry && entry.terminal.options.scrollback !== _scrollbackActive) {
+    entry.terminal.options.scrollback = _scrollbackActive;
   }
 }
 
@@ -168,5 +197,55 @@ export function updateAllTerminalThemes(themeId: string, customTerminalThemes: T
   _currentTheme = def.theme;
   for (const [, entry] of cache) {
     entry.terminal.options.theme = _currentTheme;
+  }
+}
+
+/**
+ * Update font, cursor, and scrollback options for all cached terminals.
+ * Called when the user changes terminal settings.
+ */
+export function updateAllTerminalOptions(opts: {
+  fontSize?: number;
+  fontFamily?: string;
+  lineHeight?: number;
+  cursorStyle?: "block" | "underline" | "bar";
+  cursorBlink?: boolean;
+  scrollback?: number;
+}): void {
+  // Update module-level defaults for future terminals
+  if (opts.fontSize !== undefined) _fontSize = opts.fontSize;
+  if (opts.fontFamily !== undefined) _fontFamily = opts.fontFamily;
+  if (opts.lineHeight !== undefined) _lineHeight = opts.lineHeight;
+  if (opts.cursorStyle !== undefined) _cursorStyle = opts.cursorStyle;
+  if (opts.cursorBlink !== undefined) _cursorBlink = opts.cursorBlink;
+  if (opts.scrollback !== undefined) _scrollbackActive = opts.scrollback;
+
+  const fontChanged = opts.fontSize !== undefined || opts.fontFamily !== undefined || opts.lineHeight !== undefined;
+
+  // Apply to all existing cached terminals
+  for (const [, entry] of cache) {
+    if (opts.fontSize !== undefined) entry.terminal.options.fontSize = opts.fontSize;
+    if (opts.fontFamily !== undefined) entry.terminal.options.fontFamily = opts.fontFamily;
+    if (opts.lineHeight !== undefined) entry.terminal.options.lineHeight = opts.lineHeight;
+    if (opts.cursorStyle !== undefined) entry.terminal.options.cursorStyle = opts.cursorStyle;
+    if (opts.cursorBlink !== undefined) entry.terminal.options.cursorBlink = opts.cursorBlink;
+    if (opts.scrollback !== undefined) entry.terminal.options.scrollback = opts.scrollback;
+
+    // Clear WebGL texture atlas when font changes so glyphs are re-rendered
+    if (fontChanged) {
+      const webgl = (entry.terminal as any).__webgl;
+      if (webgl && typeof webgl.clearTextureAtlas === "function") {
+        webgl.clearTextureAtlas();
+      }
+    }
+  }
+
+  // Refit all terminals to account for font/size changes
+  refitAllTerminals();
+
+  // For font family changes, the browser may need time to load the new font.
+  // Schedule a second refit after a short delay to pick up the loaded font metrics.
+  if (opts.fontFamily !== undefined) {
+    setTimeout(() => refitAllTerminals(), 300);
   }
 }

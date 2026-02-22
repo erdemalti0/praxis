@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { X, Code, ChevronLeft, Search } from "lucide-react";
+import { X, Code, ChevronLeft, Search, Star, Plus, Trash2 } from "lucide-react";
 import { useUIStore } from "../../stores/uiStore";
 import { useTerminalStore } from "../../stores/terminalStore";
 import { useSettingsStore } from "../../stores/settingsStore";
@@ -14,19 +14,14 @@ import { getBaseName } from "../../lib/pathUtils";
 
 import claudeLogo from "../../assets/logos/claude.png";
 import opencodeLogo from "../../assets/logos/opencode.svg";
+import codexLogo from "../../assets/logos/codex.svg";
 import geminiLogo from "../../assets/logos/gemini.svg";
 import ampLogo from "../../assets/logos/amp.svg";
 import shellLogo from "../../assets/logos/terminal_svg.svg";
 
 /* ───────── Flag types ───────── */
 
-interface FlagOption {
-  flag: string;
-  label: string;
-  description: string;
-  hasValue?: boolean;
-  placeholder?: string;
-}
+import type { FlagOption } from "../../types/flags";
 
 interface AgentPreset {
   label: string;
@@ -59,17 +54,18 @@ const AGENT_PRESETS: AgentPreset[] = [
     type: "claude-code",
     logo: claudeLogo,
     flags: [
-      { flag: "--dangerously-skip-permissions", label: "Skip Permissions", description: "Bypass all permission checks" },
-      { flag: "--verbose", label: "Verbose", description: "Enable verbose output" },
-      { flag: "--debug", label: "Debug", description: "Enable debug mode" },
-      { flag: "--model", label: "Model", description: "Model for the session", hasValue: true, placeholder: "claude-sonnet-4-5-20250929" },
-      { flag: "--continue", label: "Continue", description: "Continue most recent conversation" },
-      { flag: "--permission-mode", label: "Permission Mode", description: "Permission mode (acceptEdits, plan, etc.)", hasValue: true, placeholder: "acceptEdits" },
-      { flag: "--allowedTools", label: "Allowed Tools", description: "Comma-separated list of allowed tools", hasValue: true, placeholder: "Read,Write,Bash" },
-      { flag: "--system-prompt", label: "System Prompt", description: "Custom system prompt", hasValue: true, placeholder: "You are a helpful assistant" },
-      { flag: "--append-system-prompt", label: "Append System Prompt", description: "Append to system prompt", hasValue: true, placeholder: "Additional instructions..." },
-      { flag: "--print", label: "Print", description: "Print response and exit (pipe mode)" },
-      { flag: "--no-chrome", label: "No Chrome", description: "Disable Chrome integration" },
+      { flag: "--dangerously-skip-permissions", label: "Skip Permissions", description: "Bypass all permission checks (sandboxes only)" },
+      { flag: "--model", label: "Model", description: "Model for the session", hasValue: true, placeholder: "sonnet" },
+      { flag: "--permission-mode", label: "Permission Mode", description: "Permission mode for the session", hasValue: true, placeholder: "plan" },
+      { flag: "--continue", label: "Continue", description: "Continue the most recent conversation" },
+      { flag: "--resume", label: "Resume", description: "Resume conversation by session ID", hasValue: true, placeholder: "session-id" },
+      { flag: "--print", label: "Print", description: "Print response and exit (non-interactive)" },
+      { flag: "--allowedTools", label: "Allowed Tools", description: "Tools to allow without confirmation", hasValue: true, placeholder: "Read,Write,Bash" },
+      { flag: "--disallowedTools", label: "Disallowed Tools", description: "Tools to deny", hasValue: true, placeholder: "WebFetch" },
+      { flag: "--system-prompt", label: "System Prompt", description: "Override system prompt entirely", hasValue: true, placeholder: "You are a code reviewer" },
+      { flag: "--append-system-prompt", label: "Append System Prompt", description: "Append text to default system prompt", hasValue: true, placeholder: "Focus on security" },
+      { flag: "--effort", label: "Effort", description: "Set effort level", hasValue: true, placeholder: "high" },
+      { flag: "--verbose", label: "Verbose", description: "Enable verbose logging output" },
     ],
   },
   {
@@ -80,38 +76,36 @@ const AGENT_PRESETS: AgentPreset[] = [
     type: "opencode",
     logo: opencodeLogo,
     flags: [
-      { flag: "--print-logs", label: "Print Logs", description: "Print logs to stderr" },
-      { flag: "--log-level", label: "Log Level", description: "Log level (DEBUG, INFO, WARN, ERROR)", hasValue: true, placeholder: "DEBUG" },
       { flag: "--model", label: "Model", description: "Model to use (provider/model format)", hasValue: true, placeholder: "anthropic/claude-sonnet" },
       { flag: "--continue", label: "Continue", description: "Continue last session" },
+      { flag: "--session", label: "Session", description: "Continue specific session by ID", hasValue: true, placeholder: "session-id" },
       { flag: "--fork", label: "Fork", description: "Fork session when continuing" },
       { flag: "--agent", label: "Agent", description: "Agent to use", hasValue: true, placeholder: "coder" },
-      { flag: "--prompt", label: "Prompt", description: "Prompt to use", hasValue: true, placeholder: "Fix the bug in..." },
+      { flag: "--prompt", label: "Prompt", description: "Initial prompt to send", hasValue: true, placeholder: "Fix the failing test" },
+      { flag: "--print-logs", label: "Print Logs", description: "Print logs to stderr" },
+      { flag: "--log-level", label: "Log Level", description: "Log verbosity level", hasValue: true, placeholder: "DEBUG" },
+      { flag: "--port", label: "Port", description: "Port to listen on", hasValue: true, placeholder: "4096" },
     ],
   },
   {
-    label: "Aider",
-    description: "AI pair programming in terminal",
-    cmd: "aider",
+    label: "Codex",
+    description: "OpenAI coding agent in terminal",
+    cmd: "codex",
     args: [],
-    type: "aider",
-    lucideIcon: "code",
+    type: "codex",
+    logo: codexLogo,
     flags: [
-      { flag: "--no-auto-commits", label: "No Auto Commits", description: "Disable automatic git commits" },
-      { flag: "--no-git", label: "No Git", description: "Disable git integration" },
-      { flag: "--yes-always", label: "Yes Always", description: "Always say yes to confirmations" },
-      { flag: "--dark-mode", label: "Dark Mode", description: "Dark terminal colors" },
-      { flag: "--model", label: "Model", description: "LLM model to use", hasValue: true, placeholder: "gpt-4" },
-      { flag: "--stream", label: "Stream", description: "Enable streaming" },
-      { flag: "--no-stream", label: "No Stream", description: "Disable streaming" },
-      { flag: "--vim", label: "Vim", description: "VI editing mode" },
-      { flag: "--auto-lint", label: "Auto Lint", description: "Enable auto linting" },
-      { flag: "--no-auto-lint", label: "No Auto Lint", description: "Disable auto linting" },
-      { flag: "--auto-test", label: "Auto Test", description: "Enable auto testing" },
-      { flag: "--no-auto-test", label: "No Auto Test", description: "Disable auto testing" },
-      { flag: "--dry-run", label: "Dry Run", description: "Preview without modifying" },
-      { flag: "--architect", label: "Architect", description: "Architect edit format" },
-      { flag: "--show-diffs", label: "Show Diffs", description: "Show diffs on commit" },
+      { flag: "--model", label: "Model", description: "Override the model to use", hasValue: true, placeholder: "gpt-5.1-codex-max" },
+      { flag: "--approval-policy", label: "Approval Policy", description: "When to pause for human approval", hasValue: true, placeholder: "on-request" },
+      { flag: "--full-auto", label: "Full Auto", description: "Run most commands without prompts" },
+      { flag: "--sandbox", label: "Sandbox", description: "Sandbox policy for shell commands", hasValue: true, placeholder: "default" },
+      { flag: "--cd", label: "Working Dir", description: "Set working directory for the agent", hasValue: true, placeholder: "/path/to/project" },
+      { flag: "--image", label: "Image", description: "Attach image files to initial prompt", hasValue: true, placeholder: "screenshot.png" },
+      { flag: "--search", label: "Web Search", description: "Enable live web search" },
+      { flag: "--oss", label: "OSS Mode", description: "Use local open source model provider (Ollama)" },
+      { flag: "--profile", label: "Profile", description: "Configuration profile to load", hasValue: true, placeholder: "default" },
+      { flag: "--add-dir", label: "Add Directory", description: "Grant additional directories write access", hasValue: true, placeholder: "/extra/path" },
+      { flag: "--no-alternate-screen", label: "No Alt Screen", description: "Disable alternate screen mode for TUI" },
     ],
   },
   {
@@ -122,14 +116,16 @@ const AGENT_PRESETS: AgentPreset[] = [
     type: "gemini",
     logo: geminiLogo,
     flags: [
-      { flag: "--debug", label: "Debug", description: "Debug mode" },
       { flag: "--model", label: "Model", description: "Model to use", hasValue: true, placeholder: "gemini-2.5-pro" },
-      { flag: "--sandbox", label: "Sandbox", description: "Run in sandbox" },
-      { flag: "--yolo", label: "YOLO", description: "Auto-accept all actions" },
-      { flag: "--approval-mode", label: "Approval Mode", description: "Approval mode (default, auto_edit, yolo, plan)", hasValue: true, placeholder: "auto_edit" },
-      { flag: "--resume", label: "Resume", description: "Resume previous session", hasValue: true, placeholder: "session-id" },
-      { flag: "--allowed-tools", label: "Allowed Tools", description: "Tools allowed without confirmation", hasValue: true, placeholder: "Edit,Shell" },
-      { flag: "--screen-reader", label: "Screen Reader", description: "Accessibility mode" },
+      { flag: "--yolo", label: "YOLO", description: "Auto-accept all tool actions" },
+      { flag: "--sandbox", label: "Sandbox", description: "Run in sandbox mode" },
+      { flag: "--debug", label: "Debug", description: "Enable debug output (F12 for console)" },
+      { flag: "--approval-mode", label: "Approval Mode", description: "Approval mode for actions", hasValue: true, placeholder: "auto_edit" },
+      { flag: "--resume", label: "Resume", description: "Resume a previous session", hasValue: true, placeholder: "latest" },
+      { flag: "--allowed-tools", label: "Allowed Tools", description: "Tools allowed without confirmation", hasValue: true, placeholder: "edit,shell" },
+      { flag: "--extensions", label: "Extensions", description: "Extensions to use (default: all)", hasValue: true, placeholder: "ext-name" },
+      { flag: "--output-format", label: "Output Format", description: "CLI output format", hasValue: true, placeholder: "json" },
+      { flag: "--screen-reader", label: "Screen Reader", description: "Enable accessibility mode" },
     ],
   },
   {
@@ -140,12 +136,151 @@ const AGENT_PRESETS: AgentPreset[] = [
     type: "amp",
     logo: ampLogo,
     flags: [
+      { flag: "--mode", label: "Mode", description: "Agent mode", hasValue: true, placeholder: "smart" },
+      { flag: "--dangerously-allow-all", label: "Allow All", description: "Disable all command confirmation prompts" },
+      { flag: "--visibility", label: "Visibility", description: "Thread visibility level", hasValue: true, placeholder: "private" },
       { flag: "--notifications", label: "Notifications", description: "Enable sound notifications" },
       { flag: "--no-notifications", label: "No Notifications", description: "Disable sound notifications" },
-      { flag: "--visibility", label: "Visibility", description: "Thread visibility (private, public, workspace)", hasValue: true, placeholder: "private" },
+      { flag: "--mcp-config", label: "MCP Config", description: "JSON config or file path for MCP servers", hasValue: true, placeholder: "./mcp.json" },
+      { flag: "--log-level", label: "Log Level", description: "Set log level", hasValue: true, placeholder: "debug" },
+      { flag: "--execute", label: "Execute", description: "Execute mode (non-interactive)", hasValue: true, placeholder: "Fix the build" },
     ],
   },
 ];
+
+/* ───────── Add Custom Flag Row ───────── */
+
+function AddCustomFlagRow({ onAdd }: { onAdd: (flag: FlagOption) => void }) {
+  const [open, setOpen] = useState(false);
+  const [flagStr, setFlagStr] = useState("");
+  const [label, setLabel] = useState("");
+  const [hasValue, setHasValue] = useState(false);
+
+  const submit = () => {
+    const trimmed = flagStr.trim();
+    if (!trimmed) return;
+    onAdd({
+      flag: trimmed.startsWith("-") ? trimmed : `--${trimmed}`,
+      label: label.trim() || trimmed,
+      description: "Custom flag",
+      hasValue,
+      isCustom: true,
+    });
+    setFlagStr("");
+    setLabel("");
+    setHasValue(false);
+    setOpen(false);
+  };
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-1.5 text-xs"
+        style={{
+          color: "var(--vp-text-dim)",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          padding: "6px 0",
+          transition: "color 0.15s ease",
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--vp-text-primary)")}
+        onMouseLeave={(e) => (e.currentTarget.style.color = "var(--vp-text-dim)")}
+      >
+        <Plus size={12} /> Add custom flag
+      </button>
+    );
+  }
+
+  const inputStyle: React.CSSProperties = {
+    background: "var(--vp-input-bg)",
+    border: "1px solid var(--vp-input-border)",
+    borderRadius: "var(--vp-radius-md)",
+    color: "var(--vp-text-primary)",
+    padding: "5px 8px",
+    outline: "none",
+    fontFamily: "monospace",
+    fontSize: 11,
+    transition: "border-color 0.2s ease",
+    width: "100%",
+  };
+
+  return (
+    <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 6 }}>
+      <input
+        type="text"
+        placeholder="--my-flag"
+        value={flagStr}
+        onChange={(e) => setFlagStr(e.target.value)}
+        style={inputStyle}
+        autoFocus
+        onKeyDown={(e) => e.key === "Enter" && submit()}
+      />
+      <input
+        type="text"
+        placeholder="Label (optional)"
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        style={inputStyle}
+        onKeyDown={(e) => e.key === "Enter" && submit()}
+      />
+      <label
+        style={{
+          fontSize: 11,
+          color: "var(--vp-text-dim)",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          cursor: "pointer",
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={hasValue}
+          onChange={(e) => setHasValue(e.target.checked)}
+          style={{ accentColor: "var(--vp-accent-blue)" }}
+        />
+        Accepts a value
+      </label>
+      <div style={{ display: "flex", gap: 6 }}>
+        <button
+          onClick={submit}
+          style={{
+            fontSize: 11,
+            padding: "4px 12px",
+            background: "var(--vp-button-primary-bg)",
+            color: "var(--vp-button-primary-text)",
+            border: "none",
+            borderRadius: "var(--vp-radius-md)",
+            cursor: "pointer",
+          }}
+        >
+          Add
+        </button>
+        <button
+          onClick={() => {
+            setOpen(false);
+            setFlagStr("");
+            setLabel("");
+            setHasValue(false);
+          }}
+          style={{
+            fontSize: 11,
+            padding: "4px 12px",
+            background: "transparent",
+            color: "var(--vp-text-dim)",
+            border: "1px solid var(--vp-border-subtle)",
+            borderRadius: "var(--vp-radius-md)",
+            cursor: "pointer",
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
 
 /* ───────── Component ───────── */
 
@@ -160,6 +295,11 @@ export default function SpawnDialog() {
   const userAgents = useSettingsStore((s) => s.userAgents);
   const recentSpawns = useSettingsStore((s) => s.recentSpawns);
   const addRecentSpawn = useSettingsStore((s) => s.addRecentSpawn);
+  const flagFavorites = useSettingsStore((s) => s.flagFavorites);
+  const toggleFlagFavorite = useSettingsStore((s) => s.toggleFlagFavorite);
+  const customFlags = useSettingsStore((s) => s.customFlags);
+  const addCustomFlag = useSettingsStore((s) => s.addCustomFlag);
+  const removeCustomFlag = useSettingsStore((s) => s.removeCustomFlag);
 
   const allPresets = useMemo(() => {
     const userPresets: AgentPreset[] = userAgents.map((ua) => ({
@@ -184,12 +324,34 @@ export default function SpawnDialog() {
   const [searchQuery, setSearchQuery] = useState("");
   const [agentSearchQuery, setAgentSearchQuery] = useState("");
 
-  // Reset when dialog opens or preset changes
-  useEffect(() => {
-    setEnabledFlags({});
-    setFlagValues({});
+  // Select a preset and optionally pre-populate flags from recent spawn
+  const selectPreset = (index: number, savedFlags?: Record<string, string | boolean>) => {
+    setSelectedPreset(index);
+    if (savedFlags && Object.keys(savedFlags).length > 0) {
+      const enabled: Record<string, boolean> = {};
+      const values: Record<string, string> = {};
+      for (const [flag, value] of Object.entries(savedFlags)) {
+        enabled[flag] = true;
+        if (typeof value === "string") values[flag] = value;
+      }
+      setEnabledFlags(enabled);
+      setFlagValues(values);
+    } else {
+      setEnabledFlags({});
+      setFlagValues({});
+    }
     setExtraArgs("");
     setSearchQuery("");
+  };
+
+  // Reset when preset changes via direct setSelectedPreset(null) (back button)
+  useEffect(() => {
+    if (selectedPreset === null) {
+      setEnabledFlags({});
+      setFlagValues({});
+      setExtraArgs("");
+      setSearchQuery("");
+    }
   }, [selectedPreset]);
 
   // Reset stage when dialog opens
@@ -214,17 +376,39 @@ export default function SpawnDialog() {
     );
   }, [allPresets, agentSearchQuery]);
 
+  const mergedFlags = useMemo(() => {
+    if (!preset) return [];
+    const agentCustomFlags = (customFlags[preset.type] || []).map((f) => ({
+      ...f,
+      isCustom: true as const,
+    }));
+    return [...preset.flags, ...agentCustomFlags];
+  }, [preset, customFlags]);
+
+  const favSet = useMemo(() => {
+    if (!preset) return new Set<string>();
+    return new Set(flagFavorites[preset.type] || []);
+  }, [preset, flagFavorites]);
+
   const filteredFlags = useMemo(() => {
     if (!preset) return [];
-    if (!searchQuery.trim()) return preset.flags;
-    const q = searchQuery.toLowerCase();
-    return preset.flags.filter(
-      (f) =>
-        f.label.toLowerCase().includes(q) ||
-        f.description.toLowerCase().includes(q) ||
-        f.flag.toLowerCase().includes(q)
-    );
-  }, [preset, searchQuery]);
+    let result = mergedFlags;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = mergedFlags.filter(
+        (f) =>
+          f.label.toLowerCase().includes(q) ||
+          f.description.toLowerCase().includes(q) ||
+          f.flag.toLowerCase().includes(q)
+      );
+    }
+    // Sort: favorites first, then original order
+    return [...result].sort((a, b) => {
+      const aFav = favSet.has(a.flag) ? 0 : 1;
+      const bFav = favSet.has(b.flag) ? 0 : 1;
+      return aFav - bFav;
+    });
+  }, [preset, searchQuery, mergedFlags, favSet]);
 
   if (!show) return null;
 
@@ -250,7 +434,7 @@ export default function SpawnDialog() {
   const buildArgs = (): string[] => {
     if (!preset) return [];
     const args = [...preset.args];
-    for (const f of preset.flags) {
+    for (const f of mergedFlags) {
       if (enabledFlags[f.flag]) {
         args.push(f.flag);
         if (f.hasValue && flagValues[f.flag]) {
@@ -363,7 +547,7 @@ export default function SpawnDialog() {
 
       // Save to recent spawns
       const spawnFlags: Record<string, string | boolean> = {};
-      for (const f of preset.flags) {
+      for (const f of mergedFlags) {
         if (enabledFlags[f.flag]) {
           spawnFlags[f.flag] = f.hasValue && flagValues[f.flag] ? flagValues[f.flag] : true;
         }
@@ -382,53 +566,6 @@ export default function SpawnDialog() {
   const close = () => {
     setShow(false);
     setSplitSpawnContext(null);
-  };
-
-  /* ───────── Quick spawn from recent ───────── */
-
-  const handleQuickSpawn = async (agentType: string, flags: Record<string, string | boolean>) => {
-    const matchedPreset = allPresets.find((p) => p.type === agentType);
-    if (!matchedPreset) return;
-
-    // Resolve default shell placeholder
-    if (matchedPreset.cmd === "__default_shell__") {
-      matchedPreset.cmd = await getDefaultShell();
-    }
-
-    const id = `pty-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    const spawnCwd = selectedProject?.path ?? "~";
-
-    try {
-      // Wire up PTY ↔ xterm with flow control before spawning
-      const { terminal } = getOrCreateTerminal(id);
-      setupPtyConnection({ sessionId: id, terminal, fallbackCwd: spawnCwd });
-
-      // Build args from saved flags
-      const finalArgs = [...matchedPreset.args];
-      for (const [flag, value] of Object.entries(flags)) {
-        finalArgs.push(flag);
-        if (typeof value === "string") finalArgs.push(value);
-      }
-
-      const result = await invoke<{ id: string; cwd: string; pid?: number }>("spawn_pty", {
-        id, cmd: matchedPreset.cmd, args: finalArgs, cwd: spawnCwd,
-      });
-      const resolvedCwd = result?.cwd || spawnCwd;
-
-      addSession({
-        id, title: `${matchedPreset.label}@${getBaseName(resolvedCwd)}`,
-        workspaceId: activeWorkspaceId ?? "", agentType: matchedPreset.type,
-        originalAgentType: matchedPreset.type,
-        projectPath: resolvedCwd, pid: result?.pid, isActive: true,
-      });
-      addRecentSpawn(agentType, flags);
-      handlePostSpawn(id);
-    } catch (err) {
-      // Clean up the pre-created xterm instance on failure
-      cleanupTerminal(id);
-      console.error("Failed to quick spawn:", err);
-      useToastStore.getState().addToast(`Failed to spawn terminal: ${err}`, "error");
-    }
   };
 
   /* ───────── Render helpers ───────── */
@@ -569,7 +706,8 @@ export default function SpawnDialog() {
               {uniqueRecents.map((recent, i) => {
                 const matched = allPresets.find((p) => p.type === recent.agentType);
                 if (!matched) return null;
-                return renderAgentRow(matched, i, () => handleQuickSpawn(recent.agentType, recent.flags));
+                const presetIndex = allPresets.indexOf(matched);
+                return renderAgentRow(matched, i, () => selectPreset(presetIndex, recent.flags));
               })}
             </div>
           )}
@@ -589,7 +727,7 @@ export default function SpawnDialog() {
             {filteredPresets.map((p, i) => {
               // Skip agents already shown in Recent (unless searching)
               if (!hasSearch && recentTypes.has(p.type)) return null;
-              return renderAgentRow(p, i, () => setSelectedPreset(allPresets.indexOf(p)));
+              return renderAgentRow(p, i, () => selectPreset(allPresets.indexOf(p)));
             })}
           </div>
         </div>
@@ -743,6 +881,58 @@ export default function SpawnDialog() {
                             {f.description}
                           </div>
                         </div>
+                        {/* Star favorite */}
+                        <div
+                          role="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFlagFavorite(preset!.type, f.flag);
+                          }}
+                          style={{
+                            padding: 2,
+                            flexShrink: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            cursor: "pointer",
+                          }}
+                          title={favSet.has(f.flag) ? "Remove from favorites" : "Add to favorites"}
+                        >
+                          <Star
+                            size={13}
+                            fill={favSet.has(f.flag) ? "#f59e0b" : "none"}
+                            stroke={favSet.has(f.flag) ? "#f59e0b" : "var(--vp-text-faint)"}
+                            style={{ transition: "all 0.15s ease" }}
+                          />
+                        </div>
+                        {/* Delete custom flag */}
+                        {f.isCustom && (
+                          <div
+                            role="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeCustomFlag(preset!.type, f.flag);
+                              setEnabledFlags((prev) => {
+                                const next = { ...prev };
+                                delete next[f.flag];
+                                return next;
+                              });
+                            }}
+                            style={{
+                              padding: 2,
+                              flexShrink: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              cursor: "pointer",
+                            }}
+                            title="Delete custom flag"
+                          >
+                            <Trash2
+                              size={13}
+                              stroke="var(--vp-text-faint)"
+                              style={{ transition: "color 0.15s ease" }}
+                            />
+                          </div>
+                        )}
                       </button>
 
                       {/* Value input for hasValue flags */}
@@ -774,6 +964,11 @@ export default function SpawnDialog() {
                   );
                 })}
               </div>
+
+              {/* Add custom flag */}
+              {preset.type !== "shell" && (
+                <AddCustomFlagRow onAdd={(flag) => addCustomFlag(preset.type, flag)} />
+              )}
             </div>
           )}
 

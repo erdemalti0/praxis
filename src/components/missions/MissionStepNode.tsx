@@ -15,7 +15,7 @@ const STATUS_CONFIG: Record<MissionStepStatus, {
   icon: typeof Circle; label: string;
 }> = {
   pending: {
-    color: "#6b7280", glow: "none",
+    color: "var(--vp-text-muted)", glow: "none",
     bg: "var(--vp-bg-surface)", border: "var(--vp-border-subtle)",
     icon: Circle, label: "Pending",
   },
@@ -30,7 +30,7 @@ const STATUS_CONFIG: Record<MissionStepStatus, {
     icon: CheckCircle2, label: "Done",
   },
   blocked: {
-    color: "#f59e0b", glow: "none",
+    color: "var(--vp-accent-amber)", glow: "none",
     bg: "rgba(245,158,11,0.04)", border: "rgba(245,158,11,0.2)",
     icon: AlertCircle, label: "Blocked",
   },
@@ -177,7 +177,7 @@ export default function MissionStepNode({ step, projectPath, onAddChild, onEdit,
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
           }}>
-            <Zap size={9} style={{ color: "#a78bfa" }} />
+            <Zap size={9} style={{ color: "var(--vp-accent-purple)" }} />
           </div>
         )}
       </div>
@@ -237,8 +237,8 @@ export default function MissionStepNode({ step, projectPath, onAddChild, onEdit,
               title={step.prompt ? "Send prompt to agent" : "Send title to agent"}
               style={{
                 width: 22, height: 22, borderRadius: "var(--vp-radius-md)",
-                background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)",
-                color: "#a78bfa", cursor: "pointer",
+                background: "var(--vp-accent-purple-bg, rgba(167,139,250,0.08))", border: "1px solid var(--vp-accent-purple-border, rgba(167,139,250,0.2))",
+                color: "var(--vp-accent-purple)", cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 transition: "all 0.15s",
               }}

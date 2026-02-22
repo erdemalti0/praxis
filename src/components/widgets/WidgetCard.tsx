@@ -1,5 +1,5 @@
-import { Suspense, memo, useCallback } from "react";
-import { GripVertical, Maximize2, Minimize2, X } from "lucide-react";
+import { Suspense, memo, useCallback, useState, useRef, useEffect } from "react";
+import { GripVertical, Maximize2, Minimize2, X, Lock, Unlock, Copy, Pencil } from "lucide-react";
 import { getWidgetComponent, getWidgetDefinition } from "./registry";
 import { useUIStore } from "../../stores/uiStore";
 import { useWidgetStore } from "../../stores/widgetStore";
@@ -26,6 +26,24 @@ export default memo(function WidgetCard({ widgetId, widgetType, workspaceId, con
   const isCustomizeMode = useUIStore((s) => s.showCustomizePanel);
   const topPaneContent = useUIStore((s) => s.topPaneContent);
   const removeWidget = useWidgetStore((s) => s.removeWidget);
+  const renameWidget = useWidgetStore((s) => s.renameWidget);
+  const toggleWidgetLock = useWidgetStore((s) => s.toggleWidgetLock);
+  const duplicateWidget = useWidgetStore((s) => s.duplicateWidget);
+  const widgets = useWidgetStore((s) => s.workspaceWidgets[workspaceId] || []);
+  const widgetInstance = widgets.find((w) => w.id === widgetId);
+  const isLocked = widgetInstance?.locked ?? false;
+  const customName = widgetInstance?.customName;
+
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const renameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isRenaming && renameRef.current) {
+      renameRef.current.focus();
+      renameRef.current.select();
+    }
+  }, [isRenaming]);
 
   const toggleFullscreen = useCallback(() => {
     setFullscreenWidgetId(isFullscreen ? null : widgetId);
@@ -34,6 +52,24 @@ export default memo(function WidgetCard({ widgetId, widgetType, workspaceId, con
   const handleRemove = useCallback(() => {
     removeWidget(workspaceId, widgetId);
   }, [workspaceId, widgetId, removeWidget]);
+
+  const handleStartRename = useCallback(() => {
+    setRenameValue(customName || def?.name || "");
+    setIsRenaming(true);
+  }, [customName, def]);
+
+  const handleFinishRename = useCallback(() => {
+    renameWidget(workspaceId, widgetId, renameValue.trim());
+    setIsRenaming(false);
+  }, [workspaceId, widgetId, renameValue, renameWidget]);
+
+  const handleLock = useCallback(() => {
+    toggleWidgetLock(workspaceId, widgetId);
+  }, [workspaceId, widgetId, toggleWidgetLock]);
+
+  const handleDuplicate = useCallback(() => {
+    duplicateWidget(workspaceId, widgetId);
+  }, [workspaceId, widgetId, duplicateWidget]);
 
   if (!def || !Component) {
     return (
@@ -80,25 +116,84 @@ export default memo(function WidgetCard({ widgetId, widgetType, workspaceId, con
         }}
       >
         <div
-          className="widget-drag-handle flex items-center gap-2"
-          style={{ flex: 1, minWidth: 0, cursor: "grab", height: "100%" }}
+          className={isLocked ? "" : "widget-drag-handle"}
+          style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 0, cursor: isLocked ? "default" : "grab", height: "100%" }}
         >
-          <GripVertical size={12} className="grip-icon" style={{ color: "var(--vp-text-subtle)", flexShrink: 0 }} />
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 500,
-              color: "var(--vp-text-muted)",
-              flex: 1,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {def.name}
-          </span>
+          {!isLocked && <GripVertical size={12} className="grip-icon" style={{ color: "var(--vp-text-subtle)", flexShrink: 0 }} />}
+          {isLocked && <Lock size={11} style={{ color: "var(--vp-text-subtle)", flexShrink: 0 }} />}
+          {isRenaming ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, minWidth: 0 }}>
+              <input
+                ref={renameRef}
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleFinishRename();
+                  if (e.key === "Escape") setIsRenaming(false);
+                }}
+                onBlur={handleFinishRename}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 500,
+                  color: "var(--vp-text-primary)",
+                  background: "var(--vp-input-bg)",
+                  border: "1px solid var(--vp-input-border-focus)",
+                  borderRadius: "var(--vp-radius-sm)",
+                  padding: "1px 4px",
+                  outline: "none",
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              />
+            </div>
+          ) : (
+            <span
+              onDoubleClick={handleStartRename}
+              style={{
+                fontSize: 11,
+                fontWeight: 500,
+                color: "var(--vp-text-muted)",
+                flex: 1,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                cursor: "default",
+              }}
+              title="Double-click to rename"
+            >
+              {customName || def.name}
+            </span>
+          )}
         </div>
         {isCustomizeMode ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <button
+              onClick={handleStartRename}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "var(--vp-text-faint)", display: "flex", alignItems: "center", borderRadius: "var(--vp-radius-sm)", flexShrink: 0 }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--vp-text-primary)"; e.currentTarget.style.background = "var(--vp-bg-surface-hover)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--vp-text-faint)"; e.currentTarget.style.background = "none"; }}
+              title="Rename"
+            >
+              <Pencil size={12} />
+            </button>
+            <button
+              onClick={handleLock}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: isLocked ? "var(--vp-accent-blue)" : "var(--vp-text-faint)", display: "flex", alignItems: "center", borderRadius: "var(--vp-radius-sm)", flexShrink: 0 }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--vp-bg-surface-hover)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+              title={isLocked ? "Unlock" : "Lock position"}
+            >
+              {isLocked ? <Lock size={12} /> : <Unlock size={12} />}
+            </button>
+            <button
+              onClick={handleDuplicate}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "var(--vp-text-faint)", display: "flex", alignItems: "center", borderRadius: "var(--vp-radius-sm)", flexShrink: 0 }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--vp-text-primary)"; e.currentTarget.style.background = "var(--vp-bg-surface-hover)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--vp-text-faint)"; e.currentTarget.style.background = "none"; }}
+              title="Duplicate"
+            >
+              <Copy size={12} />
+            </button>
           <button
             onClick={handleRemove}
             style={{
@@ -124,6 +219,7 @@ export default memo(function WidgetCard({ widgetId, widgetType, workspaceId, con
           >
             <X size={13} />
           </button>
+          </div>
         ) : (topPaneContent === "widgets" || isFullscreen) ? (
           /* Widget pane is on top (main view) — show fullscreen button */
           <button

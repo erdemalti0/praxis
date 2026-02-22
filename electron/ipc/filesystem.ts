@@ -4,6 +4,38 @@ import path from "path";
 import os from "os";
 import { watch, FSWatcher } from "chokidar";
 
+/**
+ * Security: Blocked paths that must never be accessed via IPC from renderer.
+ * Mirrors the same list in preload.ts for defense-in-depth.
+ */
+const BLOCKED_PREFIXES = [
+  path.join(os.homedir(), ".ssh"),
+  path.join(os.homedir(), ".gnupg"),
+  path.join(os.homedir(), ".aws"),
+  path.join(os.homedir(), ".kube"),
+];
+
+function isBlockedPath(filePath: string): boolean {
+  const resolved = path.resolve(filePath);
+  return BLOCKED_PREFIXES.some((blocked) => resolved.startsWith(blocked));
+}
+
+function assertReadAllowed(filePath: string): void {
+  if (isBlockedPath(filePath)) {
+    throw new Error(`Read access denied: ${filePath}`);
+  }
+}
+
+function assertWriteAllowed(filePath: string): void {
+  const resolved = path.resolve(filePath);
+  if (isBlockedPath(resolved)) {
+    throw new Error(`Write access denied: ${filePath}`);
+  }
+  if (!resolved.startsWith(os.homedir()) && !resolved.startsWith(os.tmpdir())) {
+    throw new Error(`Write access denied (outside allowed dirs): ${filePath}`);
+  }
+}
+
 interface FileEntry {
   name: string;
   path: string;
@@ -41,6 +73,7 @@ export function registerFilesystemHandlers() {
   // Read a single file's content (async)
   ipcMain.handle("read_file", async (_event, args: { path: string }) => {
     const filePath = args.path;
+    assertReadAllowed(filePath);
     try {
       await fs.promises.access(filePath);
     } catch {
@@ -51,6 +84,7 @@ export function registerFilesystemHandlers() {
 
   // Write content to a file (async)
   ipcMain.handle("write_file", async (_event, args: { path: string; content: string }) => {
+    assertWriteAllowed(args.path);
     await fs.promises.writeFile(args.path, args.content, "utf-8");
     return true;
   });
@@ -58,6 +92,7 @@ export function registerFilesystemHandlers() {
   // Editor-specific file operations (async)
   ipcMain.handle("editor_read_file", async (_event, args: { path: string }) => {
     const filePath = args.path;
+    assertReadAllowed(filePath);
     try {
       await fs.promises.access(filePath);
     } catch {
@@ -67,6 +102,7 @@ export function registerFilesystemHandlers() {
   });
 
   ipcMain.handle("editor_write_file", async (_event, args: { path: string; content: string }) => {
+    assertWriteAllowed(args.path);
     const dir = path.dirname(args.path);
     await fs.promises.mkdir(dir, { recursive: true });
     await fs.promises.writeFile(args.path, args.content, "utf-8");
@@ -76,6 +112,7 @@ export function registerFilesystemHandlers() {
   // Glob for files matching a pattern within a directory (async)
   ipcMain.handle("glob_files", async (_event, args: { pattern: string; cwd: string }) => {
     const { pattern, cwd } = args;
+    assertReadAllowed(cwd);
     try {
       await fs.promises.access(cwd);
     } catch {
@@ -107,6 +144,7 @@ export function registerFilesystemHandlers() {
 
   // Open a file or folder in the system default app
   ipcMain.handle("open_path", (_event, args: { path: string }) => {
+    assertReadAllowed(args.path);
     const { shell } = require("electron");
     return shell.openPath(args.path);
   });
@@ -122,8 +160,21 @@ export function registerFilesystemHandlers() {
     }
   });
 
+  // Delete a file (restricted to .praxis directory for safety)
+  ipcMain.handle("delete_file", async (_event, args: { path: string }) => {
+    const home = os.homedir();
+    const praxisRoot = path.join(home, ".praxis");
+    const resolved = path.resolve(args.path);
+    if (!resolved.startsWith(praxisRoot)) {
+      throw new Error("Deletion not allowed outside .praxis directory");
+    }
+    await fs.promises.unlink(resolved);
+    return true;
+  });
+
   ipcMain.handle("list_directory", async (_event, args: { path: string }) => {
     const dirPath = args.path;
+    assertReadAllowed(dirPath);
     let stat: fs.Stats;
     try {
       stat = await fs.promises.stat(dirPath);

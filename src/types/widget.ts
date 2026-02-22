@@ -15,6 +15,8 @@ export interface WidgetInstance {
   id: string;
   type: string;
   config?: Record<string, any>;
+  customName?: string;
+  locked?: boolean;
 }
 
 export interface WidgetLayoutItem {
@@ -57,7 +59,7 @@ export interface LogViewerConfig extends BaseWidgetConfig {
 }
 
 export interface AgentMonitorConfig extends BaseWidgetConfig {
-  filterTypes?: ("claude-code" | "opencode" | "aider" | "unknown")[];
+  filterTypes?: ("claude-code" | "opencode" | "codex" | "unknown")[];
   showIdleAgents?: boolean;
 }
 
@@ -155,7 +157,7 @@ export interface ClipboardHistoryConfig extends BaseWidgetConfig {
   maxItems?: number;
 }
 
-export type AgentType = "claude-code" | "opencode" | "aider" | "unknown";
+export type AgentType = "claude-code" | "opencode" | "codex" | "unknown";
 export type AgentStatus = "active" | "idle" | "stopped" | "error";
 
 export type WidgetConfigMap = {

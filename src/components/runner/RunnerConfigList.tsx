@@ -14,10 +14,10 @@ interface RunnerConfigListProps {
 }
 
 const STATUS_DOT: Record<string, { color: string; label: string }> = {
-  running: { color: "#4ade80", label: "Running" },
-  stopped: { color: "#6b7280", label: "Stopped" },
-  error: { color: "#ef4444", label: "Error" },
-  idle: { color: "#6b7280", label: "Idle" },
+  running: { color: "var(--vp-accent-green)", label: "Running" },
+  stopped: { color: "var(--vp-text-muted)", label: "Stopped" },
+  error: { color: "var(--vp-accent-red)", label: "Error" },
+  idle: { color: "var(--vp-text-muted)", label: "Idle" },
 };
 
 export default function RunnerConfigList({
@@ -58,8 +58,8 @@ export default function RunnerConfigList({
           title="New Run Config"
           style={{
             width: 24, height: 24, borderRadius: "var(--vp-radius-md)",
-            background: "rgba(251,146,60,0.12)", border: "1px solid rgba(251,146,60,0.35)",
-            color: "#fb923c", cursor: "pointer",
+            background: "var(--vp-accent-orange-bg, rgba(251,146,60,0.12))", border: "1px solid var(--vp-accent-orange-border, rgba(251,146,60,0.35))",
+            color: "var(--vp-accent-orange)", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
             transition: "all 0.15s",
           }}
@@ -82,8 +82,8 @@ export default function RunnerConfigList({
               onClick={onAdd}
               style={{
                 marginTop: 12, padding: "6px 14px", borderRadius: "var(--vp-radius-lg)",
-                background: "rgba(251,146,60,0.12)", border: "1px solid rgba(251,146,60,0.35)",
-                color: "#fb923c", fontSize: 11, fontWeight: 600, cursor: "pointer",
+                background: "var(--vp-accent-orange-bg, rgba(251,146,60,0.12))", border: "1px solid var(--vp-accent-orange-border, rgba(251,146,60,0.35))",
+                color: "var(--vp-accent-orange)", fontSize: 11, fontWeight: 600, cursor: "pointer",
                 transition: "all 0.15s",
               }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(251,146,60,0.2)"; }}
@@ -114,12 +114,12 @@ export default function RunnerConfigList({
                 borderRadius: "var(--vp-radius-lg)",
                 cursor: "pointer",
                 background: isActive
-                  ? "rgba(251,146,60,0.08)"
+                  ? "var(--vp-accent-orange-bg, rgba(251,146,60,0.08))"
                   : isHovered
                   ? "var(--vp-bg-surface-hover)"
                   : "transparent",
                 border: isActive
-                  ? "1px solid rgba(251,146,60,0.25)"
+                  ? "1px solid var(--vp-accent-orange-border, rgba(251,146,60,0.25))"
                   : "1px solid transparent",
                 transition: "all 0.15s",
               }}
@@ -134,7 +134,7 @@ export default function RunnerConfigList({
                   }} />
                   <span style={{
                     fontSize: 12, fontWeight: 500,
-                    color: isActive ? "#fb923c" : "var(--vp-text-primary)",
+                    color: isActive ? "var(--vp-accent-orange)" : "var(--vp-text-primary)",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                   }}>
                     {config.name}
@@ -153,7 +153,7 @@ export default function RunnerConfigList({
                       style={{
                         width: 22, height: 22, borderRadius: "var(--vp-radius-sm)",
                         background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
-                        color: "#ef4444", cursor: "pointer",
+                        color: "var(--vp-accent-red)", cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center",
                       }}
                     >
@@ -166,7 +166,7 @@ export default function RunnerConfigList({
                       style={{
                         width: 22, height: 22, borderRadius: "var(--vp-radius-sm)",
                         background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)",
-                        color: "#4ade80", cursor: "pointer",
+                        color: "var(--vp-accent-green)", cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center",
                       }}
                     >
@@ -182,7 +182,7 @@ export default function RunnerConfigList({
                       color: "var(--vp-text-faint)", cursor: "pointer",
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = "#ef4444"; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "var(--vp-accent-red)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = "var(--vp-text-faint)"; }}
                   >
                     <Trash2 size={10} />
@@ -210,7 +210,7 @@ export default function RunnerConfigList({
                       style={{
                         padding: "1px 6px", borderRadius: "var(--vp-radius-sm)",
                         background: "rgba(96,165,250,0.1)", border: "1px solid rgba(96,165,250,0.25)",
-                        color: "#60a5fa", fontSize: 9, fontWeight: 600,
+                        color: "var(--vp-accent-blue)", fontSize: 9, fontWeight: 600,
                         fontFamily: "'JetBrains Mono', monospace",
                       }}
                     >

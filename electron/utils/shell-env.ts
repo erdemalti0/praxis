@@ -2,12 +2,12 @@
  * Resolve the user's full login shell environment.
  *
  * Packaged Electron apps on macOS/Linux don't inherit the user's shell PATH,
- * so commands like "claude", "opencode", "aider" etc. can't be found.
+ * so commands like "claude", "opencode", "codex" etc. can't be found.
  * This module runs the user's login shell once at startup to capture the
  * full environment (PATH, etc.) and merges it into spawned PTY processes.
  */
 
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import os from "os";
 import { getDefaultShell } from "./platform";
 
@@ -31,7 +31,7 @@ export function getUserShellEnv(): Record<string, string> {
   try {
     // Run login shell interactively to source .zshrc/.bashrc/.profile
     // Use -ilc to get a login interactive shell that runs a command
-    const output = execSync(`${shell} -ilc 'env'`, {
+    const output = execFileSync(shell, ["-ilc", "env"], {
       encoding: "utf-8",
       timeout: 5000,
       env: {
@@ -64,6 +64,7 @@ export function getUserShellEnv(): Record<string, string> {
       `${home}/.local/bin`,
       `${home}/.cargo/bin`,
       `${home}/.bun/bin`,
+      `${home}/.opencode/bin`,
       `${home}/.nvm/versions/node`,
       `/usr/bin`,
       `/bin`,

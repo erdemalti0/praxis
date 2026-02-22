@@ -15,7 +15,7 @@ interface AgentProcess {
   cpu_usage: number;
 }
 
-const BUILTIN_KEYWORDS = ["claude", "opencode", "aider", "gemini", "amp"];
+const BUILTIN_KEYWORDS = ["claude", "opencode", "codex", "gemini", "amp"];
 const isWin = process.platform === "win32";
 const isLinux = process.platform === "linux";
 
@@ -52,7 +52,7 @@ const AGENTS_CACHE_TTL = 3000; // 3 seconds
 
 /**
  * Detect agent processes running as children of specific PTY sessions.
- * Used to detect when a user types `claude`, `aider`, etc. inside a shell terminal.
+ * Used to detect when a user types `claude`, `codex`, etc. inside a shell terminal.
  *
  * Input:  { pids: Record<sessionId, ptyPid> }
  * Output: Record<sessionId, detectedAgentType | null>
@@ -128,7 +128,7 @@ function keywordToAgentType(keyword: string | null): string | null {
   const kw = keyword.toLowerCase();
   if (kw.includes("claude")) return "claude-code";
   if (kw.includes("opencode")) return "opencode";
-  if (kw.includes("aider")) return "aider";
+  if (kw.includes("codex")) return "codex";
   if (kw.includes("gemini")) return "gemini";
   if (kw.includes("amp")) return "amp";
   // Check custom agents

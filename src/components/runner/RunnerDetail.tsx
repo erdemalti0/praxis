@@ -95,7 +95,7 @@ function LineWithLinks({ text }: { text: string }) {
               window.electronAPI?.invoke("open_external", p.url).catch(() => {});
             }}
             style={{
-              color: "#60a5fa",
+              color: "var(--vp-accent-blue)",
               textDecoration: "underline",
               textDecorationColor: "rgba(96,165,250,0.4)",
               cursor: "pointer",
@@ -190,7 +190,7 @@ export default function RunnerDetail({
         <div className="flex items-center gap-3">
           <div style={{
             width: 8, height: 8, borderRadius: "50%",
-            background: isRunning ? "#4ade80" : instance?.status === "error" ? "#ef4444" : "#6b7280",
+            background: isRunning ? "var(--vp-accent-green)" : instance?.status === "error" ? "var(--vp-accent-red)" : "var(--vp-text-muted)",
             boxShadow: isRunning ? "0 0 8px rgba(74,222,128,0.5)" : "none",
           }} />
           <span style={{ fontSize: 15, fontWeight: 600, color: "var(--vp-text-primary)" }}>
@@ -208,7 +208,7 @@ export default function RunnerDetail({
             <span style={{
               padding: "2px 8px", borderRadius: "var(--vp-radius-sm)",
               background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)",
-              color: "#ef4444", fontSize: 10, fontWeight: 600,
+              color: "var(--vp-accent-red)", fontSize: 10, fontWeight: 600,
             }}>
               Exit {instance.exitCode}
             </span>
@@ -217,7 +217,7 @@ export default function RunnerDetail({
             <span style={{
               padding: "2px 8px", borderRadius: "var(--vp-radius-sm)",
               background: "rgba(107,114,128,0.1)", border: "1px solid rgba(107,114,128,0.25)",
-              color: "#6b7280", fontSize: 10, fontWeight: 600,
+              color: "var(--vp-text-muted)", fontSize: 10, fontWeight: 600,
             }}>
               Stopped
             </span>
@@ -265,7 +265,7 @@ export default function RunnerDetail({
               display: "flex", alignItems: "center", justifyContent: "center",
               transition: "all 0.15s",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)"; e.currentTarget.style.color = "#ef4444"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)"; e.currentTarget.style.color = "var(--vp-accent-red)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--vp-border-light)"; e.currentTarget.style.color = "var(--vp-text-muted)"; }}
           >
             <Trash2 size={12} />
@@ -323,7 +323,7 @@ export default function RunnerDetail({
                   style={{
                     padding: "6px 14px", borderRadius: "var(--vp-radius-lg)",
                     background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)",
-                    color: "#ef4444", fontSize: 11, fontWeight: 600, cursor: "pointer",
+                    color: "var(--vp-accent-red)", fontSize: 11, fontWeight: 600, cursor: "pointer",
                     transition: "all 0.15s",
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.18)"; }}
@@ -338,7 +338,7 @@ export default function RunnerDetail({
                   style={{
                     padding: "6px 14px", borderRadius: "var(--vp-radius-lg)",
                     background: "rgba(251,146,60,0.1)", border: "1px solid rgba(251,146,60,0.25)",
-                    color: "#fb923c", fontSize: 11, fontWeight: 600, cursor: "pointer",
+                    color: "var(--vp-accent-orange)", fontSize: 11, fontWeight: 600, cursor: "pointer",
                     transition: "all 0.15s",
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(251,146,60,0.18)"; }}
@@ -355,7 +355,7 @@ export default function RunnerDetail({
                 style={{
                   padding: "6px 14px", borderRadius: "var(--vp-radius-lg)",
                   background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.25)",
-                  color: "#4ade80", fontSize: 11, fontWeight: 600, cursor: "pointer",
+                  color: "var(--vp-accent-green)", fontSize: 11, fontWeight: 600, cursor: "pointer",
                   transition: "all 0.15s",
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(74,222,128,0.18)"; }}
@@ -380,7 +380,7 @@ export default function RunnerDetail({
                 style={{
                   padding: "4px 10px", borderRadius: "var(--vp-radius-md)",
                   background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.25)",
-                  color: "#60a5fa", fontSize: 11, fontWeight: 600, cursor: "pointer",
+                  color: "var(--vp-accent-blue)", fontSize: 11, fontWeight: 600, cursor: "pointer",
                   fontFamily: "'JetBrains Mono', monospace",
                   transition: "all 0.15s",
                 }}
@@ -404,7 +404,7 @@ export default function RunnerDetail({
                   fontSize: 10, color: "var(--vp-text-secondary)",
                 }}
               >
-                <Smartphone size={10} style={{ color: "#4ade80" }} />
+                <Smartphone size={10} style={{ color: "var(--vp-accent-green)" }} />
                 {d.name}
               </div>
             ))}
@@ -418,7 +418,7 @@ export default function RunnerDetail({
                   fontSize: 10, color: "var(--vp-text-secondary)",
                 }}
               >
-                <Tablet size={10} style={{ color: "#60a5fa" }} />
+                <Tablet size={10} style={{ color: "var(--vp-accent-blue)" }} />
                 {d.name}
               </div>
             ))}
@@ -444,7 +444,7 @@ export default function RunnerDetail({
                 </label>
                 {isRunning && (
                   <div className="flex items-center gap-1.5">
-                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ade80", animation: "pulse 2s infinite" }} />
+                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--vp-accent-green)", animation: "pulse 2s infinite" }} />
                     <span style={{ fontSize: 9, color: "var(--vp-text-faint)" }}>Live</span>
                   </div>
                 )}
@@ -461,7 +461,7 @@ export default function RunnerDetail({
                   flexShrink: 0,
                 }}
               >
-                <Link size={11} style={{ color: "#60a5fa", flexShrink: 0 }} />
+                <Link size={11} style={{ color: "var(--vp-accent-blue)", flexShrink: 0 }} />
                 {extractedUrls.map((url) => (
                   <button
                     key={url}
@@ -474,7 +474,7 @@ export default function RunnerDetail({
                       borderRadius: "var(--vp-radius-sm)",
                       background: "rgba(96,165,250,0.08)",
                       border: "1px solid rgba(96,165,250,0.2)",
-                      color: "#60a5fa",
+                      color: "var(--vp-accent-blue)",
                       fontSize: 10,
                       fontWeight: 500,
                       fontFamily: "'JetBrains Mono', monospace",

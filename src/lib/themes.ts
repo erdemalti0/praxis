@@ -40,6 +40,28 @@ export interface ThemeColors {
   codeText: string;
   buttonPrimaryBg: string;
   buttonPrimaryText: string;
+  // Syntax highlighting
+  syntaxKeyword: string;
+  syntaxString: string;
+  syntaxNumber: string;
+  syntaxComment: string;
+  syntaxFunction: string;
+  syntaxType: string;
+  syntaxVariable: string;
+  syntaxOperator: string;
+  syntaxLiteral: string;
+  syntaxRegexp: string;
+  syntaxMeta: string;
+  syntaxTag: string;
+  syntaxAttribute: string;
+  syntaxAddition: string;
+  syntaxDeletion: string;
+  // Extra accents
+  accentYellow: string;
+  accentPurple: string;
+  accentPurpleBg: string;
+  // Inline code
+  inlineCodeColor: string;
 }
 
 export interface ThemeDefinition {
@@ -57,9 +79,9 @@ export const darkTheme: ThemeDefinition = {
     bgPrimary: "#000000",
     bgSecondary: "#0a0a0a",
     bgTertiary: "#1a1a1a",
-    bgSurface: "rgba(255,255,255,0.04)",
-    bgSurfaceHover: "rgba(255,255,255,0.08)",
-    bgOverlay: "rgba(0,0,0,0.7)",
+    bgSurface: "#111111",
+    bgSurfaceHover: "#1a1a1a",
+    bgOverlay: "rgba(0,0,0,0.85)",
     bgInset: "#050505",
     textPrimary: "#e0e0e0",
     textSecondary: "#aaaaaa",
@@ -67,11 +89,11 @@ export const darkTheme: ThemeDefinition = {
     textDim: "#666666",
     textFaint: "#555555",
     textSubtle: "#444444",
-    borderSubtle: "rgba(255,255,255,0.08)",
-    borderLight: "rgba(255,255,255,0.12)",
-    borderMedium: "rgba(255,255,255,0.18)",
-    borderStrong: "rgba(255,255,255,0.25)",
-    borderPanel: "rgba(255,255,255,0.45)",
+    borderSubtle: "#1f1f1f",
+    borderLight: "#2a2a2a",
+    borderMedium: "#333333",
+    borderStrong: "#404040",
+    borderPanel: "#555555",
     accentBlue: "#60a5fa",
     accentBlueBg: "rgba(96,165,250,0.08)",
     accentBlueBgHover: "rgba(96,165,250,0.15)",
@@ -95,6 +117,25 @@ export const darkTheme: ThemeDefinition = {
     codeText: "#d4d4d4",
     buttonPrimaryBg: "#ffffff",
     buttonPrimaryText: "#000000",
+    syntaxKeyword: "#c586c0",
+    syntaxString: "#ce9178",
+    syntaxNumber: "#b5cea8",
+    syntaxComment: "#6a9955",
+    syntaxFunction: "#dcdcaa",
+    syntaxType: "#4ec9b0",
+    syntaxVariable: "#9cdcfe",
+    syntaxOperator: "#d4d4d4",
+    syntaxLiteral: "#569cd6",
+    syntaxRegexp: "#d16969",
+    syntaxMeta: "#d7ba7d",
+    syntaxTag: "#569cd6",
+    syntaxAttribute: "#9cdcfe",
+    syntaxAddition: "#4ade80",
+    syntaxDeletion: "#f87171",
+    accentYellow: "#f59e0b",
+    accentPurple: "#c9b8fa",
+    accentPurpleBg: "rgba(201,184,250,0.08)",
+    inlineCodeColor: "#e2b86b",
   },
 };
 
@@ -106,9 +147,9 @@ export const lightTheme: ThemeDefinition = {
     bgPrimary: "#f5f5f5",
     bgSecondary: "#ffffff",
     bgTertiary: "#e8e8e8",
-    bgSurface: "rgba(0,0,0,0.03)",
-    bgSurfaceHover: "rgba(0,0,0,0.06)",
-    bgOverlay: "rgba(255,255,255,0.8)",
+    bgSurface: "#eeeeee",
+    bgSurfaceHover: "#e4e4e4",
+    bgOverlay: "rgba(255,255,255,0.9)",
     bgInset: "#ebebeb",
     textPrimary: "#1a1a1a",
     textSecondary: "#4a4a4a",
@@ -116,11 +157,11 @@ export const lightTheme: ThemeDefinition = {
     textDim: "#8a8a8a",
     textFaint: "#a0a0a0",
     textSubtle: "#b0b0b0",
-    borderSubtle: "rgba(0,0,0,0.06)",
-    borderLight: "rgba(0,0,0,0.10)",
-    borderMedium: "rgba(0,0,0,0.15)",
-    borderStrong: "rgba(0,0,0,0.22)",
-    borderPanel: "rgba(0,0,0,0.18)",
+    borderSubtle: "#e8e8e8",
+    borderLight: "#dcdcdc",
+    borderMedium: "#d0d0d0",
+    borderStrong: "#c0c0c0",
+    borderPanel: "#cccccc",
     accentBlue: "#3b82f6",
     accentBlueBg: "rgba(59,130,246,0.08)",
     accentBlueBgHover: "rgba(59,130,246,0.12)",
@@ -144,6 +185,25 @@ export const lightTheme: ThemeDefinition = {
     codeText: "#1a1a1a",
     buttonPrimaryBg: "#1a1a1a",
     buttonPrimaryText: "#ffffff",
+    syntaxKeyword: "#af00db",
+    syntaxString: "#a31515",
+    syntaxNumber: "#098658",
+    syntaxComment: "#008000",
+    syntaxFunction: "#795e26",
+    syntaxType: "#267f99",
+    syntaxVariable: "#001080",
+    syntaxOperator: "#1a1a1a",
+    syntaxLiteral: "#0000ff",
+    syntaxRegexp: "#811f3f",
+    syntaxMeta: "#e36209",
+    syntaxTag: "#800000",
+    syntaxAttribute: "#e50000",
+    syntaxAddition: "#22c55e",
+    syntaxDeletion: "#dc2626",
+    accentYellow: "#d97706",
+    accentPurple: "#7c3aed",
+    accentPurpleBg: "rgba(124,58,237,0.08)",
+    inlineCodeColor: "#c7254e",
   },
 };
 
@@ -155,9 +215,9 @@ export const navyBlurTheme: ThemeDefinition = {
     bgPrimary: "#0a1628",
     bgSecondary: "#0f1d32",
     bgTertiary: "#162844",
-    bgSurface: "rgba(100,160,255,0.04)",
-    bgSurfaceHover: "rgba(100,160,255,0.08)",
-    bgOverlay: "rgba(6,14,30,0.8)",
+    bgSurface: "#0e1a30",
+    bgSurfaceHover: "#132240",
+    bgOverlay: "rgba(6,14,30,0.9)",
     bgInset: "#071020",
     textPrimary: "#d4e0f0",
     textSecondary: "#9fb3d0",
@@ -165,11 +225,11 @@ export const navyBlurTheme: ThemeDefinition = {
     textDim: "#5a7399",
     textFaint: "#4a6080",
     textSubtle: "#3a4f6a",
-    borderSubtle: "rgba(100,160,255,0.08)",
-    borderLight: "rgba(100,160,255,0.15)",
-    borderMedium: "rgba(100,160,255,0.22)",
-    borderStrong: "rgba(100,160,255,0.30)",
-    borderPanel: "rgba(100,160,255,0.35)",
+    borderSubtle: "#121e35",
+    borderLight: "#1a2a48",
+    borderMedium: "#22365a",
+    borderStrong: "#2a4270",
+    borderPanel: "#2e4878",
     accentBlue: "#7bb3ff",
     accentBlueBg: "rgba(123,179,255,0.08)",
     accentBlueBgHover: "rgba(123,179,255,0.15)",
@@ -193,6 +253,25 @@ export const navyBlurTheme: ThemeDefinition = {
     codeText: "#c8d8f0",
     buttonPrimaryBg: "#d4e0f0",
     buttonPrimaryText: "#0a1628",
+    syntaxKeyword: "#d4a0ff",
+    syntaxString: "#f0c090",
+    syntaxNumber: "#c8e8a0",
+    syntaxComment: "#6c9070",
+    syntaxFunction: "#e8e0a0",
+    syntaxType: "#70d0c0",
+    syntaxVariable: "#a0d8f0",
+    syntaxOperator: "#c8d8f0",
+    syntaxLiteral: "#80b0e0",
+    syntaxRegexp: "#e09090",
+    syntaxMeta: "#e0c090",
+    syntaxTag: "#80b0e0",
+    syntaxAttribute: "#a0d8f0",
+    syntaxAddition: "#5ce0a0",
+    syntaxDeletion: "#ff8a8a",
+    accentYellow: "#ffc040",
+    accentPurple: "#d0b8ff",
+    accentPurpleBg: "rgba(208,184,255,0.08)",
+    inlineCodeColor: "#e8c070",
   },
 };
 
@@ -202,11 +281,38 @@ function camelToKebab(str: string): string {
   return str.replace(/([A-Z])/g, "-$1").toLowerCase();
 }
 
-export function applyTheme(theme: ThemeDefinition): void {
+/**
+ * Derive rgba variants from a hex accent color for bg, hover, border, glow.
+ */
+function deriveAccentVariants(hex: string) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return {
+    accent: hex,
+    bg: `rgba(${r},${g},${b},0.08)`,
+    bgHover: `rgba(${r},${g},${b},0.15)`,
+    border: `rgba(${r},${g},${b},0.3)`,
+    glow: `rgba(${r},${g},${b},0.5)`,
+  };
+}
+
+export function applyTheme(theme: ThemeDefinition, accentOverride?: string | null): void {
   const root = document.documentElement;
   for (const [key, value] of Object.entries(theme.colors)) {
     root.style.setProperty(`--vp-${camelToKebab(key)}`, value);
   }
+
+  // Override accent colors if user picked a global accent color
+  if (accentOverride) {
+    const v = deriveAccentVariants(accentOverride);
+    root.style.setProperty("--vp-accent-blue", v.accent);
+    root.style.setProperty("--vp-accent-blue-bg", v.bg);
+    root.style.setProperty("--vp-accent-blue-bg-hover", v.bgHover);
+    root.style.setProperty("--vp-accent-blue-border", v.border);
+    root.style.setProperty("--vp-accent-blue-glow", v.glow);
+  }
+
   // Sync xterm terminal colors with the new theme
   // Use dynamic import to avoid circular dependency
   requestAnimationFrame(() => {
@@ -243,4 +349,57 @@ export function getThemeById(id: string, customThemes: ThemeDefinition[] = []): 
 
 export function createDefaultThemeColors(): ThemeColors {
   return { ...darkTheme.colors };
+}
+
+// --- Density Mode ---
+const DENSITY_SCALES: Record<string, Record<string, string>> = {
+  compact: {
+    "--vp-density-padding-xs": "2px",
+    "--vp-density-padding-sm": "4px",
+    "--vp-density-padding-md": "6px",
+    "--vp-density-padding-lg": "8px",
+    "--vp-density-gap": "4px",
+    "--vp-density-font-size": "11px",
+    "--vp-density-line-height": "1.3",
+  },
+  comfortable: {
+    "--vp-density-padding-xs": "4px",
+    "--vp-density-padding-sm": "6px",
+    "--vp-density-padding-md": "10px",
+    "--vp-density-padding-lg": "14px",
+    "--vp-density-gap": "6px",
+    "--vp-density-font-size": "12px",
+    "--vp-density-line-height": "1.5",
+  },
+  spacious: {
+    "--vp-density-padding-xs": "6px",
+    "--vp-density-padding-sm": "8px",
+    "--vp-density-padding-md": "14px",
+    "--vp-density-padding-lg": "18px",
+    "--vp-density-gap": "8px",
+    "--vp-density-font-size": "13px",
+    "--vp-density-line-height": "1.6",
+  },
+};
+
+export function applyDensityMode(mode: string): void {
+  const vars = DENSITY_SCALES[mode] || DENSITY_SCALES.comfortable;
+  const root = document.documentElement;
+  for (const [k, v] of Object.entries(vars)) {
+    root.style.setProperty(k, v);
+  }
+}
+
+// --- UI Font Size ---
+const UI_FONT_SIZES: Record<string, string> = {
+  small: "12px",
+  normal: "13px",
+  large: "14px",
+};
+
+export function applyUIFontSize(size: string): void {
+  document.documentElement.style.setProperty(
+    "--vp-ui-font-size",
+    UI_FONT_SIZES[size] || "13px"
+  );
 }
